@@ -1,3 +1,8 @@
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/7df70054-5572-4ba4-a6d8-c586e13256a2" alt="AION2 一键汉化工具界面" width="500">
+</p>
+
+
 ## 🚀 Aion2 汉化补丁 v1.0.0.0 首发测试版
 
 这是一个专为 **Aion 2 国际服与台服** 打造的一键汉化包。由于处于 `Pre-release` 阶段，主要用于核心功能和基本界面的测试。
