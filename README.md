@@ -27,3 +27,9 @@
 
 * **重启生效**：若汉化时游戏处于开启状态，需重启游戏方可看到汉化效果。
 * **关于误报**：本工具由 AutoHotkey 编译而成，且涉及本地文件的释放替换，**部分杀毒软件（如 Windows Defender）可能会出现安全误报**。此属正常现象，请放心添加信任运行。
+
+***
+
+### ⬇️ 下载地址
+
+ https://github.com/nanhezzb/Aion2-Chinese-Patch/releases
