@@ -1,0 +1,59 @@
+{
+    "cloud_bulletin": {
+        "latest_version": "1.0.0.0",
+        "text": "v1.0.0.1 现已支持汉化补丁在线升级。",
+        "bulletin_timestamp": 1789981021
+    },
+    "servers_config": [
+        {
+            "id": 101,
+            "name": "国际服",
+            "display": "国际服 - Steam / PURPLE",
+            "keywords": [
+                "AION"
+            ],
+            "patch_branches": [
+                {
+                    "id": 1,
+                    "tag": "xy",
+                    "latest_version": "1.0.0.0",
+                    "file_timestamp": 1789981021,
+                    "actions": [
+                        {
+                            "type": "add",
+                            "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll"
+                        },
+                        {
+                            "type": "add",
+                            "remote_filename": "patchs/xy_pakchunk999999-Windows_999_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk999999-Windows_999_P.pak"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "id": 102,
+            "name": "台服",
+            "display": "台服 - PURPLE",
+            "keywords": [
+                "AION"
+            ],
+            "patch_branches": [
+                {
+                    "id": 1,
+                    "tag": "xy",
+                    "latest_version": "1.0.0.0",
+                    "file_timestamp": 1789981021,
+                    "actions": [
+                        {
+                            "type": "add",
+                            "remote_filename": "patchs/xy_pakchunk504000-Windows_9999_P.Pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\xy_pakchunk504000-Windows_9999_P.Pak"
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

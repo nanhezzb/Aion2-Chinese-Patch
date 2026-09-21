@@ -1,0 +1,16 @@
+{
+    "global_config": {
+        "check_interval_hours": 24,
+        "download_timeout_ms": 15000,
+        "cdn_mirrors": [
+            "https://gh-proxy.com"
+        ]
+    },
+    "client_update": {
+        "latest_version": "1.0.0.1",
+        "min_required_version": "1.0.0.1",
+        "client_download_url": "https://github.com/nanhezzb/Aion2-Chinese-Patch/releases",
+        "changelog": "1. v1.0.0.1 现已支持汉化补丁在线升级。",
+        "file_timestamp": 1789981021
+    }
+}
