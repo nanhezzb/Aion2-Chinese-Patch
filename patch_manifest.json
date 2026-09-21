@@ -1,8 +1,8 @@
 {
     "cloud_bulletin": {
         "latest_version": "1.0.0.0",
-        "text": "v1.0.0.1 现已支持汉化补丁在线升级。",
-        "bulletin_timestamp": 1789981021
+        "description": "v1.0.0.1 现已支持汉化补丁在线升级。",
+        "release_timestamp": 1789981021
     },
     "servers_config": [
         {
@@ -15,9 +15,10 @@
             "patch_branches": [
                 {
                     "id": 1,
-                    "tag": "xy",
+                    "‌source": "xy",
                     "latest_version": "1.0.0.0",
-                    "file_timestamp": 1789981021,
+                    "description": "v1.0.0.1 现已支持汉化补丁在线升级。",
+                    "release_timestamp": 1789981021,
                     "actions": [
                         {
                             "type": "add",
@@ -42,9 +43,10 @@
             "patch_branches": [
                 {
                     "id": 1,
-                    "tag": "xy",
+                    "‌source": "xy",
                     "latest_version": "1.0.0.0",
-                    "file_timestamp": 1789981021,
+                    "description": "v1.0.0.1 现已支持汉化补丁在线升级。",
+                    "release_timestamp": 1789981021,
                     "actions": [
                         {
                             "type": "add",
