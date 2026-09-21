@@ -5,11 +5,11 @@
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
 ;@Ahk2Exe-SetVersion 1.0.0.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
-;@Ahk2Exe-SetMainIcon D:\Program Files\AutoHotkey\icon.ico
-#Include "D:\Program Files\AutoHotkey\lib\UniqueInstance.ahk"
-#Include "D:\Program Files\AutoHotkey\lib\PathUtil.ahk"
-#Include "D:\Program Files\AutoHotkey\Lib\WinHttpRequest.ahk"
-#Include "D:\Program Files\AutoHotkey\lib\JSON.ahk"
+;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
+#Include ".\AutoHotkey\lib\UniqueInstance.ahk"
+#Include ".\AutoHotkey\lib\PathUtil.ahk"
+#Include ".\AutoHotkey\Lib\WinHttpRequest.ahk"
+#Include ".\AutoHotkey\lib\JSON.ahk"
 ;@format array_style: expand, object_style: expand
 
 #NoTrayIcon
@@ -27,10 +27,11 @@ configFile := "config.ini"
 version := "1.0.0.0"
 installPath := ""
 sectionName := ""
+currentServer := ""
 proxy_mirrors := [
     "https://gh-proxy.com"
 ]
-pre_url := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/main/"
+pre_url := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/main"
 app_manifest_url := "app_manifest.json"
 patch_manifest_url := "patch_manifest.json"
 
@@ -70,8 +71,6 @@ for server in servers {
         isManualReset: 0
     }
 }
-
-global currentServer := servers
 
 ; ==================== GUI 布局开始 ====================
 myGui := Gui(, "AION2 一键汉化工具 1.0 beta")
@@ -417,9 +416,9 @@ DoChinese(*) {
                 }
             }
 
-            FileInstall("D:\Program Files\AutoHotkey\patchs\xy_pakchunk999999-Windows_999_P.Pak", installPath .
+            FileInstall(".\AutoHotkey\patchs\xy_pakchunk999999-Windows_999_P.Pak", installPath .
                 "\Aion2\Content\Paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak", 1)
-            FileInstall("D:\Program Files\AutoHotkey\patchs\xy_dxgi.dll", installPath .
+            FileInstall(".\AutoHotkey\patchs\xy_dxgi.dll", installPath .
                 "\Aion2\Binaries\Win64\dxgi.dll", 1)
         } catch {
             PopupPrompt("释放" . currentServer.name . "汉化文件时发生未知错误，汉化失败。")
@@ -434,7 +433,7 @@ DoChinese(*) {
                 }
             }
 
-            FileInstall("D:\Program Files\AutoHotkey\patchs\xy_pakchunk504000-Windows_9999_P.Pak", installPath .
+            FileInstall(".\AutoHotkey\patchs\xy_pakchunk504000-Windows_9999_P.Pak", installPath .
                 "\Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak", 1)
         } catch {
             PopupPrompt("释放" . currentServer.name . "汉化文件时发生未知错误，汉化失败。")
