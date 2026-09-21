@@ -7,6 +7,9 @@
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 ;@Ahk2Exe-SetMainIcon D:\Program Files\AutoHotkey\icon.ico
 #Include "D:\Program Files\AutoHotkey\lib\UniqueInstance.ahk"
+#Include "D:\Program Files\AutoHotkey\lib\PathUtil.ahk"
+#Include "D:\Program Files\AutoHotkey\Lib\WinHttpRequest.ahk"
+#Include "D:\Program Files\AutoHotkey\lib\JSON.ahk"
 ;@format array_style: expand, object_style: expand
 
 #NoTrayIcon
@@ -21,39 +24,38 @@ uiResult := UniqueInstance.Ensure(Map(
 
 SplitPath(A_ScriptName, , , , &fileName)
 configFile := "config.ini"
+version := "1.0.0.0"
 installPath := ""
 sectionName := ""
+proxy_mirrors := [
+    "https://gh-proxy.com"
+]
+pre_url := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/main/"
+app_manifest_url := "app_manifest.json"
+patch_manifest_url := "patch_manifest.json"
 
 servers := [
     {
         id: 101,
         name: "国际服",
-        displayDescription: "国际服 - Steam / PURPLE",
+        display: "国际服 - Steam / PURPLE",
         keywords: [
-            "AION 2 Playtest",
-            "AION 2",
-            "AION2",
-            "Aion2",
-            "Aion 2"
+            "AION"
         ]
     },
     {
         id: 102,
         name: "台服",
-        displayDescription: "台服 - PURPLE",
+        display: "台服 - PURPLE",
         keywords: [
-            "AION 2 Playtest",
-            "AION 2",
-            "AION2",
-            "Aion2",
-            "Aion 2"
+            "AION"
         ]
     }
 ]
 
 dropDownOptions := []
 for server in servers {
-    dropDownOptions.Push(server.displayDescription)
+    dropDownOptions.Push(server.display)
 }
 
 configCache := {
@@ -213,14 +215,25 @@ RefreshServerData() {
 ; 提取公共的注册表有效路径筛选逻辑
 GetValidGamePaths() {
     global currentServer
-    local detectedGames, validGames, gameInfo
+    local detectedGames, validGames, gameInfo, existingGame, isDuplicatePath
 
     detectedGames := ScanRegistryForGamePaths(currentServer.keywords)
     validGames := []
 
     for gameInfo in detectedGames {
         if (FileExist(gameInfo.gameInstallPath . "\Aion2\Binaries\Win64\Aion2.exe")) {
-            validGames.Push(gameInfo)
+
+            isDuplicatePath := false
+            for existingGame in validGames {
+                if (PathUtil.Normalize(existingGame.gameInstallPath) == PathUtil.Normalize(gameInfo.gameInstallPath)) {
+                    isDuplicatePath := true
+                    break
+                }
+            }
+
+            if (!isDuplicatePath) {
+                validGames.Push(gameInfo)
+            }
         }
     }
     return validGames
@@ -404,9 +417,10 @@ DoChinese(*) {
                 }
             }
 
-            FileInstall("D:\Program Files\AutoHotkey\pakchunk999999-Windows_999_P.Pak", installPath .
+            FileInstall("D:\Program Files\AutoHotkey\patchs\xy_pakchunk999999-Windows_999_P.Pak", installPath .
                 "\Aion2\Content\Paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak", 1)
-            FileInstall("D:\Program Files\AutoHotkey\dxgi.dll", installPath . "\Aion2\Binaries\Win64\dxgi.dll", 1)
+            FileInstall("D:\Program Files\AutoHotkey\patchs\xy_dxgi.dll", installPath .
+                "\Aion2\Binaries\Win64\dxgi.dll", 1)
         } catch {
             PopupPrompt("释放" . currentServer.name . "汉化文件时发生未知错误，汉化失败。")
             return
@@ -420,7 +434,7 @@ DoChinese(*) {
                 }
             }
 
-            FileInstall("D:\Program Files\AutoHotkey\pakchunk504000-Windows_9999_P.Pak", installPath .
+            FileInstall("D:\Program Files\AutoHotkey\patchs\xy_pakchunk504000-Windows_9999_P.Pak", installPath .
                 "\Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak", 1)
         } catch {
             PopupPrompt("释放" . currentServer.name . "汉化文件时发生未知错误，汉化失败。")
@@ -490,7 +504,7 @@ UpdateNoticeText() {
 
     noticeControl.Value := ruleText .
         "`r`n2. 汉化完成后启动或重启 AION2，使汉化文件生效。" .
-        "`r`n3. 如发生异常问题，使用“撤销”功能，或在 PURPLE 或 Steam 进行修复" .
+        "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE 或 Steam 进行修复，" .
         "`r`n   PURPLE : AION2 - 游戏设置 - 检查文件；" .
         "`r`n   Steam : AION2 -  属性 - 已安装的文件 - 验证游戏文件的完整性；" .
         "`r`n4. 汉化文件来自网游加速器，本工具为第三方扩展，使用即代表您知悉并自愿承担所有风险。"
