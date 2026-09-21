@@ -39,4 +39,4 @@
 
 ### ⬇️ 下载地址
 
- https://github.com/nanhezzb/Aion2-Chinese-Patch/releases
+https://github.com/nanhezzb/Aion2-Chinese-Patch/releases/latest
