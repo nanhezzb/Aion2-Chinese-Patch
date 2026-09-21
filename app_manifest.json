@@ -2,7 +2,7 @@
     "global_config": {
         "check_interval_hours": 24,
         "download_timeout_ms": 15000,
-        "cdn_mirrors": [
+        "proxy_mirrors": [
             "https://gh-proxy.com"
         ]
     },
