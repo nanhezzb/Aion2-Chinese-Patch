@@ -1,6 +1,6 @@
 {
     "cloud_bulletin": {
-        "latest_version": "1.0.0.0",
+        "latest_bulletin_version": "1.0.0.0",
         "changelog": "v1.0.0.1 现已支持汉化补丁在线升级。",
         "release_timestamp": 1789981021
     },
@@ -16,7 +16,7 @@
                 {
                     "id": 1,
                     "source": "xy",
-                    "latest_version": "1.0.0.0",
+                    "latest_patch_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1789981021,
                     "actions": [
