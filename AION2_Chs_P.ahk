@@ -5,11 +5,11 @@
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
 ;@Ahk2Exe-SetVersion 1.0.0.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
-;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
-#Include ".\AutoHotkey\lib\UniqueInstance.ahk"
-#Include ".\AutoHotkey\lib\PathUtil.ahk"
-#Include ".\AutoHotkey\Lib\WinHttpRequest.ahk"
-#Include ".\AutoHotkey\lib\JSON.ahk"
+;@Ahk2Exe-SetMainIcon AutoHotkey\icon.ico
+#Include "AutoHotkey\lib\UniqueInstance.ahk"
+#Include "AutoHotkey\lib\PathUtil.ahk"
+#Include "AutoHotkey\Lib\WinHttpRequest.ahk"
+#Include "AutoHotkey\lib\JSON.ahk"
 ;@format array_style: expand, object_style: expand
 
 #NoTrayIcon
@@ -36,14 +36,6 @@ app_manifest_name := "app_manifest.json"
 patch_manifest_name := "patch_manifest.json"
 
 servers := [
-    Map(
-        "id", 101,
-        "name", "国际服",
-        "display", "国际服 - Steam / PURPLE",
-        "keywords", [
-            "AION"
-        ]
-    ),
     Map(
         "id", 102,
         "name", "台服",
@@ -391,12 +383,12 @@ DoChinese(*) {
 
     currentDestFiles := []
     if (currentServer["id"] = 101) {
-        currentDestFiles.Push(installPath . "\" . "Aion2\Content\Paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak"
+        currentDestFiles.Push(installPath . "\" . "Aion2\Content\paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak"
         )
         currentDestFiles.Push(installPath . "\" . "Aion2\Binaries\Win64\dxgi.dll")
     } else if (currentServer["id"] = 102) {
         currentDestFiles.Push(installPath . "\" .
-            "Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak")
+            "Aion2\Content\paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak")
     }
 
     hasAnyPatch := false
@@ -420,12 +412,12 @@ DoChinese(*) {
         }
 
         if (currentServer["id"] = 101) {
-            FileInstall(".\AutoHotkey\patchs\xy_pakchunk999999-Windows_999_P.Pak", installPath .
-                "\Aion2\Content\Paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak", 1)
-            FileInstall(".\AutoHotkey\patchs\xy_dxgi.dll", installPath . "\" . "Aion2\Binaries\Win64\dxgi.dll", 1)
+            FileInstall("AutoHotkey\patchs\xy_pakchunk999999-Windows_999_P.pak", installPath .
+                "\Aion2\Content\paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak", 1)
+            FileInstall("AutoHotkey\patchs\xy_dxgi.dll", installPath . "\" . "Aion2\Binaries\Win64\dxgi.dll", 1)
         } else if (currentServer["id"] = 102) {
-            FileInstall(".\AutoHotkey\patchs\xy_pakchunk504000-Windows_9999_P.Pak", installPath .
-                "\Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak", 1)
+            FileInstall("AutoHotkey\patchs\xy_pakchunk504000-Windows_9999_P.pak", installPath .
+                "\Aion2\Content\paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak", 1)
         }
     } catch {
         PopupPrompt("释放" . currentServer["name"] . "汉化文件时发生未知错误，汉化失败。")
@@ -449,12 +441,12 @@ DoRestore(*) {
 
     currentDestFiles := []
     if (currentServer["id"] = 101) {
-        currentDestFiles.Push(installPath . "\" . "Aion2\Content\Paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak"
+        currentDestFiles.Push(installPath . "\" . "Aion2\Content\paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak"
         )
         currentDestFiles.Push(installPath . "\" . "Aion2\Binaries\Win64\dxgi.dll")
     } else if (currentServer["id"] = 102) {
         currentDestFiles.Push(installPath . "\" .
-            "Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak")
+            "Aion2\Content\paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak")
     }
 
     hasAnyPatch := false
@@ -595,7 +587,6 @@ SaveAllConfig() {
     }
 }
 
-; 游戏注册表扫描核心函数
 ; 游戏注册表扫描核心函数
 ScanRegistryForGamePaths(keywordArray) {
     local currentDisplayName, currentFullKey, currentInstallPath, displayKeyString, existingGame, isDuplicatePath,
