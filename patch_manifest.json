@@ -49,7 +49,7 @@
                 {
                     "id": 1,
                     "source": "xy",
-                    "latest_version": "1.0.0.0",
+                    "latest_patch_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1789981021,
                     "actions": [
