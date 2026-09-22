@@ -23,14 +23,14 @@
                         {
                             "type": "add",
                             "remote_filename": "patchs/xy_dxgi.dll",
-                            "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll"
+                            "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll",
                             "md5": "95776cdf57d0dc44b22baa347cf20105",
                             "size": 145520
                         },
                         {
                             "type": "add",
                             "remote_filename": "patchs/xy_pakchunk999999-Windows_999_P.pak",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk999999-Windows_999_P.pak"
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk999999-Windows_999_P.pak",
                             "md5": "2837ea5d0c167ccaf915f3d11e5a0939",
                             "size": 3672850
                         }
@@ -56,8 +56,7 @@
                         {
                             "type": "add",
                             "remote_filename": "patchs/xy_pakchunk504000-Windows_9999_P.Pak",
-                            "target_relative_path": "\\Aion2\\Content\\Paks\\L10N\\Text\\zh-TW\\pakchunk504000-Windows_9999_P.pak"
-                            "target_relative_path": "\\Aion2\\Content\\Paks\\L10N\\Text\\zh-TW\\pakchunk504000-Windows_9999_P.pak"
+                            "target_relative_path": "\\Aion2\\Content\\Paks\\L10N\\Text\\zh-TW\\pakchunk504000-Windows_9999_P.pak",
                             "md5": "d8f909cef6c96595e0e3514ed0e744da",
                             "size": 19817819
                         }
