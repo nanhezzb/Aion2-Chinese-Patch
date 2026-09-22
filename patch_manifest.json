@@ -15,7 +15,7 @@
             "patch_branches": [
                 {
                     "id": 1,
-                    "‌source": "xy",
+                    "source": "xy",
                     "latest_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1789981021,
@@ -48,7 +48,7 @@
             "patch_branches": [
                 {
                     "id": 1,
-                    "‌source": "xy",
+                    "source": "xy",
                     "latest_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1789981021,
