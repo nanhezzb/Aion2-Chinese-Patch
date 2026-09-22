@@ -31,32 +31,32 @@ currentServer := ""
 proxy_mirrors := [
     "https://gh-proxy.com"
 ]
-pre_url := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/main"
-app_manifest_url := "app_manifest.json"
-patch_manifest_url := "patch_manifest.json"
+download_base_url := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/main"
+app_manifest_name := "app_manifest.json"
+patch_manifest_name := "patch_manifest.json"
 
 servers := [
-    {
-        id: 101,
-        name: "国际服",
-        display: "国际服 - Steam / PURPLE",
-        keywords: [
+    Map(
+        "id", 101,
+        "name", "国际服",
+        "display", "国际服 - Steam / PURPLE",
+        "keywords", [
             "AION"
         ]
-    },
-    {
-        id: 102,
-        name: "台服",
-        display: "台服 - PURPLE",
-        keywords: [
+    ),
+    Map(
+        "id", 102,
+        "name", "台服",
+        "display", "台服 - PURPLE",
+        "keywords", [
             "AION"
         ]
-    }
+    )
 ]
 
 dropDownOptions := []
 for server in servers {
-    dropDownOptions.Push(server.display)
+    dropDownOptions.Push(server["display"])
 }
 
 configCache := {
@@ -65,7 +65,7 @@ configCache := {
     }
 }
 for server in servers {
-    loopSectionName := "Server_" . server.id
+    loopSectionName := "Server_" . server["id"]
     configCache.%loopSectionName% := {
         installPath: "",
         isManualReset: 0
@@ -135,20 +135,20 @@ myGui.Show("w570 h490")
 ReadConfig()
 
 ReadConfig() {
-    global configFile, configCache, servers, currentServer, serverComboBox
-    local lastID, server, loopSectionName, targetIndex, index
+    global configCache, configFile, currentServer, installPath, serverComboBox, servers
+    local index, lastID, loopSectionName, server, targetIndex
 
-    lastID := Number(IniRead(configFile, "Settings", "LastServerID", servers[1].id))
+    lastID := Number(IniRead(configFile, "Settings", "LastServerID", servers[1]["id"]))
 
     for server in servers {
-        loopSectionName := "Server_" . server.id
+        loopSectionName := "Server_" . server["id"]
         configCache.%loopSectionName%.installPath := IniRead(configFile, loopSectionName, "installPath", "")
         configCache.%loopSectionName%.isManualReset := Number(IniRead(configFile, loopSectionName, "isManualReset", 0))
     }
 
     targetIndex := 1
     for index, server in servers {
-        if (server.id == lastID) {
+        if (server["id"] == lastID) {
             targetIndex := index
             break
         }
@@ -157,7 +157,7 @@ ReadConfig() {
     serverComboBox.Value := targetIndex
     currentServer := servers[targetIndex]
 
-    configCache.Settings.LastServerID := currentServer.id
+    configCache.Settings.LastServerID := currentServer["id"]
     RefreshServerData()
 
     if (installPath == "") {
@@ -167,14 +167,14 @@ ReadConfig() {
 
 ; 切换服务器事件
 SelectServer() {
-    global configCache, currentServer, servers, serverComboBox
+    global configCache, currentServer, installPath, serverComboBox, servers
 
     currentServer := servers[serverComboBox.Value]
-    configCache.Settings.LastServerID := currentServer.id
+    configCache.Settings.LastServerID := currentServer["id"]
     SaveAllConfig()
 
     RefreshServerData()
-    ShowStatus("已切换至 " . currentServer.name . " 配置。")
+    ShowStatus("已切换至 " . currentServer["name"] . " 配置。")
 
     if (installPath == "") {
         SilentDetectFolder()
@@ -183,15 +183,15 @@ SelectServer() {
 
 ; 核心刷新与效验逻辑
 RefreshServerData() {
-    global sectionName, installPath, pathEdit, configCache, currentServer
-    local savedPath, promptText
+    global configCache, currentServer, installPath, pathEdit, sectionName
+    local promptText, savedPath
 
-    sectionName := "Server_" . currentServer.id
+    sectionName := "Server_" . currentServer["id"]
     UpdateNoticeText()
 
     savedPath := configCache.%sectionName%.installPath
     if (savedPath != "") {
-        if (DirExist(savedPath) && FileExist(savedPath . "\Aion2\Binaries\Win64\Aion2.exe")) {
+        if (DirExist(savedPath) && FileExist(savedPath . "\" . "Aion2\Binaries\Win64\Aion2.exe")) {
             installPath := savedPath
             pathEdit.Value := savedPath
         } else {
@@ -214,13 +214,13 @@ RefreshServerData() {
 ; 提取公共的注册表有效路径筛选逻辑
 GetValidGamePaths() {
     global currentServer
-    local detectedGames, validGames, gameInfo, existingGame, isDuplicatePath
+    local detectedGames, existingGame, gameInfo, isDuplicatePath, validGames
 
-    detectedGames := ScanRegistryForGamePaths(currentServer.keywords)
+    detectedGames := ScanRegistryForGamePaths(currentServer["keywords"])
     validGames := []
 
     for gameInfo in detectedGames {
-        if (FileExist(gameInfo.gameInstallPath . "\Aion2\Binaries\Win64\Aion2.exe")) {
+        if (FileExist(gameInfo.gameInstallPath . "\" . "Aion2\Binaries\Win64\Aion2.exe")) {
 
             isDuplicatePath := false
             for existingGame in validGames {
@@ -240,16 +240,17 @@ GetValidGamePaths() {
 
 ; 静默自动扫描函数
 SilentDetectFolder() {
-    global installPath, sectionName, pathEdit, configCache
+    global configCache, installPath, pathEdit, sectionName
+    local selectedFolder, validGames
 
     if (configCache.%sectionName%.isManualReset == 1) {
         return
     }
 
-    local validGames := GetValidGamePaths()
+    validGames := GetValidGamePaths()
 
     if (validGames.Length = 1) {
-        local selectedFolder := validGames[1].gameInstallPath
+        selectedFolder := validGames[1].gameInstallPath
         pathEdit.Value := selectedFolder
         installPath := selectedFolder
 
@@ -262,21 +263,21 @@ SilentDetectFolder() {
 
 ; 扫描按钮检测函数
 OnScanButtonClick() {
-    global installPath, sectionName, pathEdit, configCache, currentServer, configFile
-    local validGames, selectedFolder
+    global configCache, currentServer, installPath, pathEdit, sectionName
+    local selectedFolder, validGames
 
     validGames := GetValidGamePaths()
     selectedFolder := ""
 
     if (validGames.Length = 1) {
         selectedFolder := validGames[1].gameInstallPath
-        ShowStatus("AION2 " . currentServer.name . "安装目录设置成功。")
+        ShowStatus("AION2 " . currentServer["name"] . "安装目录设置成功。")
     } else if (validGames.Length > 1) {
         selectedFolder := ShowMultiPathDialog(validGames)
         if (selectedFolder = "") {
             return
         }
-        ShowStatus("AION2 " . currentServer.name . "安装目录设置成功。")
+        ShowStatus("AION2 " . currentServer["name"] . "安装目录设置成功。")
     } else {
         PopupPrompt("未检测到有效的安装目录，请通过[浏览...]按钮手动指定。")
         return
@@ -293,16 +294,16 @@ OnScanButtonClick() {
 
 ; 手动浏览安装目录
 BrowseFolder(*) {
-    global installPath, sectionName, pathEdit, configCache, currentServer
-    local promptText, selectedFolder, errorText
+    global configCache, currentServer, installPath, pathEdit, sectionName
+    local errorText, promptText, selectedFolder
 
-    promptText := "选择 AION2 " . currentServer.name . "安装目录："
+    promptText := "选择 AION2 " . currentServer["name"] . "安装目录："
     selectedFolder := FileSelect("D", pathEdit.Value, promptText)
     if (selectedFolder = "") {
         return
     }
 
-    if (!FileExist(selectedFolder . "\Aion2\Binaries\Win64\Aion2.exe")) {
+    if (!FileExist(selectedFolder . "\" . "Aion2\Binaries\Win64\Aion2.exe")) {
         errorText := "所选目录中未检测主程序 Aion2.exe，请重新选择正确的安装目录。"
         PopupPrompt(errorText)
         return
@@ -315,19 +316,20 @@ BrowseFolder(*) {
 
     SaveAllConfig()
 
-    ShowStatus("AION2 " . currentServer.name . "安装目录设置成功。")
+    ShowStatus("AION2 " . currentServer["name"] . "安装目录设置成功。")
     RefreshUI()
 }
 
 ; 用户选择安装目录
+; 用户选择安装目录
 ShowMultiPathDialog(validGames) {
-    global myGui, currentServer
-    local choiceGui, listBoxItems, game, listControl, btnConfirm, btnCancel, userChoicePath, oldDetectState
+    global currentServer, myGui
+    local btnCancel, btnConfirm, choiceGui, game, listControl, listBoxItems, oldDetectState, userChoicePath
 
     choiceGui := Gui("+Owner" . myGui.Hwnd, "提示")
     choiceGui.SetFont(, "Microsoft YaHei UI")
 
-    choiceGui.Add("Text", "x20 y15 w410 h25", "选择 AION2 " . currentServer.name . "安装目录：")
+    choiceGui.Add("Text", "x20 y15 w410 h25", "选择 AION2 " . currentServer["name"] . "安装目录：")
 
     listBoxItems := []
     for game in validGames {
@@ -362,7 +364,7 @@ ShowMultiPathDialog(validGames) {
 
 ; 重置目录
 DoReset(*) {
-    global installPath, sectionName, pathEdit, configCache, currentServer
+    global configCache, currentServer, installPath, pathEdit, sectionName
 
     pathEdit.Value := ""
     installPath := ""
@@ -372,14 +374,14 @@ DoReset(*) {
 
     SaveAllConfig()
 
-    ShowStatus("AION2 " . currentServer.name . "安装目录已重置。")
+    ShowStatus("AION2 " . currentServer["name"] . "安装目录已重置。")
     RefreshUI()
 }
 
 ; 一键汉化
 DoChinese(*) {
-    global installPath, currentServer
-    local currentDestFiles, targetFullPath, hasAnyPatch, targetDir, statusMessage
+    global currentServer, installPath
+    local currentDestFiles, hasAnyPatch, statusMessage, targetDir, targetFullPath
 
     if (!installPath || !DirExist(installPath)) {
         ShowStatus("未设置 AION2 安装目录。")
@@ -388,11 +390,13 @@ DoChinese(*) {
     }
 
     currentDestFiles := []
-    if (currentServer.id = 101) {
-        currentDestFiles.Push(installPath . "\Aion2\Content\Paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak")
-        currentDestFiles.Push(installPath . "\Aion2\Binaries\Win64\dxgi.dll")
-    } else if (currentServer.id = 102) {
-        currentDestFiles.Push(installPath . "\Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak")
+    if (currentServer["id"] = 101) {
+        currentDestFiles.Push(installPath . "\" . "Aion2\Content\Paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak"
+        )
+        currentDestFiles.Push(installPath . "\" . "Aion2\Binaries\Win64\dxgi.dll")
+    } else if (currentServer["id"] = 102) {
+        currentDestFiles.Push(installPath . "\" .
+            "Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak")
     }
 
     hasAnyPatch := false
@@ -407,38 +411,25 @@ DoChinese(*) {
         return
     }
 
-    if (currentServer.id = 101) {
-        try {
-            for targetFullPath in currentDestFiles {
-                SplitPath(targetFullPath, , &targetDir)
-                if (!DirExist(targetDir)) {
-                    DirCreate(targetDir)
-                }
+    try {
+        for targetFullPath in currentDestFiles {
+            SplitPath(targetFullPath, , &targetDir)
+            if (!DirExist(targetDir)) {
+                DirCreate(targetDir)
             }
+        }
 
+        if (currentServer["id"] = 101) {
             FileInstall(".\AutoHotkey\patchs\xy_pakchunk999999-Windows_999_P.Pak", installPath .
                 "\Aion2\Content\Paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak", 1)
-            FileInstall(".\AutoHotkey\patchs\xy_dxgi.dll", installPath .
-                "\Aion2\Binaries\Win64\dxgi.dll", 1)
-        } catch {
-            PopupPrompt("释放" . currentServer.name . "汉化文件时发生未知错误，汉化失败。")
-            return
-        }
-    } else if (currentServer.id = 102) {
-        try {
-            for targetFullPath in currentDestFiles {
-                SplitPath(targetFullPath, , &targetDir)
-                if (!DirExist(targetDir)) {
-                    DirCreate(targetDir)
-                }
-            }
-
+            FileInstall(".\AutoHotkey\patchs\xy_dxgi.dll", installPath . "\" . "Aion2\Binaries\Win64\dxgi.dll", 1)
+        } else if (currentServer["id"] = 102) {
             FileInstall(".\AutoHotkey\patchs\xy_pakchunk504000-Windows_9999_P.Pak", installPath .
                 "\Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak", 1)
-        } catch {
-            PopupPrompt("释放" . currentServer.name . "汉化文件时发生未知错误，汉化失败。")
-            return
         }
+    } catch {
+        PopupPrompt("释放" . currentServer["name"] . "汉化文件时发生未知错误，汉化失败。")
+        return
     }
 
     statusMessage := WinExist("AION2 ahk_exe Aion2.exe") ? "AION2 已成功汉化，重启 AION2 后生效。" : "AION2 已成功汉化。"
@@ -447,8 +438,8 @@ DoChinese(*) {
 
 ; 撤销还原
 DoRestore(*) {
-    global installPath, currentServer
-    local currentDestFiles, targetFullPath, hasAnyPatch, fileBaseName, statusMessage
+    global currentServer, installPath
+    local currentDestFiles, fileBaseName, hasAnyPatch, statusMessage, targetFullPath
 
     if (!installPath) {
         ShowStatus("未设置 AION2 安装目录。")
@@ -457,11 +448,13 @@ DoRestore(*) {
     }
 
     currentDestFiles := []
-    if (currentServer.id = 101) {
-        currentDestFiles.Push(installPath . "\Aion2\Content\Paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak")
-        currentDestFiles.Push(installPath . "\Aion2\Binaries\Win64\dxgi.dll")
-    } else if (currentServer.id = 102) {
-        currentDestFiles.Push(installPath . "\Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak")
+    if (currentServer["id"] = 101) {
+        currentDestFiles.Push(installPath . "\" . "Aion2\Content\Paks\L10N\Text\en-US\pakchunk999999-Windows_999_P.pak"
+        )
+        currentDestFiles.Push(installPath . "\" . "Aion2\Binaries\Win64\dxgi.dll")
+    } else if (currentServer["id"] = 102) {
+        currentDestFiles.Push(installPath . "\" .
+            "Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak")
     }
 
     hasAnyPatch := false
@@ -473,7 +466,7 @@ DoRestore(*) {
     }
 
     if (!hasAnyPatch) {
-        ShowStatus("未发现 AION2 " . currentServer.name . "汉化文件。")
+        ShowStatus("未发现 AION2 " . currentServer["name"] . "汉化文件。")
         return
     }
 
@@ -495,11 +488,11 @@ DoRestore(*) {
 
 ; 更新须知文本提示
 UpdateNoticeText() {
-    global noticeControl, currentServer
+    global currentServer, noticeControl
     local ruleText := ""
 
-    ruleText .= "1. 选择 AION2 " . currentServer.name . "的安装目录，"
-    ruleText .= (currentServer.id = 102) ? "例如 D:\Games\AION2_TW。" : "例如 D:\Games\AION 2。"
+    ruleText .= "1. 选择 AION2 " . currentServer["name"] . "的安装目录，"
+    ruleText .= (currentServer["id"] = 102) ? "例如 D:\Games\AION2_TW。" : "例如 D:\Games\AION 2。"
 
     noticeControl.Value := ruleText .
         "`r`n2. 汉化完成后启动或重启 AION2，使汉化文件生效。" .
@@ -518,7 +511,7 @@ ShowStatus(statusMessage) {
 
 ; 按钮核心焦点与状态刷新
 RefreshUI() {
-    global pathEdit, btnChinese, btnBrowse, btnReset
+    global btnBrowse, btnChinese, btnReset, pathEdit
     if (pathEdit.Value) {
         btnReset.Enabled := true
         btnChinese.Focus()
@@ -531,7 +524,7 @@ RefreshUI() {
 ; 覆盖文件确认弹窗
 ConfirmAction() {
     global myGui
-    local confirmGui, replyStatus, btnConfirm, btnCancel, oldDetectState
+    local btnCancel, btnConfirm, confirmGui, oldDetectState, replyStatus
 
     confirmGui := Gui("+Owner" . myGui.Hwnd, "提示")
     confirmGui.SetFont(, "Microsoft YaHei UI")
@@ -564,7 +557,7 @@ ConfirmAction() {
 ; 阻断式警告提示弹窗
 PopupPrompt(text) {
     global myGui
-    local confirmGui, btnConfirm, oldDetectState
+    local btnConfirm, confirmGui, oldDetectState
 
     confirmGui := Gui("+Owner" . myGui.Hwnd, "提示")
     confirmGui.SetFont(, "Microsoft YaHei UI")
@@ -591,21 +584,22 @@ PopupPrompt(text) {
 
 ; 将持久化变量写入配置文件
 SaveAllConfig() {
-    global configFile, configCache, servers
-    local server, loopSectionName
+    global configCache, configFile, servers
+    local loopSectionName, server
 
     IniWrite(configCache.Settings.LastServerID, configFile, "Settings", "LastServerID")
     for server in servers {
-        loopSectionName := "Server_" . server.id
+        loopSectionName := "Server_" . server["id"]
         IniWrite(configCache.%loopSectionName%.installPath, configFile, loopSectionName, "installPath")
         IniWrite(configCache.%loopSectionName%.isManualReset, configFile, loopSectionName, "isManualReset")
     }
 }
 
 ; 游戏注册表扫描核心函数
+; 游戏注册表扫描核心函数
 ScanRegistryForGamePaths(keywordArray) {
-    local matchedGameList, systemUninstallRoot, userUninstallRoot, currentFullKey, currentDisplayName, keyword,
-        currentInstallPath, isDuplicatePath, existingGame, displayKeyString
+    local currentDisplayName, currentFullKey, currentInstallPath, displayKeyString, existingGame, isDuplicatePath,
+        keyword, matchedGameList, systemUninstallRoot, userUninstallRoot
 
     matchedGameList := []
     systemUninstallRoot := "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
@@ -617,10 +611,10 @@ ScanRegistryForGamePaths(keywordArray) {
         currentDisplayName := RegRead(currentFullKey, "DisplayName", "")
 
         for keyword in keywordArray {
+            isDuplicatePath := false
             if (InStr(currentDisplayName, keyword)) {
                 currentInstallPath := RegRead(currentFullKey, "InstallLocation", "")
                 if (currentInstallPath != "") {
-                    isDuplicatePath := false
                     for existingGame in matchedGameList {
                         if (existingGame.gameInstallPath = currentInstallPath) {
                             isDuplicatePath := true
@@ -646,10 +640,10 @@ ScanRegistryForGamePaths(keywordArray) {
         currentDisplayName := RegRead(currentFullKey, "DisplayName", "")
 
         for keyword in keywordArray {
+            isDuplicatePath := false
             if (InStr(currentDisplayName, keyword)) {
                 currentInstallPath := RegRead(currentFullKey, "InstallLocation", "")
                 if (currentInstallPath != "") {
-                    isDuplicatePath := false
                     for existingGame in matchedGameList {
                         if (existingGame.gameInstallPath = currentInstallPath) {
                             isDuplicatePath := true
@@ -676,10 +670,10 @@ ScanRegistryForGamePaths(keywordArray) {
         currentDisplayName := RegRead(currentFullKey, "DisplayName", "")
 
         for keyword in keywordArray {
+            isDuplicatePath := false
             if (InStr(currentDisplayName, keyword)) {
                 currentInstallPath := RegRead(currentFullKey, "InstallLocation", "")
                 if (currentInstallPath != "") {
-                    isDuplicatePath := false
                     for existingGame in matchedGameList {
                         if (existingGame.gameInstallPath = currentInstallPath) {
                             isDuplicatePath := true
