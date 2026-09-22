@@ -1,7 +1,7 @@
 {
     "global_config": {
         "check_interval_hours": 24,
-        "download_timeout_ms": 15000,
+        "download_timeout_ms": 30000,
         "proxy_mirrors": [
             "https://gh-proxy.com"
         ]
