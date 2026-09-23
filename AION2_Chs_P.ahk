@@ -3,7 +3,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 1.1.0.0
+;@Ahk2Exe-SetVersion 1.2.0.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 ;@Ahk2Exe-SetMainIcon AutoHotkey\icon.ico
 #Include ".\AutoHotkey\lib\UniqueInstance.ahk"
@@ -32,12 +32,13 @@ global g_CloudBulletinData := Map()
 
 ; 基础运行参数与配置项
 global g_ConfigFile := "config.ini"
-global g_CurrentAppVersion := "1.1.0.0"
+global g_CurrentAppVersion := "1.2.0.0"
 global g_LastSeenBulletinVersion := ""
 
 global g_DefaultPreUrl := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/refs/heads/main"
 global g_DefaultProxyMirrors := [
-    "https://gh-proxy.com"
+    "https://gh-proxy.com",
+    "https://gh.ddlc.top"
 ]
 
 global g_AppManifestFilename := "app_manifest.json"
@@ -895,6 +896,7 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
     global MainGui, g_IsDialogShowing
     g_IsDialogShowing := true
 
+    OldDetectState := A_DetectHiddenWindows
     UpdateGui := Gui("+Owner" . MainGui.Hwnd, "软件更新提示")
     UpdateGui.SetFont(, "Microsoft YaHei UI")
 
@@ -922,8 +924,7 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
     MainGui.Opt("+Disabled")
     UpdateGui.Show("w400 h275")
 
-    OldDetectState := A_DetectHiddenWindows
-    DetectHiddenWindows true
+    DetectHiddenWindows false
     WinWaitClose(UpdateGui)
     DetectHiddenWindows OldDetectState
 
@@ -950,6 +951,7 @@ ShowBulletinDialog(ContentText, BulletinVersion) {
     global MainGui, g_IsDialogShowing, g_LastSeenBulletinVersion
     g_IsDialogShowing := true
 
+    OldDetectState := A_DetectHiddenWindows
     BulletinGui := Gui("+Owner" . MainGui.Hwnd, "最新公告")
     BulletinGui.SetFont(, "Microsoft YaHei UI")
 
@@ -970,8 +972,7 @@ ShowBulletinDialog(ContentText, BulletinVersion) {
     MainGui.Opt("+Disabled")
     BulletinGui.Show("w400 h250")
 
-    OldDetectState := A_DetectHiddenWindows
-    DetectHiddenWindows true
+    DetectHiddenWindows false
     WinWaitClose(BulletinGui)
     DetectHiddenWindows OldDetectState
 
@@ -984,6 +985,7 @@ ShowConfirmDialog(Text) {
     global MainGui, g_IsDialogShowing
     g_IsDialogShowing := true
 
+    OldDetectState := A_DetectHiddenWindows
     ConfirmGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     ConfirmGui.SetFont(, "Microsoft YaHei UI")
 
@@ -1000,8 +1002,7 @@ ShowConfirmDialog(Text) {
     MainGui.Opt("+Disabled")
     ConfirmGui.Show("w350 h150")
 
-    OldDetectState := A_DetectHiddenWindows
-    DetectHiddenWindows true
+    DetectHiddenWindows false
     WinWaitClose(ConfirmGui)
     DetectHiddenWindows OldDetectState
 
@@ -1015,6 +1016,7 @@ ShowMessageDialog(Text) {
     global MainGui, g_IsDialogShowing
     g_IsDialogShowing := true
 
+    OldDetectState := A_DetectHiddenWindows
     ConfirmGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     ConfirmGui.SetFont(, "Microsoft YaHei UI")
 
@@ -1028,8 +1030,7 @@ ShowMessageDialog(Text) {
     MainGui.Opt("+Disabled")
     ConfirmGui.Show("w350 h150")
 
-    OldDetectState := A_DetectHiddenWindows
-    DetectHiddenWindows true
+    DetectHiddenWindows false
     WinWaitClose(ConfirmGui)
     DetectHiddenWindows OldDetectState
 
@@ -1042,6 +1043,7 @@ ShowMultiPathDialog(ValidGames) {
     global g_CurrentServer, MainGui, g_IsDialogShowing
     g_IsDialogShowing := true
 
+    OldDetectState := A_DetectHiddenWindows
     ChoiceGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
 
@@ -1066,8 +1068,7 @@ ShowMultiPathDialog(ValidGames) {
     MainGui.Opt("+Disabled")
     ChoiceGui.Show("w450 h250")
 
-    OldDetectState := A_DetectHiddenWindows
-    DetectHiddenWindows true
+    DetectHiddenWindows false
     WinWaitClose(ChoiceGui)
     DetectHiddenWindows OldDetectState
 
