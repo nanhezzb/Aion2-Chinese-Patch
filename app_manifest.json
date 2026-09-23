@@ -11,7 +11,7 @@
         "min_required_version": "1.1.0.0",
         "client_download_url_minor": "https://github.com/nanhezzb/Aion2-Chinese-Patch/releases/latest",
         "client_download_url_main": "https://www.kdocs.cn/l/csjNl9I231ID",
-        "changelog": "1. v1.1.0.0 支持从网络分发汉化补丁配置和补丁文件。",
+        "changelog": "v1.1.0.0 支持从网络分发汉化补丁配置和补丁文件。",
         "file_timestamp": 1789981021
     }
 }
