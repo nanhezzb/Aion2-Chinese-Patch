@@ -15,7 +15,7 @@
             "patch_branches": [
                 {
                     "id": 1,
-                    "source": "xunyou",
+                    "source": "迅游",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1789981021,
@@ -38,7 +38,7 @@
                 },
                 {
                     "id": 2,
-                    "source": "QiYou",
+                    "source": "奇游",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1790138933,
@@ -83,7 +83,7 @@
             "patch_branches": [
                 {
                     "id": 1,
-                    "source": "xunyou",
+                    "source": "迅游",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1789981021,
@@ -94,6 +94,22 @@
                             "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\zh-TW\\pakchunk504000-Windows_9999_P.pak",
                             "file_md5": "d8f909cef6c96595e0e3514ed0e744da",
                             "file_size": 3672850
+                        }
+                    ]
+                },
+                {
+                    "id": 3,
+                    "source": "BiuBiu",
+                    "latest_patch_version": "1.0.0.0",
+                    "changelog": "",
+                    "release_timestamp": 1790260845,
+                    "actions": [
+                        {
+                            "type": "add",
+                            "remote_filename": "patchs/bb_pakchunk999999-Windows_0_P.Pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\bb_pakchunk999999-Windows_0_P.Pak",
+                            "file_md5": "07fd0bbaace7496eda3be28fab2ae93a",
+                            "file_size": 5759499
                         }
                     ]
                 }
