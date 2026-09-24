@@ -12,7 +12,7 @@
         "min_required_version": "1.2.0.0",
         "client_download_url_minor": "https://github.com/nanhezzb/Aion2-Chinese-Patch/releases/latest",
         "client_download_url_main": "https://www.kdocs.cn/l/cf9KkRNTpqhb",
-        "changelog": " * 1.2.0.0 更新日志 * \r\n新增支持：修改了 MD5 计算方式，速度更快。\r\n新增支持：增加了服务器多个汉化补丁来源的支持。\r\n代码修复：修复了目录和 URL路径可能引发的问题。",
+        "changelog": " * 1.2.0.0 更新日志 * \r\n新增支持：修改了 MD5 计算方式，速度更快。\r\n新增支持：增加了服务器多个汉化补丁来源的支持。\r\n代码修复：修复了目录和 URL 路径可能引发的问题。",
         "file_timestamp": 1789981021
     }
 }
