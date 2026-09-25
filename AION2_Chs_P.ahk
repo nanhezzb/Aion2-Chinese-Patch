@@ -31,8 +31,8 @@ UiResult := UniqueInstance.Ensure(Map(
 ; 全局常量与变量定义
 ; ==============================================================================
 global g_ProjectName := "AION2 Chs Patch"
-global g_CurrentAppVersion := "1.3.0.0"
-global g_CurrentAppVersionShort := "1.3"
+global g_CurrentAppVersion := "1.3.2.0"
+global g_CurrentAppVersionShort := "1.3.2"
 global g_LastSeenBulletinVersion := "1.1.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -576,6 +576,7 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) {
     global g_InstallPath, g_CurrentServer, g_PatchsCacheDir, g_ConfigCache, g_ProjectName, g_IsPatching
 
     try {
+        ServerId := g_CurrentServer.Has("id") ? g_CurrentServer["id"] : "default"
         LocalCacheRootDir := PathUtil.Normalize(A_ScriptDir . "\" . g_PatchsCacheDir)
         if !DirExist(LocalCacheRootDir)
             DirCreate(LocalCacheRootDir)
@@ -649,7 +650,7 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) {
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
             FinalPath := PathUtil.Normalize(g_InstallPath . "\" . Act["target_relative_path"])
-            BackupPath := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId . "\" . Act["target_relative_path"])
+            BackupPath := VerCompare(g_CurrentAppVersion, "1.3.0.0") > 0 ? PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . ServerId . "\" . BranchId . "\" . Act["target_relative_path"]) : PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . "\" . BranchId . "\" . Act["target_relative_path"])
             SplitPath(FinalPath, , &FDir)
             SplitPath(BackupPath, , &BDir)
 
@@ -756,6 +757,7 @@ DoRestorePatch(*) {
         if (ActionsArray.Length == 0)
             throw Error("当前补丁配置异常，缺少文件处理动作。")
 
+        ServerId := g_CurrentServer.Has("id") ? g_CurrentServer["id"] : "default"
         BranchId := PatchBranch.Has("id") ? PatchBranch["id"] : (SavedBranchID ? SavedBranchID : 1)
 
         HasAnyPatchFile := false
@@ -763,8 +765,7 @@ DoRestorePatch(*) {
             Act := ActionsArray[A_Index]
             ActType := Act.Has("type") ? Act["type"] : "add"
             TargetPath := PathUtil.Normalize(g_InstallPath . "\" . Act["target_relative_path"])
-            BackupPath := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId . "\" . Act["target_relative_path"])
-
+            BackupPath := VerCompare(g_CurrentAppVersion, "1.3.0.0") > 0 ? PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . ServerId . "\" . BranchId . "\" . Act["target_relative_path"]) : PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . "\" . BranchId . "\" . Act["target_relative_path"])
             if (ActType == "add") {
                 if FileExist(TargetPath) {
                     HasAnyPatchFile := true
@@ -800,7 +801,7 @@ DoRestorePatch(*) {
             Act := ActionsArray[A_Index]
             ActType := Act.Has("type") ? Act["type"] : "add"
             FinalPath := PathUtil.Normalize(g_InstallPath . "\" . Act["target_relative_path"])
-            BackupPath := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId . "\" . Act["target_relative_path"])
+            BackupPath := VerCompare(g_CurrentAppVersion, "1.3.0.0") > 0 ? PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . ServerId . "\" . BranchId . "\" . Act["target_relative_path"]) : PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . "\" . BranchId . "\" . Act["target_relative_path"])
             SplitPath(FinalPath, , &FDir)
 
             if (ActType == "add") {
@@ -845,7 +846,7 @@ DoRestorePatch(*) {
         g_ConfigCache.%Sec%.LocalPatchBranchID := 0
         SaveAllConfig()
 
-        BranchBackupDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId)
+        BranchBackupDir := VerCompare(g_CurrentAppVersion, "1.3.0.0") > 0 ? PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . ServerId . "\" . BranchId) : PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . "\" . BranchId)
         if (FailedFiles.Length == 0 && DirExist(BranchBackupDir)) {
             try DirDelete(BranchBackupDir, 1)
 
@@ -858,7 +859,7 @@ DoRestorePatch(*) {
             return
         }
 
-        ShowMessageDialog("已清除汉化补丁，恢复游戏默认语言。`r`n`r`n撤销成功。")
+        ShowMessageDialog("已清除汉化补丁，恢复游戏默认语言。`r`n`r`n撤销完成。")
 
     } catch Error as Err {
         SetStatusBarText("")
