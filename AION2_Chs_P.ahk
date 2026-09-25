@@ -31,7 +31,7 @@ UiResult := UniqueInstance.Ensure(Map(
 ; 全局常量与变量定义
 ; ==============================================================================
 global g_ProjectName := "AION2 Chs Patch"
-global g_CurrentAppVersion := "1.3.0.0"
+global g_CurrentAppVersion := "1.1.0.0"
 global g_CurrentAppVersionShort := "1.3"
 global g_LastSeenBulletinVersion := "1.1.0.0"
 
@@ -1180,6 +1180,8 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
 
     MainGui.Opt("+Disabled")
     UpdateGui.Show("w400 h275")
+
+    BtnDownloadMain.Focus()
 }
 
 ShowBulletinDialog(ContentText, BulletinVersion) {
