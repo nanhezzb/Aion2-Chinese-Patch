@@ -12,7 +12,7 @@
 #Include ".\AutoHotkey\lib\DownloadAsync.ahk"
 #Include ".\AutoHotkey\lib\JSON.ahk"
 
-;@format array_style: expand, object_style: expand
+;@format array_style: expand, object_style: expand, map_style: expand
 
 #NoTrayIcon
 Persistent true
@@ -159,19 +159,27 @@ MainGui.OnEvent("Close", (*) => ExitApp())
 ; ==============================================================================
 g_DefaultServers := NormalizeServerConfig([
     Map(
-        "id", 102, "name", "台服", "display", "台服 - PURPLE", "keywords", [
+        "id", 102,
+        "name", "台服",
+        "display", "台服 - PURPLE",
+        "keywords", [
             "AION"
         ],
         "patch_branches", [
-            Map("id", 1, "source", "迅游", "latest_patch_version", "1.0.0.0", "actions", [
-                Map(
-                    "type", "add",
-                    "remote_filename", "patchs/xy_pakchunk504000-Windows_9999_P.pak",
-                    "target_relative_path", "Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak",
-                    "file_md5", "d8f909cef6c96595e0e3514ed0e744da",
-                    "file_size", 3672850
-                )
-            ])
+            Map("id", 3,
+                "source", "BiuBiu",
+                "latest_patch_version", "1.0.0.0",
+                "actions", [
+                    Map(
+                        "type", "add",
+                        "filename", "bb_pakchunk999999-Windows_0_P.Pak",
+                        "remote_filename", "patchs/bb_pakchunk999999-Windows_0_P.Pak",
+                        "target_relative_path", "Aion2\\Content\\Paks\\bb_pakchunk999999-Windows_0_P.Pak",
+                        "file_md5", "12a93a1ecba45ad9803ae2c20495781d",
+                        "file_size", 3721650
+                    )
+                ]
+            )
         ]
     )
 ])
@@ -187,14 +195,14 @@ InitializeApp()
 InitializeApp() {
     global g_IsLocalInitComplete, MainGui
     MainGui.Show("w570 h490")
-    ShowStatus("正在初始化本地环境...")
+    SetStatusBarText("正在初始化本地环境...")
 
     LoadLocalManifests()
     ReadConfig()
     UpdateGlobalUrls()
 
     g_IsLocalInitComplete := true
-    ShowStatus("本地数据就绪。")
+    SetStatusBarText("本地数据就绪。")
     SetTimer(StartCloudSync, -300)
 }
 
@@ -250,7 +258,7 @@ StartCloudSync() {
     if (!g_IsLocalInitComplete)
         return
 
-    ShowStatus("")
+    SetStatusBarText("")
     MainStatusBar.SetText("`t正在后台拉取云端最新配置...")
     IsSyncSuccess := SyncCloudConfig()
 
@@ -259,12 +267,12 @@ StartCloudSync() {
         IniWrite(g_RequestTimeoutSeconds, g_ConfigFile, "Settings", "RequestTimeoutSeconds")
         if (!g_IsDialogShowing) {
             SafeRefreshUi()
-            ShowStatus("云端配置同步成功，已保存至本地。")
+            SetStatusBarText("云端配置同步成功，已保存至本地。")
         } else {
-            ShowStatus("云端配置同步成功，重启工具后生效。")
+            SetStatusBarText("云端配置同步成功，重启工具后生效。")
         }
     } else {
-        ShowStatus("连接超时或离线，已加载本地配置文件。")
+        SetStatusBarText("连接超时或离线，已加载本地配置文件。")
     }
 
     if (Type(g_ClientUpdateData) == "Map" && g_ClientUpdateData.Count > 0)
@@ -281,7 +289,7 @@ SyncCloudConfig() {
     IsPatchSuccess := false
 
     BestPrefix := ""
-    try BestPrefix := FindFastestDownloadNodeAsync()
+    try BestPrefix := SelectFastestMirrorNode()
 
     AppUrl := (BestPrefix != "") ? BestPrefix . "/" . g_CleanRemoteAppUrl : g_CleanRemoteAppUrl
     PatchUrl := (BestPrefix != "") ? BestPrefix . "/" . g_CleanRemotePatchUrl : g_CleanRemotePatchUrl
@@ -378,7 +386,7 @@ RefreshServerComboBox() {
 
     RefreshServerData()
     if (g_InstallPath == "")
-        SilentDetectFolder()
+        AutoDetectInstallPath()
 }
 
 RefreshServerData() {
@@ -388,7 +396,7 @@ RefreshServerData() {
         return
 
     Sec := "Server_" . g_CurrentServer["id"]
-    UpdateNoticeText()
+    UpdateServerNoticeText()
 
     if (!g_ConfigCache.HasOwnProp(Sec)) {
         g_ConfigCache.%Sec% := {
@@ -490,17 +498,17 @@ SelectServer() {
     SaveAllConfig()
 
     RefreshServerData()
-    ShowStatus("已切换至 " . g_CurrentServer["name"] . " 配置。")
+    SetStatusBarText("已切换至 " . g_CurrentServer["name"] . " 配置。")
 
     if (g_InstallPath == "")
-        SilentDetectFolder()
+        AutoDetectInstallPath()
 }
 
 DoChinesePatch(*) {
     global g_InstallPath, g_CurrentServer, BtnChinese, g_IsPatching
 
     if (!g_InstallPath || !DirExist(g_InstallPath)) {
-        ShowMessageDialog("请先设置 AION2 游戏的安装目录。")
+        ShowMessageDialog("先设置 AION2 游戏的安装目录。")
         RefreshUi()
         return
     }
@@ -552,10 +560,10 @@ ExecuteChinesePatch(PatchBranch) {
 
         if (HasAnyInstalled) {
             ShowConfirmDialog("检测到游戏目录中已存在汉化补丁文件，是否直接覆盖更新？", (IsConfirmed) => (
-                IsConfirmed ? RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId) : (g_IsPatching := false, RefreshUi())
+                IsConfirmed ? ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) : (g_IsPatching := false, RefreshUi())
             ))
         } else {
-            RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId)
+            ApplyPatchBranch(PatchBranch, ActionsArray, BranchId)
         }
     } catch Error as Err {
         ShowMessageDialog("汉化失败：`r`n" . Err.Message)
@@ -564,7 +572,7 @@ ExecuteChinesePatch(PatchBranch) {
     }
 }
 
-RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId) {
+ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) {
     global g_InstallPath, g_CurrentServer, g_PatchsCacheDir, g_ConfigCache, g_ProjectName, g_IsPatching
 
     try {
@@ -573,17 +581,16 @@ RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId) {
             DirCreate(LocalCacheRootDir)
 
         TempDownloadList := Map()
-        ShowStatus("")
+        SetStatusBarText("")
         MainStatusBar.SetText("`t正在检查本地缓存目录中的文件 MD5...")
         AllLocalCacheValid := true
 
-        ; 优化点：在预检循环中校验成功的文件直接缓存记录，避免第二轮重复计算 MD5
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
             if (Act["type"] != "add" && Act["type"] != "replace") || (Act["file_md5"] == "d41d8cd98f00b204e9800998ecf8427e")
                 continue
 
-            LocalCacheFile := GetLocalCachePath(Act["remote_filename"])
+            LocalCacheFile := GetLocalCachePath(Act)
             KeyName := Act["remote_filename"]
 
             if (FileExist(LocalCacheFile) && Act["file_md5"] != "" && HashFileMd5(LocalCacheFile) == Act["file_md5"]) {
@@ -594,9 +601,9 @@ RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId) {
         }
 
         if (!AllLocalCacheValid)
-            FindFastestDownloadNodeAsync()
+            SelectFastestMirrorNode()
         else
-            ShowStatus("本地缓存全部校验通过，已跳过网络下载。")
+            SetStatusBarText("本地缓存全部校验通过，已跳过网络下载。")
 
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
@@ -607,8 +614,8 @@ RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId) {
             if TempDownloadList.Has(KeyName)
                 continue
 
-            RemoteFileUrl := StrReplace(Trim(Act["remote_filename"]), "\", "/")
-            LocalCacheFile := GetLocalCachePath(Act["remote_filename"])
+            RemoteFileUrl := Act["remote_filename"]
+            LocalCacheFile := GetLocalCachePath(Act)
 
             SplitPath(LocalCacheFile, &SafeFilename, , &SafeExt)
             RandomSuffix := A_TickCount . "_" . Random(1000, 9999)
@@ -616,28 +623,28 @@ RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId) {
             if FileExist(TmpFile)
                 FileDelete(TmpFile)
 
-            if (!DownloadSingleFileWithNode(RemoteFileUrl, TmpFile, Act)) {
+            if (!DownloadPatchFileAsync(RemoteFileUrl, TmpFile, Act)) {
                 if FileExist(TmpFile)
                     FileDelete(TmpFile)
-                throw Error("补丁文件 [" . RemoteFileUrl . "] 下载失败。")
+                throw Error("补丁文件 [" . Act["filename"] . "] 下载失败。")
             }
 
             if (Act["file_md5"] != "" && HashFileMd5(TmpFile) != Act["file_md5"]) {
                 if FileExist(TmpFile)
                     FileDelete(TmpFile)
-                throw Error("文件 [" . RemoteFileUrl . "] MD5 不匹配，补丁文件下载失败。")
+                throw Error("文件 [" . Act["filename"] . "] MD5 不匹配，补丁文件下载失败。")
             }
 
             if FileExist(LocalCacheFile)
                 FileDelete(LocalCacheFile)
             FileMove(TmpFile, LocalCacheFile, 1)
 
-            ShowStatus("文件 [" . RemoteFileUrl . "] 下载并校验完成。")
+            SetStatusBarText("文件 [" . Act["filename"] . "] 下载并校验完成。")
             TempDownloadList[KeyName] := Map("src", LocalCacheFile, "fileAction", Act)
         }
 
-        ShowStatus("")
-        ShowStatus("正在按规则处理游戏内部文件...")
+        SetStatusBarText("")
+        SetStatusBarText("正在按规则处理游戏内部文件...")
 
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
@@ -707,11 +714,11 @@ RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId) {
         g_ConfigCache.%Sec%.LocalPatchBranchID := BranchId
         SaveAllConfig()
 
-        ShowStatus("")
-        ShowMessageDialog("汉化完成，补丁文件已成功释放至游戏目录。")
+        SetStatusBarText("")
+        ShowMessageDialog("补丁文件已成功释放至游戏目录。`r`n`r`n汉化完成。")
     } catch Error as Err {
-        ShowStatus("")
-        ShowMessageDialog("汉化失败：`r`n" . Err.Message)
+        SetStatusBarText("")
+        ShowMessageDialog("汉化失败：`r`n`r`n" . Err.Message)
     } finally {
         g_IsPatching := false
         RefreshUi()
@@ -726,7 +733,7 @@ DoRestorePatch(*) {
 
     try {
         if (!g_InstallPath || !DirExist(g_InstallPath))
-            throw Error("请先指定 AION2 游戏的安装目录后再执行撤销操作。")
+            throw Error("先设置 AION2 游戏的安装目录。")
 
         Branches := g_CurrentServer["patch_branches"]
         if (Branches.Length == 0)
@@ -753,9 +760,21 @@ DoRestorePatch(*) {
 
         HasAnyPatchFile := false
         loop ActionsArray.Length {
-            if FileExist(PathUtil.Normalize(g_InstallPath . "\" . ActionsArray[A_Index]["target_relative_path"])) {
-                HasAnyPatchFile := true
-                break
+            Act := ActionsArray[A_Index]
+            ActType := Act.Has("type") ? Act["type"] : "add"
+            TargetPath := PathUtil.Normalize(g_InstallPath . "\" . Act["target_relative_path"])
+            BackupPath := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId . "\" . Act["target_relative_path"])
+
+            if (ActType == "add") {
+                if FileExist(TargetPath) {
+                    HasAnyPatchFile := true
+                    break
+                }
+            } else if (ActType == "replace" || ActType == "delete") {
+                if FileExist(BackupPath) {
+                    HasAnyPatchFile := true
+                    break
+                }
             }
         }
 
@@ -769,49 +788,80 @@ DoRestorePatch(*) {
             g_ConfigCache.%Sec%.LocalPatchVersion := ""
             g_ConfigCache.%Sec%.LocalPatchBranchID := 0
             SaveAllConfig()
-            throw Error("游戏目录内未检测到汉化补丁文件。")
+            throw Error("游戏目录内未检测到汉化补丁文件，已重置配置状态。")
         }
 
-        ShowStatus("")
-        ShowStatus("正在还原文件并清理汉化残留...")
+        SetStatusBarText("")
+        SetStatusBarText("正在还原文件并清理汉化补丁文件...")
+
+        FailedFiles := []
 
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
+            ActType := Act.Has("type") ? Act["type"] : "add"
             FinalPath := PathUtil.Normalize(g_InstallPath . "\" . Act["target_relative_path"])
             BackupPath := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId . "\" . Act["target_relative_path"])
             SplitPath(FinalPath, , &FDir)
 
-            if (Act["type"] == "add") {
+            if (ActType == "add") {
                 if FileExist(FinalPath) {
-                    try FileDelete(FinalPath)
-                    if FileExist(FinalPath)
-                        throw Error("文件 [" . Act["target_relative_path"] . "] 被未知进程占用锁死，清除失败。")
+                    try {
+                        FileDelete(FinalPath)
+                    } catch {
+                        FailedFiles.Push(Act["target_relative_path"] . " (汉化文件删除失败/被占用)")
+                    }
                 }
-            } else if (Act["type"] == "replace" || Act["type"] == "delete") {
-                if FileExist(BackupPath) {
-                    if (FDir != "" && !DirExist(FDir))
+            }
+            else if (ActType == "replace" || ActType == "delete") {
+
+                if (!FileExist(BackupPath)) {
+                    continue
+                }
+
+                if (FDir != "" && !DirExist(FDir)) {
+                    try {
                         DirCreate(FDir)
-                    try FileCopy(BackupPath, FinalPath, 1)
-                    catch
-                        throw Error("还原备份文件 [" . Act["target_relative_path"] . "] 失败，可能被游戏进程占用。")
+                    } catch {
+                        FailedFiles.Push(Act["target_relative_path"] . " (创建目标文件夹失败)")
+                        continue
+                    }
+                }
+
+                try {
+                    FileCopy(BackupPath, FinalPath, 1)
+
                     try FileDelete(BackupPath)
-                } else if (Act["type"] == "replace" && FileExist(FinalPath)) {
-                    try FileDelete(FinalPath)
-                    if FileExist(FinalPath)
-                        throw Error("文件 [" . Act["target_relative_path"] . "] 被未知进程占用锁死，清除失败。")
+                } catch {
+
+                    FailedFiles.Push(Act["target_relative_path"] . " (还原失败/文件占用)")
                 }
             }
         }
+
+        SetStatusBarText("")
 
         g_ConfigCache.%Sec%.IsPatched := 0
         g_ConfigCache.%Sec%.LocalPatchVersion := ""
         g_ConfigCache.%Sec%.LocalPatchBranchID := 0
         SaveAllConfig()
 
-        ShowStatus("")
-        ShowMessageDialog("撤销成功，已恢复备份文件并清除汉化补丁。")
+        BranchBackupDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId)
+        if (FailedFiles.Length == 0 && DirExist(BranchBackupDir)) {
+            try DirDelete(BranchBackupDir, 1)
+
+        }
+
+        if (FailedFiles.Length > 0) {
+            FailMessage := "部分备份文件还原失败，关闭游戏再进行汉化操作。`r`n`r`n你需要进行“文件检查”或“验证文件的完整性”。"
+
+            ShowMessageDialog(FailMessage)
+            return
+        }
+
+        ShowMessageDialog("已清除汉化补丁，恢复游戏默认语言。`r`n`r`n撤销成功。")
 
     } catch Error as Err {
+        SetStatusBarText("")
         ShowMessageDialog(Err.Message)
     } finally {
         g_IsPatching := false
@@ -854,7 +904,7 @@ CheckBulletin(BulletinMap) {
     }
 }
 
-FindFastestDownloadNodeAsync() {
+SelectFastestMirrorNode() {
     global g_CleanPreUrl, g_PatchManifestFilename, g_CleanProxyMirrors, MainStatusBar, g_BestDownloadPrefix, g_BestLatency
 
     Candidates := [
@@ -870,8 +920,8 @@ FindFastestDownloadNodeAsync() {
         })
     }
 
-    ShowStatus("")
-    MainStatusBar.SetText("`t正在并发对所有镜像节点进行网络测速...")
+    SetStatusBarText("")
+    MainStatusBar.SetText("`t正在对所有镜像节点进行网络测速...")
 
     ReqList := []
     for Candidate in Candidates {
@@ -925,17 +975,17 @@ FindFastestDownloadNodeAsync() {
     }
 
     if (g_BestLatency >= 99999) {
-        ShowStatus("")
-        throw Error("所有下载节点连接超时，请检查网络或开启加速器。")
+        SetStatusBarText("")
+        throw Error("所有下载节点连接超时，检查网络或开启加速器。")
     }
 
     return g_BestDownloadPrefix
 }
 
-DownloadSingleFileWithNode(RemoteFile, DestPath, FileAction) {
+DownloadPatchFileAsync(RemoteFileUrl, DestPath, FileAction) {
     global g_CleanPreUrl, g_BestDownloadPrefix, g_BestLatency, MainStatusBar
 
-    CleanRemotePath := LTrim(RemoteFile, "/")
+    CleanRemotePath := LTrim(StrReplace(RemoteFileUrl, "\", "/"), "/")
     TargetUrl := (g_BestDownloadPrefix != "") ? g_BestDownloadPrefix . "/" . g_CleanPreUrl . "/" . CleanRemotePath : g_CleanPreUrl . "/" . CleanRemotePath
 
     TotalBytes := FileAction["file_size"]
@@ -965,13 +1015,13 @@ DownloadSingleFileWithNode(RemoteFile, DestPath, FileAction) {
         CurrentSizeStr := FormatFileSize(downloaded)
         TotalStr := (TotalBytes > 0) ? FormatFileSize(TotalBytes) : "未知大小"
 
-        StatusText := Format("`t正在下载：{} [{} / {}] (节点: {}ms)", RemoteFile, CurrentSizeStr, TotalStr, g_BestLatency)
-        ShowStatus("")
+        StatusText := Format("`t正在下载：{} [{} / {}] (节点: {}ms)", FileAction["filename"], CurrentSizeStr, TotalStr, g_BestLatency)
+        SetStatusBarText("")
         MainStatusBar.SetText(StatusText)
     }
 
-    ShowStatus("")
-    MainStatusBar.SetText(Format("`t开始下载：{} (节点: {}ms)", RemoteFile, g_BestLatency))
+    SetStatusBarText("")
+    MainStatusBar.SetText(Format("`t开始下载：{} (节点: {}ms)", FileAction["filename"], g_BestLatency))
 
     try {
         req := DownloadAsync(TargetUrl, DestPath, OnFinishedCallback, OnProgressCallback)
@@ -1095,12 +1145,12 @@ WriteFileAtomic(FilePath, TextContent := "") {
     }
 }
 
-ShowStatus(StatusMessage := "") {
+SetStatusBarText(StatusMessage := "") {
     global MainStatusBar
     static ClearStatus := () => MainStatusBar.SetText("")
 
     if (StatusMessage != "") {
-        ShowStatus("")
+        SetStatusBarText("")
         MainStatusBar.SetText("`t" . StatusMessage)
         SetTimer(ClearStatus, -3000)
     } else {
@@ -1112,7 +1162,7 @@ ShowStatus(StatusMessage := "") {
 DoResetConfig(*) {
     global g_CurrentServer
     SetInstallPath("", 1)
-    ShowStatus("AION2 " . g_CurrentServer["name"] . "安装目录已重置。")
+    SetStatusBarText("AION2 " . g_CurrentServer["name"] . "安装目录已重置。")
 }
 
 BrowseFolder(*) {
@@ -1123,14 +1173,14 @@ BrowseFolder(*) {
 
     NormalizedSelectedFolder := PathUtil.Normalize(SelectedFolder)
     if (!FileExist(NormalizedSelectedFolder . "\Aion2\Binaries\Win64\Aion2.exe")) {
-        ShowMessageDialog("所选目录中未检测主程序 Aion2.exe，请重新选择正确的安装目录。")
+        ShowMessageDialog("所选目录中未检测主程序 Aion2.exe，重新选择正确的安装目录。")
         return
     }
     SetInstallPath(NormalizedSelectedFolder, 0)
-    ShowStatus("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
+    SetStatusBarText("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
 }
 
-UpdateNoticeText() {
+UpdateServerNoticeText() {
     global g_CurrentServer, TextExplain
     ServerName := g_CurrentServer["name"]
     RuleText := "1. 选择 AION2 " . ServerName . "的安装目录，" . ((g_CurrentServer["id"] = 102) ? "例如 D:\Games\AION2_TW。" : "例如 D:\Games\AION 2。")
@@ -1582,17 +1632,17 @@ OnScanButtonClick() {
     if (ValidGames.Length = 1) {
         SelectedFolder := ValidGames[1].GameInstallPath
         SetInstallPath(SelectedFolder, 0)
-        ShowStatus("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
+        SetStatusBarText("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
     } else if (ValidGames.Length > 1) {
         ShowMultiPathDialog(ValidGames, (SelectedFolder) => (
-            SelectedFolder != "" ? (SetInstallPath(SelectedFolder, 0), ShowStatus("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")) : false
+            SelectedFolder != "" ? (SetInstallPath(SelectedFolder, 0), SetStatusBarText("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")) : false
         ))
     } else {
-        ShowMessageDialog("未检测到有效的安装目录，请通过[浏览...]按钮手动指定。")
+        ShowMessageDialog("未检测到有效的安装目录，通过[浏览...]按钮手动指定。")
     }
 }
 
-SilentDetectFolder() {
+AutoDetectInstallPath() {
     global g_ConfigCache, g_CurrentServer
     SectionName := "Server_" . g_CurrentServer["id"]
 
@@ -1604,7 +1654,7 @@ SilentDetectFolder() {
     if (ValidGames.Length = 1) {
         SelectedFolder := ValidGames[1].GameInstallPath
         SetInstallPath(SelectedFolder, 0)
-        ShowStatus("已自动识别并设置安装目录。")
+        SetStatusBarText("已自动识别并设置安装目录。")
     }
 }
 
@@ -1701,11 +1751,10 @@ SafeIniRead(Filename, Section, Key, Default := "") {
         return Default
 }
 
-GetLocalCachePath(RemoteFilename) {
+GetLocalCachePath(Act) {
     global g_PatchsCacheDir
-    CleanRelPath := StrReplace(RemoteFilename, "/", "\")
-    CleanRelPath := LTrim(CleanRelPath, "\")
-    SplitPath(CleanRelPath, &FileNameOnly)
+    FileNameOnly := (Type(Act) == "Map") ? Act["filename"] : Act
+    FileNameOnly := LTrim(StrReplace(FileNameOnly, "/", "\"), "\")
     return PathUtil.Normalize(A_ScriptDir . "\" . g_PatchsCacheDir . "\" . FileNameOnly)
 }
 
@@ -1744,10 +1793,25 @@ NormalizeServerConfig(ServersArray) {
                     for Act in Actions {
                         if (Type(Act) != "Map")
                             continue
+
+                        RemoteFile := SafeGet(Act, "remote_filename", "")
+
+                        SplitPath(RemoteFile, &ExtractedName)
+                        FileNameVal := SafeGet(Act, "filename", "")
+                        if (FileNameVal == "")
+                            FileNameVal := ExtractedName
+
+                        CleanRemoteUrl := StrReplace(RemoteFile, "\", "/")
+                        CleanRemoteUrl := LTrim(CleanRemoteUrl, "/")
+
+                        CleanTargetPath := StrReplace(SafeGet(Act, "target_relative_path", ""), "/", "\")
+                        CleanTargetPath := LTrim(CleanTargetPath, "\")
+
                         SafeAct := Map(
                             "type", SafeGet(Act, "type", "add"),
-                            "remote_filename", SafeGet(Act, "remote_filename", ""),
-                            "target_relative_path", SafeGet(Act, "target_relative_path", ""),
+                            "filename", FileNameVal,
+                            "remote_filename", CleanRemoteUrl,
+                            "target_relative_path", CleanTargetPath,
                             "file_md5", SafeGet(Act, "file_md5", ""),
                             "file_size", Number(SafeGet(Act, "file_size", 0))
                         )
