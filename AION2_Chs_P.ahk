@@ -1,14 +1,15 @@
-;@Ahk2Exe-SetName AION2_Chs Patch
+;@Ahk2Exe-SetName AION2 Chs Patch
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 1.2.0.0
+;@Ahk2Exe-SetVersion 1.3.0.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 ;@Ahk2Exe-SetMainIcon AutoHotkey\icon.ico
 
 #Include ".\AutoHotkey\lib\UniqueInstance.ahk"
 #Include ".\AutoHotkey\lib\PathUtil.ahk"
 #Include ".\AutoHotkey\Lib\WinHttpRequest.ahk"
+#Include ".\AutoHotkey\lib\DownloadAsync.ahk"
 #Include ".\AutoHotkey\lib\JSON.ahk"
 
 ;@format array_style: expand, object_style: expand
@@ -17,22 +18,34 @@
 Persistent true
 #SingleInstance Off
 
+; ==============================================================================
+; 单实例与权限保障
+; ==============================================================================
 UiResult := UniqueInstance.Ensure(Map(
     "preferRunAsAdmin", true,
     "allowCoexist", true,
     "showReport", true
 ))
 
-global g_CurrentAppVersion := "1.2.0.0"
+; ==============================================================================
+; 全局常量与变量定义
+; ==============================================================================
+global g_ProjectName := "AION2 Chs Patch"
+global g_CurrentAppVersion := "1.3.0.0"
+global g_CurrentAppVersionShort := "1.3"
+global g_LastSeenBulletinVersion := "1.1.0.0"
+
 global g_ConfigFile := "config.ini"
 global g_AppManifestFilename := "app_manifest.json"
 global g_PatchManifestFilename := "patch_manifest.json"
 global g_PatchsCacheDir := "data"
 
-global g_DefaultPreUrl := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/refs/heads/main"
+global g_DefaultPreUrl := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/main"
 global g_DefaultProxyMirrors := [
     "https://gh-proxy.com",
-    "https://gh.ddlc.top"
+    "https://gh.ddlc.top",
+    "https://ghproxy.net",
+    "https://github.dpik.top"
 ]
 
 global g_GlobalConfigData := Map()
@@ -43,7 +56,6 @@ global g_CloudBulletinData := Map()
 global g_IsDialogShowing := false
 global g_IsLocalInitComplete := false
 global g_InstallPath := ""
-global g_LastSeenBulletinVersion := "1.1.0.0"
 global g_RequestTimeoutSeconds := 30
 global g_CleanPreUrl := RTrim(g_DefaultPreUrl, "/")
 global g_CleanProxyMirrors := []
@@ -57,110 +69,55 @@ global g_ConfigCache := {
         LastServerID: 102
     }
 }
+global g_DialogCallbacks := Map()
+global g_IsPatching := false
+
+; Win32 API 控制常量
+global LVM_FIRST := 0x1000
+global LVM_GETHEADER := LVM_FIRST + 31
+global LVM_SETEXTENDEDLISTVIEWSTYLE := LVM_FIRST + 54
+global LVM_GETEXTENDEDLISTVIEWSTYLE := LVM_FIRST + 55
+
+global LVS_EX_HEADERDRAGDROP := 0x00000010
+global LVS_EX_FULLROWSELECT := 0x00000020
+global LVS_EX_INFOTIP := 0x00000400
+global LVS_EX_LABELTIP := 0x00004000
+global LVS_EX_DOUBLEBUFFER := 0x00010000
+
+global HDM_FIRST := 0x1200
+global HDM_GETITEM := HDM_FIRST + 11
+global HDM_SETITEM := HDM_FIRST + 12
+
+global HDI_FORMAT := 0x0004
+global HDF_SORTDOWN := 0x0200
+global HDF_SORTUP := 0x0400
 
 ; ==============================================================================
-; 安全获取对象键值
+; 默认服务器配置回退数据
 ; ==============================================================================
-SafeGet(Obj, Key, DefaultValue := "") {
-    if (Type(Obj) == "Map" || Type(Obj) == "Array") && Obj.Has(Key)
-        return Obj[Key]
-    return DefaultValue
-}
+global g_DefaultServers := []
 
 ; ==============================================================================
-; 安全读取 INI 配置文件
+; 自定义消息与事件监听
 ; ==============================================================================
-SafeIniRead(Filename, Section, Key, Default := "") {
-    try return IniRead(Filename, Section, Key, Default)
-    catch
-        return Default
-}
+OnMessage(0x0900, HandleDialogEvent)
 
-; ==============================================================================
-; 规范化服务器配置数据结构
-; ==============================================================================
-GetLocalCachePath(RemoteFilename) {
-    global g_PatchsCacheDir
-    CleanRelPath := StrReplace(RemoteFilename, "/", "\")
-    CleanRelPath := LTrim(CleanRelPath, "\")
-    SplitPath(CleanRelPath, &FileNameOnly)
-    return PathUtil.Normalize(A_ScriptDir . "\" . g_PatchsCacheDir . "\" . FileNameOnly)
-}
-NormalizeServerConfig(ServersArray) {
-    SafeList := []
-    if (Type(ServersArray) != "Array")
-        return SafeList
-
-    for Srv in ServersArray {
-        if (Type(Srv) != "Map")
-            continue
-        SafeSrv := Map(
-            "id", SafeGet(Srv, "id", 1),
-            "name", SafeGet(Srv, "name", "未知服务器"),
-            "display", SafeGet(Srv, "display", "未知服务器"),
-            "keywords", SafeGet(Srv, "keywords", [
-                "AION"
-            ]),
-            "patch_branches", []
-        )
-        Branches := SafeGet(Srv, "patch_branches", [])
-        if (Type(Branches) == "Array") {
-            for Br in Branches {
-                if (Type(Br) != "Map")
-                    continue
-                SafeBr := Map(
-                    "id", SafeGet(Br, "id", 1),
-                    "source", SafeGet(Br, "source", "default"),
-                    "latest_patch_version", SafeGet(Br, "latest_patch_version", "1.0.0.0"),
-                    "changelog", SafeGet(Br, "changelog", ""),
-                    "release_timestamp", SafeGet(Br, "release_timestamp", 0),
-                    "actions", []
-                )
-                Actions := SafeGet(Br, "actions", [])
-                if (Type(Actions) == "Array") {
-                    for Act in Actions {
-                        if (Type(Act) != "Map")
-                            continue
-                        SafeAct := Map(
-                            "type", SafeGet(Act, "type", "add"),
-                            "remote_filename", SafeGet(Act, "remote_filename", ""),
-                            "target_relative_path", SafeGet(Act, "target_relative_path", ""),
-                            "file_md5", SafeGet(Act, "file_md5", ""),
-                            "file_size", Number(SafeGet(Act, "file_size", 0))
-                        )
-                        SafeBr["actions"].Push(SafeAct)
-                    }
-                }
-                SafeSrv["patch_branches"].Push(SafeBr)
-            }
-        }
-        SafeList.Push(SafeSrv)
+HandleDialogEvent(wParam, lParam, msg, hwnd) {
+    if (g_DialogCallbacks.Has(wParam)) {
+        CallbackFunc := g_DialogCallbacks[wParam]
+        g_DialogCallbacks.Delete(wParam)
+        CallbackFunc(lParam)
     }
-    return SafeList
 }
 
-global g_DefaultServers := NormalizeServerConfig([
-    Map(
-        "id", 102, "name", "台服", "display", "台服 - PURPLE", "keywords", [
-            "AION"
-        ],
-        "patch_branches", [
-            Map("id", 1, "source", "xy", "latest_patch_version", "1.0.0.0", "actions", [
-                Map(
-                    "type", "add", "remote_filename", "patchs/xy_pakchunk504000-Windows_9999_P.pak",
-                    "target_relative_path", "Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak",
-                    "file_md5", "d8f909cef6c96595e0e3514ed0e744da", "file_size", 3672850
-                )
-            ])
-        ]
-    )
-])
-
-global MainGui := Gui(, "AION2 一键汉化工具 1.2")
+; ==============================================================================
+; 主界面 GUI 构建
+; ==============================================================================
+global MainGui := Gui(, "AION2 一键汉化工具 " . g_CurrentAppVersionShort)
 MainGui.SetFont("s9", "Microsoft YaHei")
 
 global TabCtrl := MainGui.AddTab3("x-1 y10 w574 h460", [
-    "中文汉化",
+    "一键汉化",
     "免费加速器"
 ])
 
@@ -182,15 +139,13 @@ global BtnRestore := MainGui.AddButton("x289 y418 w100 h32", "撤销汉化")
 
 TabCtrl.UseTab(2)
 MainGui.AddLink("x31 y75 w510 r1", '<a href="https://www.ggkuai.com/">古怪加速器 - 每天0-16点免费，极速稳定全球网游加速。</a>')
-MainGui.AddLink("x31 y100 w510 r1",
-    '<a href="https://www.akspeedy.com/html/invite_new/invite_download.html?inviter=3Xtkus4t">AK加速器- 每天0-14点免费，支持全球网游加速。</a>'
-)
-MainGui.AddLink("x31 y125 w510 r1",
-    '<a href="https://www.xiaoyao.co/index.htm">逍遥加速器 - 24小时免费加速，全新模式 - 平台加速。支持 Steam、EA、Epic、暴雪等平台。</a>')
+MainGui.AddLink("x31 y100 w510 r1", '<a href="https://www.akspeedy.com/html/invite_new/invite_download.html?inviter=3Xtkus4t">AK加速器- 每天0-14点免费，支持全球网游加速。</a>')
+MainGui.AddLink("x31 y125 w510 r1", '<a href="https://www.xiaoyao.co/index.htm">逍遥加速器 - 24小时免费加速，全新模式 - 平台加速。支持 Steam、EA、Epic、暴雪等平台。</a>')
 
 TabCtrl.UseTab(0)
 global MainStatusBar := MainGui.AddStatusBar(, "")
 
+; 绑定控件事件
 ComboServerList.OnEvent("Change", (*) => SelectServer())
 BtnScan.OnEvent("Click", (*) => OnScanButtonClick())
 BtnBrowse.OnEvent("Click", BrowseFolder)
@@ -199,13 +154,36 @@ BtnChinese.OnEvent("Click", DoChinesePatch)
 BtnRestore.OnEvent("Click", DoRestorePatch)
 MainGui.OnEvent("Close", (*) => ExitApp())
 
+; ==============================================================================
+; 应用程序启动主流程
+; ==============================================================================
+g_DefaultServers := NormalizeServerConfig([
+    Map(
+        "id", 102, "name", "台服", "display", "台服 - PURPLE", "keywords", [
+            "AION"
+        ],
+        "patch_branches", [
+            Map("id", 1, "source", "迅游", "latest_patch_version", "1.0.0.0", "actions", [
+                Map(
+                    "type", "add",
+                    "remote_filename", "patchs/xy_pakchunk504000-Windows_9999_P.pak",
+                    "target_relative_path", "Aion2\Content\Paks\L10N\Text\zh-TW\pakchunk504000-Windows_9999_P.pak",
+                    "file_md5", "d8f909cef6c96595e0e3514ed0e744da",
+                    "file_size", 3672850
+                )
+            ])
+        ]
+    )
+])
+
 g_ServersConfigData := g_DefaultServers
 InitProxyMirrors(g_DefaultProxyMirrors)
 InitializeApp()
 
 ; ==============================================================================
-; 初始化应用程序环境
+; 核心逻辑函数与工具库
 ; ==============================================================================
+
 InitializeApp() {
     global g_IsLocalInitComplete, MainGui
     MainGui.Show("w570 h490")
@@ -220,9 +198,6 @@ InitializeApp() {
     SetTimer(StartCloudSync, -300)
 }
 
-; ==============================================================================
-; 解析并应用配置清单 (Manifest)
-; ==============================================================================
 ParseAndApplyManifest(JsonContent, IsPatchFile := false) {
     global g_ClientUpdateData, g_ServersConfigData, g_CloudBulletinData, g_GlobalConfigData
 
@@ -242,7 +217,6 @@ ParseAndApplyManifest(JsonContent, IsPatchFile := false) {
 
         if (Parsed.Has("global_config") && Type(Parsed["global_config"]) == "Map") {
             g_GlobalConfigData := Parsed["global_config"]
-            g_RequestTimeoutSeconds := Number(SafeGet(g_GlobalConfigData, "download_timeout_seconds", 30))
             InitProxyMirrors(SafeGet(g_GlobalConfigData, "proxy_mirrors", g_DefaultProxyMirrors))
         }
         return true
@@ -251,9 +225,6 @@ ParseAndApplyManifest(JsonContent, IsPatchFile := false) {
     }
 }
 
-; ==============================================================================
-; 加载本地清单文件
-; ==============================================================================
 LoadLocalManifests() {
     global g_AppManifestFilename, g_PatchManifestFilename, g_ServersConfigData, g_DefaultServers
 
@@ -273,17 +244,14 @@ LoadLocalManifests() {
     }
 }
 
-; ==============================================================================
-; 启动后台云端同步
-; ==============================================================================
 StartCloudSync() {
-    global g_ConfigFile, g_RequestTimeoutSeconds, g_IsLocalInitComplete, g_IsDialogShowing, g_CloudBulletinData,
-        g_ClientUpdateData
+    global g_ConfigFile, g_RequestTimeoutSeconds, g_IsLocalInitComplete, g_IsDialogShowing, g_CloudBulletinData, g_ClientUpdateData
 
     if (!g_IsLocalInitComplete)
         return
 
-    ShowStatus("正在后台拉取云端最新配置...")
+    ShowStatus("")
+    MainStatusBar.SetText("`t正在后台拉取云端最新配置...")
     IsSyncSuccess := SyncCloudConfig()
 
     if (IsSyncSuccess) {
@@ -293,7 +261,7 @@ StartCloudSync() {
             SafeRefreshUi()
             ShowStatus("云端配置同步成功，已保存至本地。")
         } else {
-            ShowStatus("云端配置同步成功，等待重启动生效。")
+            ShowStatus("云端配置同步成功，重启工具后生效。")
         }
     } else {
         ShowStatus("连接超时或离线，已加载本地配置文件。")
@@ -306,24 +274,26 @@ StartCloudSync() {
         CheckBulletin(g_CloudBulletinData)
 }
 
-; ==============================================================================
-; 同步云端配置文件
-; ==============================================================================
 SyncCloudConfig() {
-    global g_AppManifestFilename, g_PatchManifestFilename, g_RequestTimeoutSeconds, g_CleanRemoteAppUrl,
-        g_CleanRemotePatchUrl
+    global g_AppManifestFilename, g_PatchManifestFilename, g_CleanRemoteAppUrl, g_CleanRemotePatchUrl, g_CleanPreUrl, g_BestDownloadPrefix, g_RequestTimeoutSeconds
 
     IsAppSuccess := false
     IsPatchSuccess := false
 
-    if (AppJson := HttpGetText(g_CleanRemoteAppUrl, g_RequestTimeoutSeconds)) {
+    BestPrefix := ""
+    try BestPrefix := FindFastestDownloadNodeAsync()
+
+    AppUrl := (BestPrefix != "") ? BestPrefix . "/" . g_CleanRemoteAppUrl : g_CleanRemoteAppUrl
+    PatchUrl := (BestPrefix != "") ? BestPrefix . "/" . g_CleanRemotePatchUrl : g_CleanRemotePatchUrl
+
+    if (AppJson := HttpGetText(AppUrl, g_RequestTimeoutSeconds)) {
         if (ParseAndApplyManifest(AppJson, false)) {
             WriteFileAtomic(g_AppManifestFilename, AppJson)
             IsAppSuccess := true
         }
     }
 
-    if (PatchJson := HttpGetText(g_CleanRemotePatchUrl, g_RequestTimeoutSeconds)) {
+    if (PatchJson := HttpGetText(PatchUrl, g_RequestTimeoutSeconds)) {
         if (ParseAndApplyManifest(PatchJson, true)) {
             WriteFileAtomic(g_PatchManifestFilename, PatchJson)
             IsPatchSuccess := true
@@ -333,9 +303,6 @@ SyncCloudConfig() {
     return (IsAppSuccess || IsPatchSuccess)
 }
 
-; ==============================================================================
-; 初始化代理镜像列表
-; ==============================================================================
 InitProxyMirrors(MirrorsArray) {
     global g_CleanProxyMirrors := []
     if (Type(MirrorsArray) == "Array") {
@@ -346,9 +313,6 @@ InitProxyMirrors(MirrorsArray) {
     }
 }
 
-; ==============================================================================
-; 更新全局远程请求链接
-; ==============================================================================
 UpdateGlobalUrls() {
     global g_CleanPreUrl, g_AppManifestFilename, g_PatchManifestFilename, g_CleanRemoteAppUrl, g_CleanRemotePatchUrl
     TimestampParam := "?t=" . DateDiff(A_NowUTC, "19700101000000", "Seconds")
@@ -356,9 +320,6 @@ UpdateGlobalUrls() {
     g_CleanRemotePatchUrl := g_CleanPreUrl . "/" . g_PatchManifestFilename . TimestampParam
 }
 
-; ==============================================================================
-; 读取本地 INI 配置信息
-; ==============================================================================
 ReadConfig() {
     global g_ConfigCache, g_ConfigFile, g_ServersConfigData, g_LastSeenBulletinVersion
     g_LastSeenBulletinVersion := SafeIniRead(g_ConfigFile, "Settings", "LastSeenBulletinVersion", "1.0.0.0")
@@ -376,9 +337,6 @@ ReadConfig() {
     RefreshServerComboBox()
 }
 
-; ==============================================================================
-; 保存所有配置到 INI 文件
-; ==============================================================================
 SaveAllConfig() {
     global g_ConfigCache, g_ConfigFile, g_ServersConfigData, g_LastSeenBulletinVersion
     IniWrite(g_ConfigCache.Settings.LastServerID, g_ConfigFile, "Settings", "LastServerID")
@@ -395,9 +353,6 @@ SaveAllConfig() {
     }
 }
 
-; ==============================================================================
-; 刷新服务器下拉列表控件
-; ==============================================================================
 RefreshServerComboBox() {
     global g_ServersConfigData, ComboServerList, g_ConfigFile, g_CurrentServer, g_ConfigCache
 
@@ -426,9 +381,6 @@ RefreshServerComboBox() {
         SilentDetectFolder()
 }
 
-; ==============================================================================
-; 刷新当前选中的服务器业务数据
-; ==============================================================================
 RefreshServerData() {
     global g_ConfigCache, g_CurrentServer, g_InstallPath, EditInstallPath
 
@@ -467,33 +419,41 @@ RefreshServerData() {
     RefreshUi()
 }
 
-; ==============================================================================
-; 刷新界面控件状态与交互逻辑
-; ==============================================================================
 RefreshUi() {
-    global BtnBrowse, BtnChinese, BtnRestore, BtnReset, EditInstallPath, g_ConfigCache, g_CurrentServer
+    global BtnBrowse, BtnChinese, BtnRestore, BtnReset, BtnScan, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_IsPatching
+
+    if (g_IsPatching) {
+        BtnChinese.Opt("+Disabled")
+        BtnRestore.Opt("+Disabled")
+        BtnScan.Opt("+Disabled")
+        BtnBrowse.Opt("+Disabled")
+        BtnReset.Opt("+Disabled")
+        ComboServerList.Opt("+Disabled")
+        return
+    }
+
+    ComboServerList.Opt("-Disabled")
+    BtnScan.Opt("-Disabled")
+    BtnBrowse.Opt("-Disabled")
+
     if (!g_CurrentServer.Has("id"))
         return
 
     Sec := "Server_" . g_CurrentServer["id"]
-    IsPatched := (g_ConfigCache.HasOwnProp(Sec) && g_ConfigCache.%Sec%.HasOwnProp("IsPatched")) ? g_ConfigCache.%Sec%.IsPatched :
-        0
+    IsPatched := (g_ConfigCache.HasOwnProp(Sec) && g_ConfigCache.%Sec%.HasOwnProp("IsPatched")) ? g_ConfigCache.%Sec%.IsPatched : 0
 
     BtnChinese.Opt(IsPatched == 1 ? "+Disabled" : "-Disabled")
     BtnRestore.Opt("-Disabled")
 
     if (EditInstallPath.Value) {
-        BtnReset.Enabled := true
+        BtnReset.Opt("-Disabled")
         (IsPatched != 1) ? BtnChinese.Focus() : BtnRestore.Focus()
     } else {
-        BtnReset.Enabled := false
+        BtnReset.Opt("+Disabled")
         BtnScan.Focus()
     }
 }
 
-; ==============================================================================
-; 安全刷新主界面
-; ==============================================================================
 SafeRefreshUi() {
     global g_IsDialogShowing, MainGui
     if (g_IsDialogShowing || !WinExist(MainGui))
@@ -502,11 +462,8 @@ SafeRefreshUi() {
     RefreshServerData()
 }
 
-; ==============================================================================
-; 设置并规范化游戏安装目录
-; ==============================================================================
 SetInstallPath(NewPath, IsManualReset := 0) {
-    global g_ConfigCache, g_CurrentServer, g_InstallPath, EditInstallPath, BtnChinese, BtnRestore
+    global g_ConfigCache, g_CurrentServer, g_InstallPath, EditInstallPath, BtnChinese
     Sec := "Server_" . g_CurrentServer["id"]
     NewPathNormalized := (NewPath != "") ? PathUtil.Normalize(NewPath) : ""
 
@@ -526,9 +483,6 @@ SetInstallPath(NewPath, IsManualReset := 0) {
     RefreshUi()
 }
 
-; ==============================================================================
-; 切换服务器时的事件响应
-; ==============================================================================
 SelectServer() {
     global g_ConfigCache, g_CurrentServer, g_InstallPath, ComboServerList, g_ServersConfigData
     g_CurrentServer := g_ServersConfigData[ComboServerList.Value]
@@ -542,39 +496,48 @@ SelectServer() {
         SilentDetectFolder()
 }
 
-; ==============================================================================
-; 执行一键汉化核心逻辑
-; ==============================================================================
 DoChinesePatch(*) {
-    global g_InstallPath, g_CurrentServer, g_PatchsCacheDir, BtnChinese, g_ConfigCache
+    global g_InstallPath, g_CurrentServer, BtnChinese, g_IsPatching
 
+    if (!g_InstallPath || !DirExist(g_InstallPath)) {
+        ShowMessageDialog("请先设置 AION2 游戏的安装目录。")
+        RefreshUi()
+        return
+    }
+
+    Branches := g_CurrentServer["patch_branches"]
+    if (Branches.Length == 0) {
+        ShowMessageDialog("未发现有效的汉化补丁数据。")
+        RefreshUi()
+        return
+    }
+
+    g_IsPatching := true
     BtnChinese.Opt("+Disabled")
 
+    if (Branches.Length == 1) {
+        ExecuteChinesePatch(Branches[1])
+    } else {
+        ShowMultiBranchDialog(Branches, (SelectedBranch) => (
+            SelectedBranch ? ExecuteChinesePatch(SelectedBranch) : (g_IsPatching := false, RefreshUi())
+        ))
+    }
+}
+
+ExecuteChinesePatch(PatchBranch) {
+    global g_InstallPath, g_IsPatching
+
     try {
-        if (!g_InstallPath || !DirExist(g_InstallPath)) {
-            ShowMessageDialog("请先设置 AION2 游戏的安装目录。")
-            return
-        }
-
-        Branches := g_CurrentServer["patch_branches"]
-        if (Branches.Length == 0) {
-            ShowMessageDialog("未发现有效的汉化补丁数据。")
-            return
-        }
-
-        PatchBranch := (Branches.Length == 1) ? Branches[1] : ShowMultiBranchDialog(Branches)
-        if (!PatchBranch)
-            return
-
         ActionsArray := PatchBranch["actions"]
         if (ActionsArray.Length == 0) {
             ShowMessageDialog("未发现有效的汉化补丁执行方案。")
+            g_IsPatching := false
             return
         }
 
         BranchId := PatchBranch["id"]
-
         HasAnyInstalled := false
+
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
             if (Act["type"] == "add" || Act["type"] == "replace") {
@@ -586,52 +549,70 @@ DoChinesePatch(*) {
                 }
             }
         }
-        if (HasAnyInstalled && !ShowConfirmDialog("检测到游戏目录中已存在汉化补丁文件，是否直接覆盖更新？"))
-            return
 
+        if (HasAnyInstalled) {
+            ShowConfirmDialog("检测到游戏目录中已存在汉化补丁文件，是否直接覆盖更新？", (IsConfirmed) => (
+                IsConfirmed ? RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId) : (g_IsPatching := false, RefreshUi())
+            ))
+        } else {
+            RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId)
+        }
+    } catch Error as Err {
+        ShowMessageDialog("汉化失败：`r`n" . Err.Message)
+        g_IsPatching := false
+        RefreshUi()
+    }
+}
+
+RunPatchDownloadAndApply(PatchBranch, ActionsArray, BranchId) {
+    global g_InstallPath, g_CurrentServer, g_PatchsCacheDir, g_ConfigCache, g_ProjectName, g_IsPatching
+
+    try {
         LocalCacheRootDir := PathUtil.Normalize(A_ScriptDir . "\" . g_PatchsCacheDir)
         if !DirExist(LocalCacheRootDir)
             DirCreate(LocalCacheRootDir)
 
         TempDownloadList := Map()
-        ShowStatus("正在检查本地缓存目录中的文件 MD5...")
+        ShowStatus("")
+        MainStatusBar.SetText("`t正在检查本地缓存目录中的文件 MD5...")
         AllLocalCacheValid := true
 
+        ; 优化点：在预检循环中校验成功的文件直接缓存记录，避免第二轮重复计算 MD5
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
-            if (Act["type"] != "add" && Act["type"] != "replace") || (Act["file_md5"] ==
-                "d41d8cd98f00b204e9800998ecf8427e")
+            if (Act["type"] != "add" && Act["type"] != "replace") || (Act["file_md5"] == "d41d8cd98f00b204e9800998ecf8427e")
                 continue
 
-            LocalCacheFile := GetLocalCachePath(Act["remote_filename"])
-            if (!FileExist(LocalCacheFile) || Act["file_md5"] == "" || HashFileMd5(LocalCacheFile) != Act["file_md5"]) {
-                AllLocalCacheValid := false
-                break
-            }
-        }
-
-        if (!AllLocalCacheValid)
-            FindFastestDownloadNode()
-        else
-            ShowStatus("本地缓存全部校验通过，已跳过网络下载。")
-
-        loop ActionsArray.Length {
-            Act := ActionsArray[A_Index]
-            if (Act["type"] != "add" && Act["type"] != "replace") || (Act["file_md5"] ==
-                "d41d8cd98f00b204e9800998ecf8427e")
-                continue
-
-            RemoteFileUrl := StrReplace(Trim(Act["remote_filename"]), "\", "/")
             LocalCacheFile := GetLocalCachePath(Act["remote_filename"])
             KeyName := Act["remote_filename"]
 
             if (FileExist(LocalCacheFile) && Act["file_md5"] != "" && HashFileMd5(LocalCacheFile) == Act["file_md5"]) {
                 TempDownloadList[KeyName] := Map("src", LocalCacheFile, "fileAction", Act)
-                continue
+            } else {
+                AllLocalCacheValid := false
             }
+        }
 
-            SplitPath(LocalCacheFile, &SafeFilename)
-            TmpFile := PathUtil.Normalize(A_Temp . "\" . SafeFilename . ".tmp")
+        if (!AllLocalCacheValid)
+            FindFastestDownloadNodeAsync()
+        else
+            ShowStatus("本地缓存全部校验通过，已跳过网络下载。")
+
+        loop ActionsArray.Length {
+            Act := ActionsArray[A_Index]
+            if (Act["type"] != "add" && Act["type"] != "replace") || (Act["file_md5"] == "d41d8cd98f00b204e9800998ecf8427e")
+                continue
+
+            KeyName := Act["remote_filename"]
+            if TempDownloadList.Has(KeyName)
+                continue
+
+            RemoteFileUrl := StrReplace(Trim(Act["remote_filename"]), "\", "/")
+            LocalCacheFile := GetLocalCachePath(Act["remote_filename"])
+
+            SplitPath(LocalCacheFile, &SafeFilename, , &SafeExt)
+            RandomSuffix := A_TickCount . "_" . Random(1000, 9999)
+            TmpFile := PathUtil.Normalize(A_Temp . "\" . SafeFilename . "_" . RandomSuffix . ".tmp")
             if FileExist(TmpFile)
                 FileDelete(TmpFile)
 
@@ -655,13 +636,13 @@ DoChinesePatch(*) {
             TempDownloadList[KeyName] := Map("src", LocalCacheFile, "fileAction", Act)
         }
 
+        ShowStatus("")
         ShowStatus("正在按规则处理游戏内部文件...")
 
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
             FinalPath := PathUtil.Normalize(g_InstallPath . "\" . Act["target_relative_path"])
-            BackupPath := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId . "\" . Act["target_relative_path"]
-            )
+            BackupPath := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId . "\" . Act["target_relative_path"])
             SplitPath(FinalPath, , &FDir)
             SplitPath(BackupPath, , &BDir)
 
@@ -673,6 +654,9 @@ DoChinesePatch(*) {
                 if FileExist(FinalPath) {
                     if (BDir != "" && !DirExist(BDir))
                         DirCreate(BDir)
+                    BackupTextFile := A_ScriptDir . "\rawBackup\" . g_ProjectName . " 备份文件夹.txt"
+                    if !FileExist(BackupTextFile)
+                        FileAppend("", BackupTextFile, "UTF-8-RAW")
                     if (!FileExist(BackupPath)) {
                         try FileCopy(FinalPath, BackupPath, 1)
                         catch
@@ -723,19 +707,22 @@ DoChinesePatch(*) {
         g_ConfigCache.%Sec%.LocalPatchBranchID := BranchId
         SaveAllConfig()
 
+        ShowStatus("")
         ShowMessageDialog("汉化完成，补丁文件已成功释放至游戏目录。")
     } catch Error as Err {
+        ShowStatus("")
         ShowMessageDialog("汉化失败：`r`n" . Err.Message)
     } finally {
+        g_IsPatching := false
         RefreshUi()
     }
 }
 
-; ==============================================================================
-; 撤销汉化并还原原始文件
-; ==============================================================================
 DoRestorePatch(*) {
-    global g_InstallPath, g_CurrentServer, BtnRestore, g_ConfigCache
+    global g_InstallPath, g_CurrentServer, g_ConfigCache, g_IsPatching
+
+    g_IsPatching := true
+    RefreshUi()
 
     try {
         if (!g_InstallPath || !DirExist(g_InstallPath))
@@ -746,8 +733,7 @@ DoRestorePatch(*) {
             throw Error("当前服务器未发现可用的撤销配置。")
 
         Sec := "Server_" . g_CurrentServer["id"]
-        SavedBranchID := (g_ConfigCache.HasOwnProp(Sec) && g_ConfigCache.%Sec%.HasOwnProp("LocalPatchBranchID")) ?
-            g_ConfigCache.%Sec%.LocalPatchBranchID : 0
+        SavedBranchID := (g_ConfigCache.HasOwnProp(Sec) && g_ConfigCache.%Sec%.HasOwnProp("LocalPatchBranchID")) ? g_ConfigCache.%Sec%.LocalPatchBranchID : 0
 
         PatchBranch := ""
         for Branch in Branches {
@@ -763,7 +749,7 @@ DoRestorePatch(*) {
         if (ActionsArray.Length == 0)
             throw Error("当前补丁配置异常，缺少文件处理动作。")
 
-        BranchId := PatchBranch["id"] ? PatchBranch["id"] : (SavedBranchID ? SavedBranchID : 1)
+        BranchId := PatchBranch.Has("id") ? PatchBranch["id"] : (SavedBranchID ? SavedBranchID : 1)
 
         HasAnyPatchFile := false
         loop ActionsArray.Length {
@@ -786,13 +772,13 @@ DoRestorePatch(*) {
             throw Error("游戏目录内未检测到汉化补丁文件。")
         }
 
+        ShowStatus("")
         ShowStatus("正在还原文件并清理汉化残留...")
 
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
             FinalPath := PathUtil.Normalize(g_InstallPath . "\" . Act["target_relative_path"])
-            BackupPath := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId . "\" . Act["target_relative_path"]
-            )
+            BackupPath := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . BranchId . "\" . Act["target_relative_path"])
             SplitPath(FinalPath, , &FDir)
 
             if (Act["type"] == "add") {
@@ -822,23 +808,22 @@ DoRestorePatch(*) {
         g_ConfigCache.%Sec%.LocalPatchBranchID := 0
         SaveAllConfig()
 
+        ShowStatus("")
         ShowMessageDialog("撤销成功，已恢复备份文件并清除汉化补丁。")
 
     } catch Error as Err {
         ShowMessageDialog(Err.Message)
     } finally {
+        g_IsPatching := false
         RefreshUi()
     }
 }
 
-; ==============================================================================
-; 检查客户端应用更新
-; ==============================================================================
 CheckAppUpdate(UpdateMap) {
     global g_CurrentAppVersion
 
     if (Type(UpdateMap) != "Map" || !UpdateMap.Has("latest_client_version"))
-        return false
+        return
 
     LatestVersion := String(UpdateMap["latest_client_version"])
     MinRequiredVersion := UpdateMap.Has("min_required_version") ? String(UpdateMap["min_required_version"]) : ""
@@ -848,20 +833,13 @@ CheckAppUpdate(UpdateMap) {
     HasNewVersion := (LatestVersion != "" && VerCompare(LatestVersion, g_CurrentAppVersion) > 0)
 
     if (IsForceUpdate || HasNewVersion) {
-        DownloadUrlMain := UpdateMap.Has("client_download_url_main") ? String(UpdateMap["client_download_url_main"]) :
-            ""
-        DownloadUrlMinor := UpdateMap.Has("client_download_url_minor") ? String(UpdateMap["client_download_url_minor"]) :
-            ""
+        DownloadUrlMain := UpdateMap.Has("client_download_url_main") ? String(UpdateMap["client_download_url_main"]) : ""
+        DownloadUrlMinor := UpdateMap.Has("client_download_url_minor") ? String(UpdateMap["client_download_url_minor"]) : ""
 
         ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpdate)
-        return true
     }
-    return false
 }
 
-; ==============================================================================
-; 检查云端公告更新
-; ==============================================================================
 CheckBulletin(BulletinMap) {
     global g_LastSeenBulletinVersion
 
@@ -876,12 +854,8 @@ CheckBulletin(BulletinMap) {
     }
 }
 
-; ==============================================================================
-; 查找最快的下载镜像节点 (网络测速)
-; ==============================================================================
-FindFastestDownloadNode() {
-    global g_CleanPreUrl, g_PatchManifestFilename, g_CleanProxyMirrors, MainStatusBar, g_BestDownloadPrefix,
-        g_BestLatency
+FindFastestDownloadNodeAsync() {
+    global g_CleanPreUrl, g_PatchManifestFilename, g_CleanProxyMirrors, MainStatusBar, g_BestDownloadPrefix, g_BestLatency
 
     Candidates := [
         {
@@ -889,125 +863,153 @@ FindFastestDownloadNode() {
             TestUrl: g_CleanPreUrl . "/" . g_PatchManifestFilename
         }
     ]
-    for Mirror in g_CleanProxyMirrors
+    for Mirror in g_CleanProxyMirrors {
         Candidates.Push({
             Prefix: Mirror,
             TestUrl: Mirror . "/" . g_CleanPreUrl . "/" . g_PatchManifestFilename
         })
-
-    MainStatusBar.SetText("`t正在对所有下载节点进行网络测速...")
-    Sleep(50)
-
-    BestNode := Candidates[1]
-    g_BestLatency := 99999
-
-    for Node in Candidates {
-        Latency := GetUrlLatency(Node.TestUrl, 2)
-        if (Latency < g_BestLatency) {
-            g_BestLatency := Latency
-            BestNode := Node
-        }
     }
 
-    if (g_BestLatency >= 99999)
-        throw Error("所有下载节点连接超时，请检查网络或开启加速器。")
+    ShowStatus("")
+    MainStatusBar.SetText("`t正在并发对所有镜像节点进行网络测速...")
 
-    g_BestDownloadPrefix := BestNode.Prefix
-    return BestNode
-}
-
-; ==============================================================================
-; 获取指定 URL 链接的响应延迟 (毫秒)
-; ==============================================================================
-GetUrlLatency(Url, TimeoutSeconds := 2) {
-    StartTime := A_TickCount
-    try {
-        Whr := WinHttpRequest()
-        Whr.Open("HEAD", Url, true)
-        Whr.SetRequestHeader("User-Agent", "Mozilla/5.0")
-        Whr.Send()
-        if (Whr.WaitForResponse(TimeoutSeconds)) {
-            if (Whr.Status == 200 || Whr.Status == 301 || Whr.Status == 302)
-                return A_TickCount - StartTime
-        }
-    } catch {
-    }
-    return 99999
-}
-
-; ==============================================================================
-; 通过测速后的最佳节点单文件下载
-; ==============================================================================
-DownloadSingleFileWithNode(RemoteFile, DestPath, FileAction) {
-    global g_CleanPreUrl, g_BestDownloadPrefix, g_BestLatency, MainStatusBar
-    CleanRemotePath := LTrim(RemoteFile, "/")
-    TargetUrl := (g_BestDownloadPrefix != "") ? g_BestDownloadPrefix . "/" . g_CleanPreUrl . "/" . CleanRemotePath :
-        g_CleanPreUrl . "/" . CleanRemotePath
-    TotalBytes := FileAction["file_size"]
-    TotalSizeStr := (TotalBytes > 0) ? FormatFileSize(TotalBytes) : "未知大小"
-
-    UpdateDownloadStatus() {
+    ReqList := []
+    for Candidate in Candidates {
         try {
-            CurrentSizeStr := FormatFileSize(FileExist(DestPath) ? FileGetSize(DestPath) : 0)
-            StatusText := (TotalBytes > 0)
-                ? Format("`t正在下载：{} [{} / {}] (节点: {}ms)", RemoteFile, CurrentSizeStr, TotalSizeStr, g_BestLatency)
-                : Format("`t正在下载：{} [{}] (节点: {}ms)", RemoteFile, CurrentSizeStr, g_BestLatency)
-            MainStatusBar.SetText(StatusText)
-        }
-    }
-
-    SetTimer(UpdateDownloadStatus, 100)
-    try {
-        SplitPath(DestPath, , &ParentDir)
-        if (ParentDir != "" && !DirExist(ParentDir))
-            DirCreate(ParentDir)
-        if FileExist(DestPath)
-            FileDelete(DestPath)
-        Download(TargetUrl, DestPath)
-        SetTimer(UpdateDownloadStatus, 0)
-        return (FileExist(DestPath) && FileGetSize(DestPath) > 0)
-    } catch {
-        SetTimer(UpdateDownloadStatus, 0)
-        return false
-    }
-}
-
-; ==============================================================================
-; 通过代理队列 HTTP 请求获取文本内容
-; ==============================================================================
-HttpGetText(ApiUrl, TimeoutSeconds) {
-    global g_CleanProxyMirrors
-    UrlQueue := []
-    for Mirror in g_CleanProxyMirrors
-        UrlQueue.Push(Mirror . "/" . LTrim(ApiUrl, "/"))
-    UrlQueue.Push(ApiUrl)
-
-    for TargetUrl in UrlQueue {
-        try {
-            Whr := WinHttpRequest()
-            Whr.Open("GET", TargetUrl, true)
-            Whr.SetRequestHeader("User-Agent", "Mozilla/5.0")
-            Whr.Send()
-            if (Whr.WaitForResponse(TimeoutSeconds)) {
-                if (Whr.Status == 200)
-                    return Whr.ResponseText
-            }
+            whr := WinHttpRequest()
+            whr.Open("HEAD", Candidate.TestUrl, true)
+            whr.SetRequestHeader("User-Agent", "Mozilla/5.0")
+            ReqList.Push({
+                req: whr,
+                prefix: Candidate.Prefix,
+                startTime: A_TickCount,
+                finished: false,
+                latency: 99999
+            })
+            whr.Send()
         } catch {
             continue
         }
     }
+
+    g_BestLatency := 99999
+    g_BestDownloadPrefix := ""
+    MaxWaitMs := 3000
+    StartWait := A_TickCount
+
+    while (A_TickCount - StartWait < MaxWaitMs) {
+        AllFinished := true
+        for item in ReqList {
+            if item.finished
+                continue
+            try {
+                if item.req.WaitForResponse(0.01) {
+                    item.finished := true
+                    if (item.req.Status == 200 || item.req.Status == 301 || item.req.Status == 302) {
+                        item.latency := A_TickCount - item.startTime
+                        if (item.latency < g_BestLatency) {
+                            g_BestLatency := item.latency
+                            g_BestDownloadPrefix := item.prefix
+                        }
+                    }
+                } else {
+                    AllFinished := false
+                }
+            } catch {
+                item.finished := true
+            }
+        }
+        if (g_BestLatency < 500 || AllFinished)
+            break
+        Sleep(30)
+    }
+
+    if (g_BestLatency >= 99999) {
+        ShowStatus("")
+        throw Error("所有下载节点连接超时，请检查网络或开启加速器。")
+    }
+
+    return g_BestDownloadPrefix
+}
+
+DownloadSingleFileWithNode(RemoteFile, DestPath, FileAction) {
+    global g_CleanPreUrl, g_BestDownloadPrefix, g_BestLatency, MainStatusBar
+
+    CleanRemotePath := LTrim(RemoteFile, "/")
+    TargetUrl := (g_BestDownloadPrefix != "") ? g_BestDownloadPrefix . "/" . g_CleanPreUrl . "/" . CleanRemotePath : g_CleanPreUrl . "/" . CleanRemotePath
+
+    TotalBytes := FileAction["file_size"]
+
+    SplitPath(DestPath, , &ParentDir)
+    if (ParentDir != "" && !DirExist(ParentDir))
+        DirCreate(ParentDir)
+    if FileExist(DestPath)
+        FileDelete(DestPath)
+
+    isDone := false
+    hasError := false
+    errMsg := ""
+
+    OnFinishedCallback(result) {
+        if (result is OSError || result is Error) {
+            hasError := true
+            errMsg := result.Message
+        }
+        isDone := true
+    }
+
+    OnProgressCallback(downloaded, total) {
+        if (total > 0 && TotalBytes <= 0)
+            TotalBytes := total
+
+        CurrentSizeStr := FormatFileSize(downloaded)
+        TotalStr := (TotalBytes > 0) ? FormatFileSize(TotalBytes) : "未知大小"
+
+        StatusText := Format("`t正在下载：{} [{} / {}] (节点: {}ms)", RemoteFile, CurrentSizeStr, TotalStr, g_BestLatency)
+        ShowStatus("")
+        MainStatusBar.SetText(StatusText)
+    }
+
+    ShowStatus("")
+    MainStatusBar.SetText(Format("`t开始下载：{} (节点: {}ms)", RemoteFile, g_BestLatency))
+
+    try {
+        req := DownloadAsync(TargetUrl, DestPath, OnFinishedCallback, OnProgressCallback)
+    } catch Error as err {
+        return false
+    }
+
+    while (!isDone) {
+        Sleep(50)
+    }
+
+    if (hasError || !FileExist(DestPath) || FileGetSize(DestPath) == 0)
+        return false
+
+    return true
+}
+
+HttpGetText(ApiUrl, TimeoutSeconds := 5) {
+    try {
+        Whr := WinHttpRequest()
+        Whr.Open("GET", ApiUrl, true)
+        Whr.SetRequestHeader("User-Agent", "Mozilla/5.0")
+        Whr.Send()
+        if (Whr.WaitForResponse(TimeoutSeconds)) {
+            if (Whr.Status == 200)
+                return Whr.ResponseText
+        }
+    } catch {
+        return ""
+    }
     return ""
 }
 
-; ==============================================================================
-; 计算文件的 MD5 哈希校验值
-; ==============================================================================
 HashFileMd5(FilePath) {
     if (!FileExist(FilePath))
         return ""
 
     try {
-
         f := FileOpen(FilePath, "r")
         if (!f)
             return ""
@@ -1047,7 +1049,6 @@ HashFileMd5(FilePath) {
         MD5String := ""
 
         if DllCall("Advapi32\CryptGetHashParam", "Ptr", hHash, "UInt", 2, "Ptr", HashBuf, "UInt*", &HashLen, "UInt", 0) {
-
             Loop HashLen {
                 MD5String .= Format("{:02x}", NumGet(HashBuf, A_Index - 1, "UChar"))
             }
@@ -1062,9 +1063,6 @@ HashFileMd5(FilePath) {
     }
 }
 
-; ==============================================================================
-; 格式化文件大小字节数
-; ==============================================================================
 FormatFileSize(Bytes) {
     if (!IsNumber(Bytes) || Bytes <= 0)
         return "0 B"
@@ -1078,13 +1076,7 @@ FormatFileSize(Bytes) {
         return Format("{:.2f} GB", Bytes / 1073741824)
 }
 
-; ==============================================================================
-; 原子化写入文件
-; ==============================================================================
 WriteFileAtomic(FilePath, TextContent := "") {
-    if IsObject(TextContent)
-        TextContent := ""
-
     TmpFile := FilePath . ".tmp"
     try {
         if FileExist(TmpFile)
@@ -1103,27 +1095,26 @@ WriteFileAtomic(FilePath, TextContent := "") {
     }
 }
 
-; ==============================================================================
-; 显示状态栏提示消息并定时清除
-; ==============================================================================
-ShowStatus(StatusMessage) {
+ShowStatus(StatusMessage := "") {
     global MainStatusBar
-    MainStatusBar.SetText("`t" . StatusMessage)
-    SetTimer(() => MainStatusBar.SetText(""), -3000)
+    static ClearStatus := () => MainStatusBar.SetText("")
+
+    if (StatusMessage != "") {
+        ShowStatus("")
+        MainStatusBar.SetText("`t" . StatusMessage)
+        SetTimer(ClearStatus, -3000)
+    } else {
+        ClearStatus()
+        SetTimer(ClearStatus, 0)
+    }
 }
 
-; ==============================================================================
-; 重置配置按钮事件
-; ==============================================================================
 DoResetConfig(*) {
     global g_CurrentServer
     SetInstallPath("", 1)
     ShowStatus("AION2 " . g_CurrentServer["name"] . "安装目录已重置。")
 }
 
-; ==============================================================================
-; 浏览并选择安装目录按钮事件
-; ==============================================================================
 BrowseFolder(*) {
     global g_CurrentServer, EditInstallPath
     SelectedFolder := FileSelect("D", EditInstallPath.Value, "选择 AION2 " . g_CurrentServer["name"] . "安装目录：")
@@ -1139,30 +1130,27 @@ BrowseFolder(*) {
     ShowStatus("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
 }
 
-; ==============================================================================
-; 更新界面使用须知说明文字
-; ==============================================================================
 UpdateNoticeText() {
     global g_CurrentServer, TextExplain
     ServerName := g_CurrentServer["name"]
-    RuleText := "1. 选择 AION2 " . ServerName . "的安装目录，" . ((g_CurrentServer["id"] = 102) ? "例如 D:\Games\AION2_TW。" :
-        "例如 D:\Games\AION 2。")
+    RuleText := "1. 选择 AION2 " . ServerName . "的安装目录，" . ((g_CurrentServer["id"] = 102) ? "例如 D:\Games\AION2_TW。" : "例如 D:\Games\AION 2。")
     TextExplain.Value := RuleText .
         "`r`n2. 汉化完成后启动或重启 AION2，使汉化文件生效。" .
         "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE / Steam 修复文件；" .
         "`r`n   PURPLE : AION2 - 游戏设置 - 检查文件；" .
-        "`r`n   Steam : AION2 -  属性 - 已安装的文件 - 验证游戏文件的完整性；" .
+        "`r`n   Steam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性；" .
         "`r`n4. 本工具为第三方扩展，使用即代表您自愿承担所有风险。"
 }
 
 ; ==============================================================================
-; 显示软件更新弹窗
+; 各种模态对话框封装
 ; ==============================================================================
+
 ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpdate := false) {
-    global MainGui, g_IsDialogShowing
+    global MainGui, g_IsDialogShowing, g_DialogCallbacks
     g_IsDialogShowing := true
 
-    OldDetectState := A_DetectHiddenWindows
+    MsgId := 1001
     UpdateGui := Gui("+Owner" . MainGui.Hwnd, "软件更新提示")
     UpdateGui.SetFont(, "Microsoft YaHei UI")
 
@@ -1175,223 +1163,287 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
     BtnDownloadMain.OnEvent("Click", (*) => (DownloadUrlMain != "" ? Run(DownloadUrlMain) : false))
     BtnDownloadMinor.OnEvent("Click", (*) => (DownloadUrlMinor != "" ? Run(DownloadUrlMinor) : false))
 
-    OnClose(*) {
-        if (IsForceUpdate) {
+    CloseDialog(Result := 0) {
+        MainGui.Opt("-Disabled")
+        UpdateGui.Destroy()
+        g_IsDialogShowing := false
+        if (IsForceUpdate)
             ExitApp()
-        } else {
-            MainGui.Opt("-Disabled")
-            UpdateGui.Hide()
-        }
+        else
+            RefreshUi()
     }
 
-    UpdateGui.OnEvent("Close", OnClose)
-    UpdateGui.OnEvent("Escape", OnClose)
+    g_DialogCallbacks[MsgId] := CloseDialog
+
+    UpdateGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
+    UpdateGui.OnEvent("Escape", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
     MainGui.Opt("+Disabled")
     UpdateGui.Show("w400 h275")
-
-    DetectHiddenWindows false
-    WinWaitClose(UpdateGui)
-    DetectHiddenWindows OldDetectState
-
-    UpdateGui.Destroy()
-    g_IsDialogShowing := false
-    RefreshUi()
 }
 
-; ==============================================================================
-; 显示云端公告弹窗
-; ==============================================================================
 ShowBulletinDialog(ContentText, BulletinVersion) {
-    global MainGui, g_IsDialogShowing, g_LastSeenBulletinVersion
+    global MainGui, g_IsDialogShowing, g_LastSeenBulletinVersion, g_DialogCallbacks
     g_IsDialogShowing := true
 
-    OldDetectState := A_DetectHiddenWindows
+    MsgId := 1002
     BulletinGui := Gui("+Owner" . MainGui.Hwnd, "最新公告")
     BulletinGui.SetFont(, "Microsoft YaHei UI")
 
     BulletinGui.Add("Edit", "x20 y20 w360 h150 ReadOnly -WantReturn", ContentText)
-
     BtnConfirm := BulletinGui.Add("Button", "x290 y200 w90 h30 Default", "我知道了")
 
-    OnCloseOrConfirm(*) {
+    CloseDialog(*) {
         g_LastSeenBulletinVersion := BulletinVersion
         SaveAllConfig()
         MainGui.Opt("-Disabled")
-        BulletinGui.Hide()
+        BulletinGui.Destroy()
+        g_IsDialogShowing := false
+        RefreshUi()
     }
 
-    BtnConfirm.OnEvent("Click", OnCloseOrConfirm)
-    BulletinGui.OnEvent("Close", OnCloseOrConfirm)
+    g_DialogCallbacks[MsgId] := CloseDialog
+
+    BtnConfirm.OnEvent("Click", (*) => PostMessage(0x0900, MsgId, 1, , MainGui.Hwnd))
+    BulletinGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
     MainGui.Opt("+Disabled")
     BulletinGui.Show("w400 h250")
-
-    DetectHiddenWindows false
-    WinWaitClose(BulletinGui)
-    DetectHiddenWindows OldDetectState
-
-    BulletinGui.Destroy()
-    g_IsDialogShowing := false
-    RefreshUi()
 }
 
-; ==============================================================================
-; 显示确认对话框
-; ==============================================================================
-ShowConfirmDialog(Text) {
-    global MainGui, g_IsDialogShowing
+ShowConfirmDialog(Text, Callback := "") {
+    global MainGui, g_IsDialogShowing, g_DialogCallbacks
     g_IsDialogShowing := true
 
-    OldDetectState := A_DetectHiddenWindows
+    MsgId := 1003
     ConfirmGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     ConfirmGui.SetFont(, "Microsoft YaHei UI")
 
     ConfirmGui.Add("Text", "x20 y20 w310 h60", Text)
-
     BtnConfirm := ConfirmGui.Add("Button", "x184 y102 w68 h28 Default", "确认")
     BtnCancel := ConfirmGui.Add("Button", "x262 y102 w68 h28", "取消")
 
-    UserChoice := false
-    BtnConfirm.OnEvent("Click", (*) => (UserChoice := true, MainGui.Opt("-Disabled"), ConfirmGui.Hide()))
-    BtnCancel.OnEvent("Click", (*) => (UserChoice := false, MainGui.Opt("-Disabled"), ConfirmGui.Hide()))
-    ConfirmGui.OnEvent("Close", (*) => (UserChoice := false, MainGui.Opt("-Disabled"), ConfirmGui.Hide()))
+    CloseDialog(UserChoice) {
+        MainGui.Opt("-Disabled")
+        ConfirmGui.Destroy()
+        g_IsDialogShowing := false
+        RefreshUi()
+        if (Callback)
+            Callback(UserChoice)
+    }
+
+    g_DialogCallbacks[MsgId] := CloseDialog
+
+    BtnConfirm.OnEvent("Click", (*) => PostMessage(0x0900, MsgId, 1, , MainGui.Hwnd))
+    BtnCancel.OnEvent("Click", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
+    ConfirmGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
     MainGui.Opt("+Disabled")
     ConfirmGui.Show("w350 h150")
-
-    DetectHiddenWindows false
-    WinWaitClose(ConfirmGui)
-    DetectHiddenWindows OldDetectState
-
-    ConfirmGui.Destroy()
-    g_IsDialogShowing := false
-    RefreshUi()
-    return UserChoice
 }
 
-; ==============================================================================
-; 显示普通消息提示对话框
-; ==============================================================================
-ShowMessageDialog(Text) {
-    global MainGui, g_IsDialogShowing
+ShowMessageDialog(Text, Callback := "") {
+    global MainGui, g_IsDialogShowing, g_DialogCallbacks
     g_IsDialogShowing := true
 
-    OldDetectState := A_DetectHiddenWindows
-    ConfirmGui := Gui("+Owner" . MainGui.Hwnd, "提示")
-    ConfirmGui.SetFont(, "Microsoft YaHei UI")
+    MsgId := 1004
+    MessageGui := Gui("+Owner" . MainGui.Hwnd, "提示")
+    MessageGui.SetFont(, "Microsoft YaHei UI")
 
-    ConfirmGui.Add("Text", "x20 y20 w310 h60", Text)
+    MessageGui.Add("Text", "x20 y20 w310 h60", Text)
+    BtnConfirm := MessageGui.Add("Button", "x262 y102 w68 h28 Default", "确认")
 
-    BtnConfirm := ConfirmGui.Add("Button", "x262 y102 w68 h28 Default", "确认")
+    CloseDialog(*) {
+        MainGui.Opt("-Disabled")
+        MessageGui.Destroy()
+        g_IsDialogShowing := false
+        RefreshUi()
+        if (Callback)
+            Callback()
+    }
 
-    BtnConfirm.OnEvent("Click", (*) => (MainGui.Opt("-Disabled"), ConfirmGui.Hide()))
-    ConfirmGui.OnEvent("Close", (*) => (MainGui.Opt("-Disabled"), ConfirmGui.Hide()))
+    g_DialogCallbacks[MsgId] := CloseDialog
+
+    BtnConfirm.OnEvent("Click", (*) => PostMessage(0x0900, MsgId, 1, , MainGui.Hwnd))
+    MessageGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
     MainGui.Opt("+Disabled")
-    ConfirmGui.Show("w350 h150")
-
-    DetectHiddenWindows false
-    WinWaitClose(ConfirmGui)
-    DetectHiddenWindows OldDetectState
-
-    ConfirmGui.Destroy()
-    g_IsDialogShowing := false
-    RefreshUi()
+    MessageGui.Show("w350 h150")
 }
 
-; ==============================================================================
-; 显示多补丁分支选择对话框
-; ==============================================================================
-ShowMultiBranchDialog(Branches) {
+ShowMultiBranchDialog(Branches, Callback := "") {
     global g_CurrentServer, MainGui, g_IsDialogShowing
     g_IsDialogShowing := true
 
-    OldDetectState := A_DetectHiddenWindows
-    ChoiceGui := Gui("+Owner" . MainGui.Hwnd, "提示")
+    ChoiceGui := Gui("+Owner" . MainGui.Hwnd, "选择补丁分支")
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
-
     ChoiceGui.Add("Text", "x20 y15 w410 h25", "选择 AION2 " . g_CurrentServer["name"] . " 汉化补丁来源，不同来源游戏内翻译完成度可能不同。")
 
-    ListBoxItems := []
-    for Branch in Branches {
+    LV := ChoiceGui.Add("ListView", "x20 y45 w410 h140 -Multi", [
+        "来源",
+        "版本",
+        "更新时间"
+    ])
+    LV_ApplyExplorerTheme(LV)
+    LV.ModifyCol(1, 130)
+    LV.ModifyCol(2, 100)
+    LV.ModifyCol(3, 180)
 
-        ret := Branch.Has("release_timestamp") ? FormatTime(DateAdd("19700101000000", Branch["release_timestamp"], "Seconds"), "yy-MM-dd HH:mm:ss") : "未知"
+    for Index, Branch in Branches {
+        ReleaseTime := Branch.Has("release_timestamp") ? FormatTime(DateAdd("19700101000000", Branch["release_timestamp"], "Seconds"), "yyyy-MM-dd HH:mm:ss") : "未知"
         Ver := Branch.Has("latest_patch_version") ? Branch["latest_patch_version"] : "1.0.0.0"
         Src := Branch.Has("source") ? Branch["source"] : "default"
-        Id := Branch.Has("id") ? Branch["id"] : A_Index
-        ListBoxItems.Push(Format("补丁来源 - [ {} ] -> 更新于 {}", Src, Ret))
+
+        RowNumber := LV.Add("", Src, Ver, ReleaseTime)
+        LV_SetItemLParam(LV.Hwnd, RowNumber, Index)
     }
 
-    ListControl := ChoiceGui.Add("ListBox", "x20 y45 w410 h130 r5 Choose1 +HScroll", ListBoxItems)
-
-    BtnConfirm := ChoiceGui.Add("Button", "x262 y200 w84 h30 Default", "确认")
+    BtnConfirm := ChoiceGui.Add("Button", "x262 y200 w84 h30 +Disabled", "确认")
     BtnCancel := ChoiceGui.Add("Button", "x356 y200 w74 h30", "取消")
 
-    SelectedBranch := ""
-    BtnConfirm.OnEvent("Click", (*) => (SelectedBranch := Branches[ListControl.Value], MainGui.Opt("-Disabled"),
-        ChoiceGui.Hide()))
-    BtnCancel.OnEvent("Click", (*) => (SelectedBranch := "", MainGui.Opt("-Disabled"), ChoiceGui.Hide()))
-    ChoiceGui.OnEvent("Close", (*) => (SelectedBranch := "", MainGui.Opt("-Disabled"), ChoiceGui.Hide()))
+    LV.OnEvent("ItemSelect", (Ctrl, Item, Selected) => BtnConfirm.Opt(LV.GetNext(0) > 0 ? "-Disabled" : "+Disabled"))
+    BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
+    BtnCancel.OnEvent("Click", (*) => HandleSubmit(0))
+    ChoiceGui.OnEvent("Close", (*) => HandleSubmit(0))
+
+    sortState := {
+        col: 0,
+        desc: false
+    }
+    LV.OnEvent("ColClick", SortListView.Bind(sortState))
+
+    SortListView(state, Ctrl, Column) {
+        if (state.col == Column) {
+            state.desc := !state.desc
+        } else {
+            state.col := Column
+            state.desc := false
+        }
+        try {
+            if (state.desc) {
+                Ctrl.ModifyCol(Column, "SortDesc")
+            } else {
+                Ctrl.ModifyCol(Column, "Sort")
+            }
+            LV_SetHeaderSortArrow(Ctrl, Column, state.desc)
+        }
+    }
+
+    HandleSubmit(IsConfirmed) {
+        if (IsConfirmed && !BtnConfirm.Enabled)
+            return
+
+        SelectedBranch := ""
+        if (IsConfirmed == 1) {
+            RowNumber := LV.GetNext(0)
+            if (RowNumber) {
+                RealIdx := LV_GetItemLParam(LV.Hwnd, RowNumber)
+                if (RealIdx > 0 && RealIdx <= Branches.Length)
+                    SelectedBranch := Branches[RealIdx]
+            }
+        }
+
+        MainGui.Opt("-Disabled")
+        ChoiceGui.Destroy()
+        g_IsDialogShowing := false
+        RefreshUi()
+
+        if (Callback)
+            Callback(SelectedBranch)
+    }
 
     MainGui.Opt("+Disabled")
     ChoiceGui.Show("w450 h250")
-
-    DetectHiddenWindows false
-    WinWaitClose(ChoiceGui)
-    DetectHiddenWindows OldDetectState
-
-    ChoiceGui.Destroy()
-    g_IsDialogShowing := false
-    RefreshUi()
-    return SelectedBranch
+    LV.Modify(0, "-Select")
 }
 
-; ==============================================================================
-; 显示多游戏安装路径选择对话框
-; ==============================================================================
-ShowMultiPathDialog(ValidGames) {
+ShowMultiPathDialog(ValidGames, Callback := "") {
     global g_CurrentServer, MainGui, g_IsDialogShowing
     g_IsDialogShowing := true
 
-    OldDetectState := A_DetectHiddenWindows
-    ChoiceGui := Gui("+Owner" . MainGui.Hwnd, "提示")
+    ChoiceGui := Gui("+Owner" . MainGui.Hwnd, "选择游戏目录")
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
-
     ChoiceGui.Add("Text", "x20 y15 w410 h25", "选择 AION2 " . g_CurrentServer["name"] . "安装目录：")
 
-    ListBoxItems := []
-    for Game in ValidGames {
-        ListBoxItems.Push("[" . Game.SoftwareDisplayName . "] -> " . Game.GameInstallPath)
+    LV := ChoiceGui.Add("ListView", "x20 y45 w410 h140 -Multi", [
+        "名称",
+        "安装目录"
+    ])
+    LV_ApplyExplorerTheme(LV)
+    LV.Opt("-Redraw")
+
+    for Index, Game in ValidGames {
+        RowNumber := LV.Add("", Game.SoftwareDisplayName, Game.GameInstallPath)
+        LV_SetItemLParam(LV.Hwnd, RowNumber, Index)
     }
 
-    ListControl := ChoiceGui.Add("ListBox", "x20 y45 w410 h130 r5 Choose1 +HScroll", ListBoxItems)
+    LV.ModifyCol(1, "AutoHdr")
+    LV.ModifyCol(2, "AutoHdr")
+    LV.Opt("+Redraw")
 
-    BtnConfirm := ChoiceGui.Add("Button", "x262 y200 w84 h30 Default", "确认")
-    BtnCancel := ChoiceGui.Add("Button", "x356 y200 w74 h30 ", "取消")
+    BtnConfirm := ChoiceGui.Add("Button", "x262 y200 w84 h30 +Disabled", "确认")
+    BtnCancel := ChoiceGui.Add("Button", "x356 y200 w74 h30", "取消")
 
-    UserChoicePath := ""
-    BtnConfirm.OnEvent("Click", (*) => (UserChoicePath := ValidGames[ListControl.Value].GameInstallPath, MainGui.Opt(
-        "-Disabled"), ChoiceGui.Hide()))
-    BtnCancel.OnEvent("Click", (*) => (UserChoicePath := "", MainGui.Opt("-Disabled"), ChoiceGui.Hide()))
-    ChoiceGui.OnEvent("Close", (*) => (UserChoicePath := "", MainGui.Opt("-Disabled"), ChoiceGui.Hide()))
+    LV.OnEvent("ItemSelect", (Ctrl, Item, Selected) => BtnConfirm.Opt(LV.GetNext(0) > 0 ? "-Disabled" : "+Disabled"))
+    BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
+    BtnCancel.OnEvent("Click", (*) => HandleSubmit(0))
+    ChoiceGui.OnEvent("Close", (*) => HandleSubmit(0))
+
+    sortState := {
+        col: 0,
+        desc: false
+    }
+    LV.OnEvent("ColClick", SortListView.Bind(sortState))
+
+    SortListView(state, Ctrl, Column) {
+        if (state.col == Column) {
+            state.desc := !state.desc
+        } else {
+            state.col := Column
+            state.desc := false
+        }
+        try {
+            if (state.desc) {
+                Ctrl.ModifyCol(Column, "SortDesc")
+            } else {
+                Ctrl.ModifyCol(Column, "Sort")
+            }
+            LV_SetHeaderSortArrow(Ctrl, Column, state.desc)
+        }
+    }
+
+    HandleSubmit(IsConfirmed) {
+        if (IsConfirmed && !BtnConfirm.Enabled)
+            return
+
+        UserChoicePath := ""
+        if (IsConfirmed == 1) {
+            RowNumber := LV.GetNext(0)
+            if (RowNumber) {
+                RealIdx := LV_GetItemLParam(LV.Hwnd, RowNumber)
+                if (RealIdx > 0 && RealIdx <= ValidGames.Length)
+                    UserChoicePath := ValidGames[RealIdx].GameInstallPath
+            }
+        }
+
+        MainGui.Opt("-Disabled")
+        ChoiceGui.Destroy()
+        g_IsDialogShowing := false
+        RefreshUi()
+
+        if (Callback)
+            Callback(UserChoicePath)
+    }
 
     MainGui.Opt("+Disabled")
     ChoiceGui.Show("w450 h250")
-
-    DetectHiddenWindows false
-    WinWaitClose(ChoiceGui)
-    DetectHiddenWindows OldDetectState
-
-    ChoiceGui.Destroy()
-    g_IsDialogShowing := false
-    RefreshUi()
-    return UserChoicePath
+    LV.Modify(0, "-Select")
 }
 
 ; ==============================================================================
-; 获取所有经过合法性校验的游戏安装路径列表
+; 注册表扫描与游戏路径探测机制
 ; ==============================================================================
+
 GetValidGamePaths() {
     global g_CurrentServer
 
@@ -1418,9 +1470,6 @@ GetValidGamePaths() {
     return ValidGames
 }
 
-; ==============================================================================
-; 从注册表查询匹配关键字的游戏安装路径
-; ==============================================================================
 FindGamesFromReg(KeywordArray) {
     SystemUninstallRoot := "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
     UserUninstallRoot := "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall"
@@ -1517,9 +1566,6 @@ FindGamesFromReg(KeywordArray) {
     return MatchedGameList
 }
 
-; ==============================================================================
-; 点击查找按钮事件响应
-; ==============================================================================
 OnScanButtonClick() {
     global g_CurrentServer
 
@@ -1527,23 +1573,17 @@ OnScanButtonClick() {
 
     if (ValidGames.Length = 1) {
         SelectedFolder := ValidGames[1].GameInstallPath
+        SetInstallPath(SelectedFolder, 0)
         ShowStatus("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
     } else if (ValidGames.Length > 1) {
-        SelectedFolder := ShowMultiPathDialog(ValidGames)
-        if (SelectedFolder = "")
-            return
-        ShowStatus("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
+        ShowMultiPathDialog(ValidGames, (SelectedFolder) => (
+            SelectedFolder != "" ? (SetInstallPath(SelectedFolder, 0), ShowStatus("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")) : false
+        ))
     } else {
         ShowMessageDialog("未检测到有效的安装目录，请通过[浏览...]按钮手动指定。")
-        return
     }
-
-    SetInstallPath(SelectedFolder, 0)
 }
 
-; ==============================================================================
-; 静默自动检测游戏安装目录
-; ==============================================================================
 SilentDetectFolder() {
     global g_ConfigCache, g_CurrentServer
     SectionName := "Server_" . g_CurrentServer["id"]
@@ -1558,4 +1598,158 @@ SilentDetectFolder() {
         SetInstallPath(SelectedFolder, 0)
         ShowStatus("已自动识别并设置安装目录。")
     }
+}
+
+; ==============================================================================
+; ListView 辅助控制函数
+; ==============================================================================
+
+LV_SetItemLParam(lv, row, param) {
+    static LVM_SETITEMW := 0x104C
+    static LVIF_PARAM := 0x0004
+
+    lvitem := Buffer(A_PtrSize = 8 ? 48 : 36, 0)
+    NumPut("UInt", LVIF_PARAM, lvitem, 0)
+    NumPut("Int", row - 1, lvitem, 4)
+
+    offset_lparam := A_PtrSize = 8 ? 40 : 32
+    NumPut("Ptr", Integer(param), lvitem, offset_lparam)
+
+    return SendMessage(LVM_SETITEMW, 0, lvitem.Ptr, lv)
+}
+
+LV_GetItemLParam(lv, row) {
+    static LVM_GETITEMW := 0x104B
+    static LVIF_PARAM := 0x0004
+
+    lvitem := Buffer(A_PtrSize = 8 ? 48 : 36, 0)
+    NumPut("UInt", LVIF_PARAM, lvitem, 0)
+    NumPut("Int", row - 1, lvitem, 4)
+
+    SendMessage(LVM_GETITEMW, 0, lvitem.Ptr, lv)
+
+    offset_lparam := A_PtrSize = 8 ? 40 : 32
+    return NumGet(lvitem, offset_lparam, "Ptr")
+}
+
+LV_ApplyExplorerTheme(LV) {
+    try DllCall("uxtheme\SetWindowTheme", "ptr", LV.Hwnd, "str", "Explorer", "ptr", 0)
+
+    exStyle := SendMessage(LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0, LV)
+    exStyle |= LVS_EX_FULLROWSELECT
+    exStyle |= LVS_EX_DOUBLEBUFFER
+    exStyle |= LVS_EX_HEADERDRAGDROP
+    exStyle |= LVS_EX_INFOTIP
+    exStyle |= LVS_EX_LABELTIP
+
+    SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, exStyle, LV)
+}
+
+LV_SetHeaderSortArrow(LV, sort_col, desc := false) {
+    hHeader := SendMessage(LVM_GETHEADER, 0, 0, LV)
+    if !hHeader
+        return
+
+    hdi_size := (A_PtrSize = 8) ? 72 : 48
+    fmt_offset := (A_PtrSize = 8) ? 28 : 20
+    hdi := Buffer(hdi_size, 0)
+    col_count := LV.GetCount("Col")
+
+    loop col_count {
+        col_index0 := A_Index - 1
+
+        NumPut("UInt", HDI_FORMAT, hdi, 0)
+        ok := DllCall("SendMessage", "ptr", hHeader, "uint", HDM_GETITEM, "ptr", col_index0, "ptr", hdi.Ptr, "ptr")
+        if !ok
+            continue
+
+        fmt := NumGet(hdi, fmt_offset, "Int")
+        fmt &= ~HDF_SORTUP
+        fmt &= ~HDF_SORTDOWN
+
+        if (A_Index = sort_col)
+            fmt |= desc ? HDF_SORTDOWN : HDF_SORTUP
+
+        NumPut("UInt", HDI_FORMAT, hdi, 0)
+        NumPut("Int", fmt, hdi, fmt_offset)
+
+        DllCall("SendMessage", "ptr", hHeader, "uint", HDM_SETITEM, "ptr", col_index0, "ptr", hdi.Ptr, "ptr")
+    }
+}
+
+; ==============================================================================
+; 安全解析与常规辅助工具
+; ==============================================================================
+
+SafeGet(Obj, Key, DefaultValue := "") {
+    if (Type(Obj) == "Map" || Type(Obj) == "Array") && Obj.Has(Key)
+        return Obj[Key]
+    return DefaultValue
+}
+
+SafeIniRead(Filename, Section, Key, Default := "") {
+    try return IniRead(Filename, Section, Key, Default)
+    catch
+        return Default
+}
+
+GetLocalCachePath(RemoteFilename) {
+    global g_PatchsCacheDir
+    CleanRelPath := StrReplace(RemoteFilename, "/", "\")
+    CleanRelPath := LTrim(CleanRelPath, "\")
+    SplitPath(CleanRelPath, &FileNameOnly)
+    return PathUtil.Normalize(A_ScriptDir . "\" . g_PatchsCacheDir . "\" . FileNameOnly)
+}
+
+NormalizeServerConfig(ServersArray) {
+    SafeList := []
+    if (Type(ServersArray) != "Array")
+        return SafeList
+
+    for Srv in ServersArray {
+        if (Type(Srv) != "Map")
+            continue
+        SafeSrv := Map(
+            "id", SafeGet(Srv, "id", 1),
+            "name", SafeGet(Srv, "name", "未知服务器"),
+            "display", SafeGet(Srv, "display", "未知服务器"),
+            "keywords", SafeGet(Srv, "keywords", [
+                "AION"
+            ]),
+            "patch_branches", []
+        )
+        Branches := SafeGet(Srv, "patch_branches", [])
+        if (Type(Branches) == "Array") {
+            for Br in Branches {
+                if (Type(Br) != "Map")
+                    continue
+                SafeBr := Map(
+                    "id", SafeGet(Br, "id", 1),
+                    "source", SafeGet(Br, "source", "default"),
+                    "latest_patch_version", SafeGet(Br, "latest_patch_version", "1.0.0.0"),
+                    "changelog", SafeGet(Br, "changelog", ""),
+                    "release_timestamp", SafeGet(Br, "release_timestamp", 0),
+                    "actions", []
+                )
+                Actions := SafeGet(Br, "actions", [])
+                if (Type(Actions) == "Array") {
+                    for Act in Actions {
+                        if (Type(Act) != "Map")
+                            continue
+                        SafeAct := Map(
+                            "type", SafeGet(Act, "type", "add"),
+                            "remote_filename", SafeGet(Act, "remote_filename", ""),
+                            "target_relative_path", SafeGet(Act, "target_relative_path", ""),
+                            "file_md5", SafeGet(Act, "file_md5", ""),
+                            "file_size", Number(SafeGet(Act, "file_size", 0))
+                        )
+                        SafeBr["actions"].Push(SafeAct)
+                    }
+                }
+                SafeSrv["patch_branches"].Push(SafeBr)
+            }
+        }
+        SafeList.Push(SafeSrv)
+    }
+    return SafeList
 }
