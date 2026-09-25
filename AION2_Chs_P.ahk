@@ -31,7 +31,7 @@ UiResult := UniqueInstance.Ensure(Map(
 ; 全局常量与变量定义
 ; ==============================================================================
 global g_ProjectName := "AION2 Chs Patch"
-global g_CurrentAppVersion := "1.1.0.0"
+global g_CurrentAppVersion := "1.3.0.0"
 global g_CurrentAppVersionShort := "1.3"
 global g_LastSeenBulletinVersion := "1.1.0.0"
 
@@ -1147,16 +1147,23 @@ UpdateNoticeText() {
 ; ==============================================================================
 
 ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpdate := false) {
-    global MainGui, g_IsDialogShowing, g_DialogCallbacks
+    global MainGui, g_IsDialogShowing, g_DialogCallbacks, g_ClientUpdateData
     g_IsDialogShowing := true
 
     MsgId := 1001
     UpdateGui := Gui("+Owner" . MainGui.Hwnd, "软件更新提示")
     UpdateGui.SetFont(, "Microsoft YaHei UI")
 
-    UpdateGui.Add("Text", "x20 y20 w360", "当前软件版本过低，请下载最新版本使用。")
-    UpdateGui.Add("Edit", "x20 y45 w360 h150 ReadOnly", ChangelogText)
+    LatestVersion := (Type(g_ClientUpdateData) == "Map" && g_ClientUpdateData.Has("latest_client_version"))
+        ? "发现新版本 v" . String(g_ClientUpdateData["latest_client_version"]) . "。"
+        : "发现新版本。"
 
+    if (IsForceUpdate)
+        UpdateGui.Add("Text", "x20 y20 w360", "当前版本过低，必须升级为最新版本才能使用。")
+    else
+        UpdateGui.Add("Text", "x20 y20 w360", LatestVersion)
+
+    UpdateGui.Add("Edit", "x20 y45 w360 h150 ReadOnly", ChangelogText)
     BtnDownloadMain := UpdateGui.Add("Button", "x170 y225 w100 h30 Default", "主线路下载")
     BtnDownloadMinor := UpdateGui.Add("Button", "x280 y225 w100 h30", "备用下载")
 
@@ -1180,7 +1187,6 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
 
     MainGui.Opt("+Disabled")
     UpdateGui.Show("w400 h275")
-
     BtnDownloadMain.Focus()
 }
 
