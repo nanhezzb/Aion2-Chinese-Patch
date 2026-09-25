@@ -22,6 +22,7 @@
                     "actions": [
                         {
                             "type": "add",
+                            "filename": "xy_dxgi.dll",
                             "remote_filename": "patchs/xy_dxgi.dll",
                             "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll",
                             "file_md5": "95776cdf57d0dc44b22baa347cf20105",
@@ -29,6 +30,7 @@
                         },
                         {
                             "type": "add",
+                            "filename": "xy_pakchunk999999-Windows_999_P.pak",
                             "remote_filename": "patchs/xy_pakchunk999999-Windows_999_P.pak",
                             "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk999999-Windows_999_P.pak",
                             "file_md5": "2837ea5d0c167ccaf915f3d11e5a0939",
@@ -57,6 +59,7 @@
                         },
                         {
                             "type": "replace",
+                            "filename": "qy_pakchunk502000-Windows_0_P.pak",
                             "remote_filename": "patchs/qy_pakchunk502000-Windows_0_P.pak",
                             "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
                             "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
@@ -64,6 +67,7 @@
                         },
                         {
                             "type": "add",
+                            "filename": "qy_L10NString.dat",
                             "remote_filename": "patchs/qy_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
                             "file_md5": "4ba827b3a5167e7ec4be35460b966434",
@@ -90,6 +94,7 @@
                     "actions": [
                         {
                             "type": "add",
+                            "filename": "xy_pakchunk504000-Windows_9999_P.pak",
                             "remote_filename": "patchs/xy_pakchunk504000-Windows_9999_P.pak",
                             "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\zh-TW\\pakchunk504000-Windows_9999_P.pak",
                             "file_md5": "d8f909cef6c96595e0e3514ed0e744da",
@@ -106,6 +111,7 @@
                     "actions": [
                         {
                             "type": "add",
+                            "filename": "bb_pakchunk999999-Windows_0_P.Pak",
                             "remote_filename": "patchs/bb_pakchunk999999-Windows_0_P.Pak",
                             "target_relative_path": "Aion2\\Content\\Paks\\bb_pakchunk999999-Windows_0_P.Pak",
                             "file_md5": "12a93a1ecba45ad9803ae2c20495781d",
