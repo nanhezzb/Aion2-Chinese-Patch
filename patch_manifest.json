@@ -14,31 +14,6 @@
             ],
             "patch_branches": [
                 {
-                    "id": 1,
-                    "source": "迅游",
-                    "latest_patch_version": "1.0.0.0",
-                    "changelog": "",
-                    "release_timestamp": 1789981021,
-                    "actions": [
-                        {
-                            "type": "add",
-                            "filename": "xy_dxgi.dll",
-                            "remote_filename": "patchs/xy_dxgi.dll",
-                            "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll",
-                            "file_md5": "95776cdf57d0dc44b22baa347cf20105",
-                            "file_size": 145520
-                        },
-                        {
-                            "type": "add",
-                            "filename": "xy_pakchunk999999-Windows_999_P.pak",
-                            "remote_filename": "patchs/xy_pakchunk999999-Windows_999_P.pak",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk999999-Windows_999_P.pak",
-                            "file_md5": "2837ea5d0c167ccaf915f3d11e5a0939",
-                            "file_size": 19817819
-                        }
-                    ]
-                },
-                {
                     "id": 2,
                     "source": "奇游",
                     "latest_patch_version": "1.0.0.0",
@@ -74,6 +49,31 @@
                             "file_size": 3473812
                         }
                     ]
+                },
+                {
+                    "id": 1,
+                    "source": "迅游",
+                    "latest_patch_version": "1.0.0.0",
+                    "changelog": "",
+                    "release_timestamp": 1789981021,
+                    "actions": [
+                        {
+                            "type": "add",
+                            "filename": "xy_dxgi.dll",
+                            "remote_filename": "patchs/xy_dxgi.dll",
+                            "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll",
+                            "file_md5": "95776cdf57d0dc44b22baa347cf20105",
+                            "file_size": 145520
+                        },
+                        {
+                            "type": "add",
+                            "filename": "xy_pakchunk999999-Windows_999_P.pak",
+                            "remote_filename": "patchs/xy_pakchunk999999-Windows_999_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk999999-Windows_999_P.pak",
+                            "file_md5": "2837ea5d0c167ccaf915f3d11e5a0939",
+                            "file_size": 19817819
+                        }
+                    ]
                 }
             ]
         },
@@ -85,23 +85,6 @@
                 "AION"
             ],
             "patch_branches": [
-                {
-                    "id": 1,
-                    "source": "迅游",
-                    "latest_patch_version": "1.0.0.0",
-                    "changelog": "",
-                    "release_timestamp": 1789981021,
-                    "actions": [
-                        {
-                            "type": "add",
-                            "filename": "xy_pakchunk504000-Windows_9999_P.pak",
-                            "remote_filename": "patchs/xy_pakchunk504000-Windows_9999_P.pak",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\zh-TW\\pakchunk504000-Windows_9999_P.pak",
-                            "file_md5": "d8f909cef6c96595e0e3514ed0e744da",
-                            "file_size": 3672850
-                        }
-                    ]
-                },
                 {
                     "id": 3,
                     "source": "BiuBiu",
@@ -116,6 +99,23 @@
                             "target_relative_path": "Aion2\\Content\\Paks\\bb_pakchunk999999-Windows_0_P.Pak",
                             "file_md5": "12a93a1ecba45ad9803ae2c20495781d",
                             "file_size": 3721650
+                        }
+                    ]
+                },
+                {
+                    "id": 1,
+                    "source": "迅游",
+                    "latest_patch_version": "1.0.0.0",
+                    "changelog": "",
+                    "release_timestamp": 1789981021,
+                    "actions": [
+                        {
+                            "type": "add",
+                            "filename": "xy_pakchunk504000-Windows_9999_P.pak",
+                            "remote_filename": "patchs/xy_pakchunk504000-Windows_9999_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\zh-TW\\pakchunk504000-Windows_9999_P.pak",
+                            "file_md5": "d8f909cef6c96595e0e3514ed0e744da",
+                            "file_size": 3672850
                         }
                     ]
                 }
