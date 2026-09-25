@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/6fc9c0b4-1141-411d-bbdb-5235b9dc5771" alt="AION2 一键汉化工具界面" width="572" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
+  <img src="https://github.com/user-attachments/assets/6d9cddd9-39fa-411f-b747-d8359543f855" alt="AION2 一键汉化工具界面" width="572" style="image-rendering: -webkit-optimize-contrast; image-rendering: crisp-edges;">
 </p>
 
 ## 🚀 Aion2-Chinese-Patch
