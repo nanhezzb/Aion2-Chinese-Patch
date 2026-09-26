@@ -1,3 +1,4 @@
+#Requires AutoHotkey v2.0
 ;@Ahk2Exe-SetName AION2 Chs Patch
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
