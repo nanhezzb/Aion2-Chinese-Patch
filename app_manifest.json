@@ -7,6 +7,10 @@
             "https://gh.ddlc.top",
             "https://ghproxy.net",
             "https://github.dpik.top"
+        ],
+        "game_processes": [
+            "Aion2.exe",
+            "Aion2-Win64-Shipping.exe"
         ]
     },
     "client_update": {
