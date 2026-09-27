@@ -3,7 +3,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 1.3.5.0
+;@Ahk2Exe-SetVersion 1.4.0.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 ;@Ahk2Exe-SetMainIcon AutoHotkey\icon.ico
 
@@ -32,14 +32,14 @@ UiResult := UniqueInstance.Ensure(Map(
 ; 全局常量与变量定义
 ; ==============================================================================
 global g_ProjectName := "AION2 Chs Patch"
-global g_CurrentAppVersion := "1.3.5.0"
-global g_CurrentAppVersionShort := "1.3.5"
+global g_CurrentAppVersion := "1.4.0.0"
+global g_CurrentAppVersionShort := "1.4"
 global g_LastSeenBulletinVersion := "1.1.0.0"
 
 global g_ConfigFile := "config.ini"
 global g_AppManifestFilename := "app_manifest.json"
 global g_PatchManifestFilename := "patch_manifest.json"
-global g_PatchsCacheDir := "data"
+global g_PatchsCacheDir := "patches"
 
 global g_DefaultPreUrl := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/main"
 global g_DefaultProxyMirrors := [
@@ -49,6 +49,7 @@ global g_DefaultProxyMirrors := [
     "https://github.dpik.top"
 ]
 global g_DefaultGameProcesses := []
+global g_DefaultServers := []
 
 global g_GlobalConfigData := Map()
 global g_ClientUpdateData := Map()
@@ -72,6 +73,10 @@ global g_ConfigCache := {
 global g_DialogCallbacks := Map()
 global g_IsPatching := false
 global g_IsSyncing := false
+global g_NeedLayoutUpdate := false
+
+; 卡片交互句柄映射
+global g_CardHwndMap := Map()
 
 ; Win32 API 控制常量
 global LVM_FIRST := 0x1000
@@ -94,14 +99,10 @@ global HDF_SORTDOWN := 0x0200
 global HDF_SORTUP := 0x0400
 
 ; ==============================================================================
-; 默认服务器配置回退数据
-; ==============================================================================
-global g_DefaultServers := []
-
-; ==============================================================================
 ; 自定义消息与事件监听
 ; ==============================================================================
 OnMessage(0x0900, HandleDialogEvent)
+OnMessage(0x0020, WM_SETCURSOR)
 
 HandleDialogEvent(wParam, lParam, msg, hwnd) {
     if (g_DialogCallbacks.Has(wParam)) {
@@ -109,6 +110,106 @@ HandleDialogEvent(wParam, lParam, msg, hwnd) {
         g_DialogCallbacks.Delete(wParam)
         CallbackFunc(lParam)
     }
+}
+
+WM_SETCURSOR(wParam, lParam, msg, hwnd) {
+    global g_CardHwndMap
+    static hHandCursor := 0
+    if (g_CardHwndMap.Has(wParam)) {
+        if (!hHandCursor) {
+            hHandCursor := DllCall("LoadCursor", "ptr", 0, "int", 32649, "ptr")
+        }
+        DllCall("SetCursor", "ptr", hHandCursor)
+        return true
+    }
+}
+
+; ==============================================================================
+; 资源加载与卡片 UI 渲染组件
+; ==============================================================================
+LoadEmbeddedPictureHandle(RelativePath) {
+    static BitmapCacheMap := Map()
+
+    NormalizedPath := PathUtil.Normalize(A_ScriptDir . "\" . RelativePath)
+    if (BitmapCacheMap.Has(NormalizedPath)) {
+        return BitmapCacheMap[NormalizedPath]
+    }
+
+    try {
+        TempFilePath := PathUtil.Normalize(A_Temp . "\" . A_TickCount . "_" . Random(1000, 9999) . ".tmp")
+        if InStr(NormalizedPath, "GuGuai.png") {
+            FileInstall("AutoHotkey\GuGuai.png", TempFilePath, 1)
+        } else if InStr(NormalizedPath, "AK.png") {
+            FileInstall("AutoHotkey\AK.png", TempFilePath, 1)
+        } else if InStr(NormalizedPath, "XaoYao.png") {
+            FileInstall("AutoHotkey\XaoYao.png", TempFilePath, 1)
+        } else if FileExist(NormalizedPath) {
+            FileCopy(NormalizedPath, TempFilePath, 1)
+        } else {
+            return 0
+        }
+
+        hBitmap := LoadPicture(TempFilePath)
+        try FileDelete(TempFilePath)
+
+        if (hBitmap) {
+            BitmapCacheMap[NormalizedPath] := hBitmap
+            return hBitmap
+        }
+    } catch {
+        return 0
+    }
+    return 0
+}
+
+CreateCardControl(GuiObj, OptionsMap) {
+    global g_CardHwndMap
+
+    PosX := OptionsMap.HasProp("x") ? OptionsMap.x : 15
+    PosY := OptionsMap.HasProp("y") ? OptionsMap.y : 15
+    IconRes := OptionsMap.HasProp("icon") ? OptionsMap.icon : "🚀"
+    TitleText := OptionsMap.HasProp("title") ? OptionsMap.title : "默认标题"
+    DescText := OptionsMap.HasProp("desc") ? OptionsMap.desc : "默认描述信息…"
+    TargetUrl := OptionsMap.HasProp("url") ? OptionsMap.url : ""
+    CardWidth := OptionsMap.HasProp("width") ? OptionsMap.width : 536
+    CardHeight := OptionsMap.HasProp("height") ? OptionsMap.height : 75
+    ShowBorder := OptionsMap.HasProp("border") ? OptionsMap.border : true
+    ClickHandler := (*) => (TargetUrl != "" ? Run(TargetUrl) : false)
+    if (ShowBorder) {
+        GuiObj.Add("GroupBox", Format("x{} y{} w{} h{}", PosX, PosY, CardWidth, CardHeight))
+    }
+    if (StrLen(IconRes) <= 4) {
+        IconCtrl := GuiObj.Add("Text", Format("x{} y{} w40 h40 +0x100 +0x200 Center BackgroundTrans", PosX + 15, PosY +
+            18), IconRes).SetFont("s20", "Segoe UI Emoji")
+    } else {
+        hBitmap := LoadEmbeddedPictureHandle(IconRes)
+        if (hBitmap != 0) {
+            IconCtrl := GuiObj.Add("Picture", Format("x{} y{} w40 h40 +0x100 BackgroundTrans", PosX + 15, PosY + 18),
+                "HBITMAP:*" . hBitmap)
+        } else {
+            IconCtrl := GuiObj.Add("Text", Format("x{} y{} w40 h40 +0x100 +0x200 Center BackgroundTrans", PosX + 15,
+                PosY + 18), "❌").SetFont("s12", "Microsoft YaHei")
+        }
+    }
+
+    IconCtrl.OnEvent("Click", ClickHandler)
+    g_CardHwndMap[IconCtrl.Hwnd] := true
+    TextX := PosX + 65
+    TextW := CardWidth - 80
+
+    GuiObj.Add("Text", Format("x{} y{} w{} h20 c333333 BackgroundTrans", TextX, PosY + 15, TextW), TitleText).SetFont(
+        "s10 bold", "Microsoft YaHei")
+    GuiObj.Add("Text", Format("x{} y{} w{} h20 c666666 BackgroundTrans", TextX, PosY + 38, TextW), DescText).SetFont(
+        "s9 norm", "Microsoft YaHei")
+    MaskX := PosX + 2
+    MaskY := PosY + 2
+    MaskW := CardWidth - 4
+    MaskH := CardHeight - 4
+
+    ClickMaskCtrl := GuiObj.Add("Text", Format("x{} y{} w{} h{} +0x100 BackgroundTrans", MaskX, MaskY, MaskW, MaskH),
+        "")
+    ClickMaskCtrl.OnEvent("Click", ClickHandler)
+    g_CardHwndMap[ClickMaskCtrl.Hwnd] := true
 }
 
 ; ==============================================================================
@@ -139,11 +240,45 @@ global BtnRestore := MainGui.Add("Button", "x289 y419 w100 h30", "撤销汉化")
 global TextTipInfo := MainGui.Add("Text", "x0 y405 w575 +Hidden cRed Center", "建议关闭游戏后进行汉化操作。")
 
 TabCtrl.UseTab(2)
-MainGui.Add("Link", "x31 y75 w510 r1", '<a href="https://www.ggkuai.com/">古怪加速器 - 每天0-16点免费，极速稳定全球网游加速。</a>')
-MainGui.Add("Link", "x31 y100 w510 r1", '<a href="https://www.akspeedy.com/html/invite_new/invite_download.html?inviter=3Xtkus4t">AK加速器- 每天0-14点免费，支持全球网游加速。</a>')
-MainGui.Add("Link", "x31 y125 w510 r1", '<a href="https://www.xiaoyao.co/index.htm">逍遥加速器 - 24小时免费加速，全新模式 - 平台加速。支持 Steam、EA、Epic、暴雪等平台。</a>')
+
+CreateCardControl(MainGui, {
+    x: 17,
+    y: 45,
+    icon: "AutoHotkey\XaoYao.png",
+    title: "逍遥加速器",
+    desc: "注册登录后 24 小时免费加速，支持塔 2 国际服和 Steam、EA、Epic、暴雪等平台。",
+    url: "https://www.xiaoyao.co/index.htm",
+    width: 536,
+    height: 70,
+    border: true
+})
+
+CreateCardControl(MainGui, {
+    x: 17,
+    y: 125,
+    icon: "AutoHotkey\GuGuai.png",
+    title: "古怪加速器",
+    desc: "注册登录后，口令获得时长， 0-16 时免费加速，极速稳定支持全球网游。",
+    url: "https://www.ggkuai.com/",
+    width: 536,
+    height: 70,
+    border: true
+})
+
+CreateCardControl(MainGui, {
+    x: 17,
+    y: 205,
+    icon: "AutoHotkey\AK.png",
+    title: "AK加速器",
+    desc: "注册登录后 0-14 时免费加速，支持全球网游加速。",
+    url: "https://www.akspeedy.com/html/invite_new/invite_download.html?inviter=3Xtkus4t",
+    width: 536,
+    height: 70,
+    border: true
+})
 
 TabCtrl.UseTab(0)
+
 global MainStatusBar := MainGui.Add("StatusBar", "")
 
 ; 绑定控件事件
@@ -154,6 +289,7 @@ BtnReset.OnEvent("Click", DoResetConfig)
 BtnChinese.OnEvent("Click", DoChinesePatch)
 BtnRestore.OnEvent("Click", DoRestorePatch)
 MainGui.OnEvent("Close", (*) => ExitApp())
+TabCtrl.OnEvent("Change", OnTabChange)
 
 ; ==============================================================================
 ; 应用程序启动主流程
@@ -264,10 +400,7 @@ LoadLocalManifests() {
 }
 
 StartCloudSync() {
-    global g_ConfigFile, g_RequestTimeoutSeconds, g_IsLocalInitComplete, g_IsDialogShowing
-    global g_CloudBulletinData, g_ClientUpdateData, g_IsSyncing
-    global g_CleanPreUrl, g_AppManifestFilename, g_PatchManifestFilename
-    global TextTipInfo, TabCtrl, BtnChinese, BtnRestore, MainGui, MainStatusBar
+    global g_ConfigFile, g_RequestTimeoutSeconds, g_IsLocalInitComplete, g_IsDialogShowing, g_NeedLayoutUpdate, g_CloudBulletinData, g_ClientUpdateData, g_IsSyncing, g_CleanPreUrl, g_AppManifestFilename, g_PatchManifestFilename, TextTipInfo, TabCtrl, BtnChinese, BtnRestore, MainGui, MainStatusBar
 
     if (!g_IsLocalInitComplete)
         return
@@ -329,18 +462,11 @@ StartCloudSync() {
         g_IsSyncing := false
         RefreshUi()
 
-        if (IsGameProcessRunning()) {
-            TextTipInfo.Opt("-Hidden")
-            TabCtrl.Move(, , , 470)
-            BtnChinese.Move(, 428)
-            BtnRestore.Move(, 428)
-            MainGui.Show("h500")
+        if (TabCtrl.Value == 1) {
+            ApplyTab1Layout()
+            g_NeedLayoutUpdate := false
         } else {
-            TextTipInfo.Opt("+Hidden")
-            TabCtrl.Move(, , , 460)
-            BtnChinese.Move(, 418)
-            BtnRestore.Move(, 418)
-            MainGui.Show("h490")
+            g_NeedLayoutUpdate := true
         }
     }
 }
@@ -361,7 +487,7 @@ ReadConfig() {
 
     IniSections := SafeIniReadSections(g_ConfigFile)
     if (IniSections != "") {
-        Loop Parse, IniSections, "`n", "`r" {
+        loop parse, IniSections, "`n", "`r" {
             SecName := Trim(A_LoopField)
             if (SubStr(SecName, 1, 8) == "Profile_") {
                 S_ID := Number(SafeIniRead(g_ConfigFile, SecName, "server_id", 0))
@@ -838,7 +964,7 @@ DoRestorePatch(*) {
 
         BackupBaseDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup")
         if DirExist(BackupBaseDir) {
-            Loop Files, BackupBaseDir . "\*", "D" {
+            loop files, BackupBaseDir . "\*", "D" {
                 FolderName := A_LoopFileName
                 if (SubStr(FolderName, 1, 8) == "Profile_") {
                     TestManifestPath := A_LoopFileFullPath . "\backup_manifest.json"
@@ -1135,8 +1261,9 @@ DownloadPatchFileAsync(RemoteFileUrl, DestPath, FileAction) {
         DirCreate(ParentDir)
     if FileExist(DestPath) {
         try FileDelete(DestPath)
-        catch Error as err
+        catch {
             return false
+        }
     }
 
     isDone := false
@@ -1168,7 +1295,7 @@ DownloadPatchFileAsync(RemoteFileUrl, DestPath, FileAction) {
 
     try {
         req := DownloadAsync(TargetUrl, DestPath, OnFinishedCallback, OnProgressCallback)
-    } catch Error as err {
+    } catch {
         return false
     }
 
@@ -1242,7 +1369,7 @@ HashFileMd5(FilePath) {
         MD5String := ""
 
         if DllCall("Advapi32\CryptGetHashParam", "Ptr", hHash, "UInt", 2, "Ptr", HashBuf, "UInt*", &HashLen, "UInt", 0) {
-            Loop HashLen {
+            loop HashLen {
                 MD5String .= Format("{:02x}", NumGet(HashBuf, A_Index - 1, "UChar"))
             }
         }
@@ -1282,7 +1409,7 @@ HashStringMd5(Text) {
         MD5String := ""
 
         if DllCall("Advapi32\CryptGetHashParam", "Ptr", hHash, "UInt", 2, "Ptr", HashBuf, "UInt*", &HashLen, "UInt", 0) {
-            Loop HashLen {
+            loop HashLen {
                 MD5String .= Format("{:02x}", NumGet(HashBuf, A_Index - 1, "UChar"))
             }
         }
@@ -1332,7 +1459,7 @@ GetSavedBranchID() {
 
         BackupBaseDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup")
         if DirExist(BackupBaseDir) {
-            Loop Files, BackupBaseDir . "\*", "D" {
+            loop files, BackupBaseDir . "\*", "D" {
                 ManifestPath := A_LoopFileFullPath . "\backup_manifest.json"
                 if FileExist(ManifestPath) {
                     try {
@@ -1375,7 +1502,7 @@ CheckIsPatchedStatus() {
 
     BackupBaseDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup")
     if DirExist(BackupBaseDir) {
-        Loop Files, BackupBaseDir . "\*", "D" {
+        loop files, BackupBaseDir . "\*", "D" {
             FolderName := A_LoopFileName
             if (SubStr(FolderName, 1, 8) == "Profile_") {
                 ManifestPath := A_LoopFileFullPath . "\backup_manifest.json"
@@ -1508,10 +1635,41 @@ UpdateServerNoticeText() {
         "`r`n4. 本工具为第三方扩展，使用即代表您自愿承担所有风险。"
 }
 
+OnTabChange(ctrl, *) {
+    global g_NeedLayoutUpdate
+
+    if (ctrl.Value == 1) {
+        if (g_NeedLayoutUpdate) {
+            ApplyTab1Layout()
+            g_NeedLayoutUpdate := false
+        } else {
+            if (IsGameProcessRunning()) {
+                TextTipInfo.Opt("-Hidden")
+            }
+        }
+    } else {
+        TextTipInfo.Opt("+Hidden")
+    }
+}
+
+ApplyTab1Layout() {
+    if (IsGameProcessRunning()) {
+        TextTipInfo.Opt("-Hidden")
+        TabCtrl.Move(, , , 470)
+        BtnChinese.Move(, 428)
+        BtnRestore.Move(, 428)
+        MainGui.Show("h500")
+    } else {
+        TextTipInfo.Opt("+Hidden")
+        TabCtrl.Move(, , , 460)
+        BtnChinese.Move(, 418)
+        BtnRestore.Move(, 418)
+        MainGui.Show("h490")
+    }
+}
+
 ; ==============================================================================
-; 各种模态对话框封装（统一按钮尺寸与间距规范）
-; 窗口右侧边距: 20, 按钮高度: 30, 按钮间距: 12
-; 统一确认按钮宽度: 100, 统一取消按钮宽度: 84
+; 模态对话框封装
 ; ==============================================================================
 
 ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpdate := false) {
@@ -1670,7 +1828,10 @@ ShowMultiBranchDialog(Branches, Callback := "") {
     LV.ModifyCol(3, 180)
 
     for Index, Branch in Branches {
-        ReleaseTime := Branch.Has("release_timestamp") ? FormatTime(DateAdd("19700101000000", Branch["release_timestamp"], "Seconds"), "yyyy-MM-dd HH:mm:ss") : "未知"
+        ReleaseTime := Branch.Has("release_timestamp")
+            ? FormatTime(DateAdd("19700101000000", Branch["release_timestamp"] + DateDiff(A_Now, A_NowUTC, "Seconds"),
+                "Seconds"), "yyyy-MM-dd HH:mm:ss")
+            : "未知"
         Ver := Branch.Has("latest_patch_version") ? Branch["latest_patch_version"] : "1.0.0.0"
         Src := Branch.Has("source") ? Branch["source"] : "default"
 
