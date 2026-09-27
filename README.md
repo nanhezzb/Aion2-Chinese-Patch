@@ -19,7 +19,7 @@
 
 ### 🛠️ 安装方法
 
-1. 在下方 **Assets** 区域下载打包好的 `AION2_Chs_P.exe`。
+1.  [**Release**](https://github.com/nanhezzb/Aion2-Chinese-Patch/releases/latest) 下载打包好的 `AION2_Chs_P.exe`。
 
 2. 运行程序后，选择对应的服务器（国际服/台服）。
 
