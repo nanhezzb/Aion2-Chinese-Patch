@@ -197,9 +197,9 @@ CreateCardControl(GuiObj, OptionsMap) {
     TextX := PosX + 65
     TextW := CardWidth - 80
 
-    GuiObj.Add("Text", Format("x{} y{} w{} h20 c333333 BackgroundTrans", TextX, PosY + 15, TextW), TitleText).SetFont(
+    GuiObj.Add("Text", Format("x{} y{} w{} c333333 BackgroundTrans", TextX, PosY + 15, TextW), TitleText).SetFont(
         "s10 bold", "Microsoft YaHei")
-    GuiObj.Add("Text", Format("x{} y{} w{} h20 c666666 BackgroundTrans", TextX, PosY + 38, TextW), DescText).SetFont(
+    GuiObj.Add("Text", Format("x{} y{} w{} c666666 BackgroundTrans", TextX, PosY + 38, TextW), DescText).SetFont(
         "s9 norm", "Microsoft YaHei")
     MaskX := PosX + 2
     MaskY := PosY + 2
@@ -246,19 +246,19 @@ CreateCardControl(MainGui, {
     y: 45,
     icon: "AutoHotkey\XaoYao.png",
     title: "逍遥加速器",
-    desc: "注册登录后 24 小时免费加速，支持塔 2 国际服和 Steam、EA、Epic、暴雪等平台。",
+    desc: "24 小时免费加速，支持 Steam、PURPLE、EA、Epic、暴雪等游戏平台，使用“平台加速”功能，加速平台内全部游戏（含塔2 国际服）。",
     url: "https://www.xiaoyao.co/index.htm",
     width: 536,
-    height: 70,
+    height: 90,
     border: true
 })
 
 CreateCardControl(MainGui, {
     x: 17,
-    y: 125,
+    y: 140,
     icon: "AutoHotkey\GuGuai.png",
     title: "古怪加速器",
-    desc: "注册登录后，口令获得时长， 0-16 时免费加速，极速稳定支持全球网游。",
+    desc: "Bilibili 搜索口令获取永久时长， 0 - 16 时免费加速，极速稳定支持全球网游。",
     url: "https://www.ggkuai.com/",
     width: 536,
     height: 70,
@@ -267,10 +267,10 @@ CreateCardControl(MainGui, {
 
 CreateCardControl(MainGui, {
     x: 17,
-    y: 205,
+    y: 215,
     icon: "AutoHotkey\AK.png",
     title: "AK加速器",
-    desc: "注册登录后 0-14 时免费加速，支持全球网游加速。",
+    desc: "0 - 14 时免费加速，支持全球网游加速。",
     url: "https://www.akspeedy.com/html/invite_new/invite_download.html?inviter=3Xtkus4t",
     width: 536,
     height: 70,
@@ -1595,7 +1595,7 @@ SetStatusBarText(StatusMessage := "") {
 
     if (StatusMessage != "") {
         MainStatusBar.SetText("`t" . StatusMessage)
-        SetTimer(ClearFunc, -3000)
+        SetTimer(ClearFunc, -2000)
     } else {
         SetTimer(ClearFunc, 0)
         ClearFunc()
