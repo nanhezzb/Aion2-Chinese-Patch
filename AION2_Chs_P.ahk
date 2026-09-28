@@ -3,7 +3,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 1.4.0.0
+;@Ahk2Exe-SetVersion 1.5.0.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 ;@Ahk2Exe-SetMainIcon AutoHotkey\icon.ico
 
@@ -32,8 +32,8 @@ UiResult := UniqueInstance.Ensure(Map(
 ; 全局常量与变量定义
 ; ==============================================================================
 global g_ProjectName := "AION2 Chs Patch"
-global g_CurrentAppVersion := "1.4.0.0"
-global g_CurrentAppVersionShort := "1.4"
+global g_CurrentAppVersion := "1.5.0.0"
+global g_CurrentAppVersionShort := "1.5"
 global g_LastSeenBulletinVersion := "1.1.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -1965,19 +1965,29 @@ GetValidGamePaths() {
     Keywords := (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has("keywords")) ? g_CurrentServer["keywords"] : [
         "AION"
     ]
-    DetectedGames := FindGamesFromReg(Keywords)
+
+    RawDetectedGames := []
+    RawDetectedGames.Push(ScanGamesFromUninstallReg(Keywords)*)
+    RawDetectedGames.Push(ScanGamesFromPlayNcReg()*)
+    RawDetectedGames.Push(ScanGamesFromSteam()*)
+
     ValidGames := []
 
-    for GameInfo in DetectedGames {
-        if (FileExist(GameInfo.GameInstallPath . "\Aion2\Binaries\Win64\Aion2.exe")) {
+    for GameInfo in RawDetectedGames {
+        NormalizedInstallPath := PathUtil.Normalize(GameInfo.GameInstallPath)
+
+        if (FileExist(NormalizedInstallPath . "\Aion2\Binaries\Win64\Aion2.exe")) {
             IsDuplicatePath := false
+
             for ExistingGame in ValidGames {
-                if (PathUtil.Normalize(ExistingGame.GameInstallPath) == PathUtil.Normalize(GameInfo.GameInstallPath)) {
+                if (StrLower(ExistingGame.GameInstallPath) == StrLower(NormalizedInstallPath)) {
                     IsDuplicatePath := true
                     break
                 }
             }
+
             if (!IsDuplicatePath) {
+                GameInfo.GameInstallPath := NormalizedInstallPath
                 ValidGames.Push(GameInfo)
             }
         }
@@ -1985,94 +1995,234 @@ GetValidGamePaths() {
     return ValidGames
 }
 
-FindGamesFromReg(KeywordArray) {
+SafeRegRead(KeyPath, ValueName := "") {
+    try return RegRead(KeyPath, ValueName)
+    catch
+        return ""
+}
+
+IsKeywordMatch(DisplayName, Keywords) {
+    if (Keywords.Length = 0)
+        return true
+    for Keyword in Keywords {
+        if (InStr(DisplayName, Keyword))
+            return true
+    }
+    return false
+}
+
+ScanGamesFromUninstallReg(KeywordArray := []) {
     SystemUninstallRoot := "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"
     UserUninstallRoot := "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall"
     MatchedGameList := []
 
+    TryAddUninstallEntry(FullKey, RegName, DisplayName, RawInstallPath) {
+        if (RawInstallPath == "")
+            return
+        CleanPath := PathUtil.Normalize(RawInstallPath)
+        CleanPathLower := StrLower(CleanPath)
+
+        for ExistingGame in MatchedGameList {
+            if (StrLower(ExistingGame.GameInstallPath) == CleanPathLower)
+                return
+        }
+
+        MatchedGameList.Push({
+            FullRegistryPath: FullKey,
+            RegistryKeyName: RegName,
+            SoftwareDisplayName: DisplayName,
+            GameInstallPath: CleanPath,
+            ScanMethod: "uninstall"
+        })
+    }
+
     SetRegView 64
     loop reg, SystemUninstallRoot, "K" {
         CurrentFullKey := A_LoopRegKey . "\" . A_LoopRegName
-        CurrentDisplayName := RegRead(CurrentFullKey, "DisplayName", "")
+        CurrentDisplayName := SafeRegRead(CurrentFullKey, "DisplayName")
 
-        for Keyword in KeywordArray {
-            IsDuplicatePath := false
-            if (InStr(CurrentDisplayName, Keyword)) {
-                CurrentInstallPath := RegRead(CurrentFullKey, "InstallLocation", "")
-                if (CurrentInstallPath != "") {
-                    for ExistingGame in MatchedGameList {
-                        if (ExistingGame.GameInstallPath = CurrentInstallPath) {
-                            IsDuplicatePath := true
-                            break
-                        }
-                    }
-                    if (!IsDuplicatePath) {
-                        MatchedGameList.Push({
-                            FullRegistryPath: CurrentFullKey,
-                            RegistryKeyName: A_LoopRegName,
-                            SoftwareDisplayName: CurrentDisplayName,
-                            GameInstallPath: CurrentInstallPath
-                        })
-                    }
-                }
-            }
+        if (CurrentDisplayName != "" && IsKeywordMatch(CurrentDisplayName, KeywordArray)) {
+            CurrentInstallPath := SafeRegRead(CurrentFullKey, "InstallLocation")
+            TryAddUninstallEntry(CurrentFullKey, A_LoopRegName, CurrentDisplayName, CurrentInstallPath)
         }
     }
 
     SetRegView 32
     loop reg, SystemUninstallRoot, "K" {
         CurrentFullKey := A_LoopRegKey . "\" . A_LoopRegName
-        CurrentDisplayName := RegRead(CurrentFullKey, "DisplayName", "")
+        CurrentDisplayName := SafeRegRead(CurrentFullKey, "DisplayName")
 
-        for Keyword in KeywordArray {
-            IsDuplicatePath := false
-            if (InStr(CurrentDisplayName, Keyword)) {
-                CurrentInstallPath := RegRead(CurrentFullKey, "InstallLocation", "")
-                if (CurrentInstallPath != "") {
-                    for ExistingGame in MatchedGameList {
-                        if (ExistingGame.GameInstallPath = CurrentInstallPath) {
-                            IsDuplicatePath := true
-                            break
-                        }
-                    }
-                    if (!IsDuplicatePath) {
-                        DisplayKeyString := StrReplace(CurrentFullKey, "SOFTWARE\", "SOFTWARE\WOW6432Node\")
-                        MatchedGameList.Push({
-                            FullRegistryPath: DisplayKeyString,
-                            RegistryKeyName: A_LoopRegName,
-                            SoftwareDisplayName: CurrentDisplayName,
-                            GameInstallPath: CurrentInstallPath
-                        })
-                    }
-                }
-            }
+        if (CurrentDisplayName != "" && IsKeywordMatch(CurrentDisplayName, KeywordArray)) {
+            CurrentInstallPath := SafeRegRead(CurrentFullKey, "InstallLocation")
+            DisplayKeyString := RegExReplace(CurrentFullKey, "i)^HKEY_LOCAL_MACHINE\\SOFTWARE\\", "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\")
+            TryAddUninstallEntry(DisplayKeyString, A_LoopRegName, CurrentDisplayName, CurrentInstallPath)
         }
     }
 
     SetRegView "Default"
     loop reg, UserUninstallRoot, "K" {
         CurrentFullKey := A_LoopRegKey . "\" . A_LoopRegName
-        CurrentDisplayName := RegRead(CurrentFullKey, "DisplayName", "")
+        CurrentDisplayName := SafeRegRead(CurrentFullKey, "DisplayName")
 
-        for Keyword in KeywordArray {
-            IsDuplicatePath := false
-            if (InStr(CurrentDisplayName, Keyword)) {
-                CurrentInstallPath := RegRead(CurrentFullKey, "InstallLocation", "")
-                if (CurrentInstallPath != "") {
-                    for ExistingGame in MatchedGameList {
-                        if (ExistingGame.GameInstallPath = CurrentInstallPath) {
-                            IsDuplicatePath := true
-                            break
-                        }
+        if (CurrentDisplayName != "" && IsKeywordMatch(CurrentDisplayName, KeywordArray)) {
+            CurrentInstallPath := SafeRegRead(CurrentFullKey, "InstallLocation")
+            TryAddUninstallEntry(CurrentFullKey, A_LoopRegName, CurrentDisplayName, CurrentInstallPath)
+        }
+    }
+
+    return MatchedGameList
+}
+
+ScanGamesFromPlayNcReg() {
+    SystemPlayNcRoot := "HKEY_LOCAL_MACHINE\SOFTWARE\plaync"
+    UserPlayNcRoot := "HKEY_CURRENT_USER\SOFTWARE\plaync"
+    MatchedGameList := []
+
+    TryAddPlayNcEntry(FullKey, RegName, RawInstallPath) {
+        if (RawInstallPath == "")
+            return
+        CleanPath := PathUtil.Normalize(RawInstallPath)
+        CleanPathLower := StrLower(CleanPath)
+
+        for ExistingGame in MatchedGameList {
+            if (StrLower(ExistingGame.GameInstallPath) == CleanPathLower)
+                return
+        }
+
+        MatchedGameList.Push({
+            FullRegistryPath: FullKey,
+            RegistryKeyName: RegName,
+            SoftwareDisplayName: RegName,
+            GameInstallPath: CleanPath,
+            ScanMethod: "plaync"
+        })
+    }
+
+    SetRegView 64
+    loop reg, SystemPlayNcRoot, "K" {
+        CurrentFullKey := A_LoopRegKey . "\" . A_LoopRegName
+        CurrentInstallPath := SafeRegRead(CurrentFullKey, "BaseDir")
+        TryAddPlayNcEntry(CurrentFullKey, A_LoopRegName, CurrentInstallPath)
+    }
+
+    SetRegView 32
+    loop reg, SystemPlayNcRoot, "K" {
+        CurrentFullKey := A_LoopRegKey . "\" . A_LoopRegName
+        CurrentInstallPath := SafeRegRead(CurrentFullKey, "BaseDir")
+        DisplayKeyString := RegExReplace(CurrentFullKey, "i)^HKEY_LOCAL_MACHINE\\SOFTWARE\\", "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\")
+        TryAddPlayNcEntry(DisplayKeyString, A_LoopRegName, CurrentInstallPath)
+    }
+
+    SetRegView "Default"
+    loop reg, UserPlayNcRoot, "K" {
+        CurrentFullKey := A_LoopRegKey . "\" . A_LoopRegName
+        CurrentInstallPath := SafeRegRead(CurrentFullKey, "BaseDir")
+        TryAddPlayNcEntry(CurrentFullKey, A_LoopRegName, CurrentInstallPath)
+    }
+
+    return MatchedGameList
+}
+
+ScanGamesFromSteam() {
+    SystemSteamRoot := "HKEY_LOCAL_MACHINE\SOFTWARE\Valve\Steam"
+    UserSteamRoot := "HKEY_CURRENT_USER\Software\Valve\Steam"
+    MatchedGameList := []
+
+    SteamInstallPaths := []
+
+    TryAddSteamPath(FullKey, RawInstallPath) {
+        if (RawInstallPath == "")
+            return
+        CleanPath := PathUtil.Normalize(RawInstallPath)
+        if !DirExist(CleanPath)
+            return
+
+        CleanPathLower := StrLower(CleanPath)
+        for ExistingPath in SteamInstallPaths {
+            if (StrLower(ExistingPath) == CleanPathLower)
+                return
+        }
+        SteamInstallPaths.Push(CleanPath)
+    }
+
+    SetRegView 64
+    TryAddSteamPath(SystemSteamRoot, SafeRegRead(SystemSteamRoot, "InstallPath"))
+
+    SetRegView 32
+    TryAddSteamPath(RegExReplace(SystemSteamRoot, "i)^HKEY_LOCAL_MACHINE\\SOFTWARE\\", "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\"), SafeRegRead(SystemSteamRoot, "InstallPath"))
+
+    SetRegView "Default"
+    TryAddSteamPath(UserSteamRoot, SafeRegRead(UserSteamRoot, "SteamPath"))
+
+    SetRegView "Default"
+
+    if (SteamInstallPaths.Length == 0)
+        return MatchedGameList
+
+    LibraryPaths := []
+
+    TryAddLibraryPath(RawPath) {
+        if (RawPath == "")
+            return
+
+        CleanRaw := StrReplace(RawPath, "\\", "\")
+        CleanRaw := StrReplace(CleanRaw, '\"', '"')
+        CleanPath := PathUtil.Normalize(CleanRaw)
+
+        if !DirExist(CleanPath)
+            return
+
+        CleanPathLower := StrLower(CleanPath)
+        for ExistingPath in LibraryPaths {
+            if (StrLower(ExistingPath) == CleanPathLower)
+                return
+        }
+        LibraryPaths.Push(CleanPath)
+    }
+
+    for SteamPath in SteamInstallPaths {
+        TryAddLibraryPath(SteamPath)
+
+        LibraryFoldersFile := SteamPath . "\steamapps\libraryfolders.vdf"
+        if FileExist(LibraryFoldersFile) {
+            try {
+                VdfContent := FileRead(LibraryFoldersFile, "UTF-8")
+
+                RegExPattern := 'i)"path"[\t ]+"((?:[^"\\]|\\.)*)"'
+
+                Pos := 1
+                while (Pos := RegExMatch(VdfContent, RegExPattern, &Match, Pos)) {
+                    TryAddLibraryPath(Match[1])
+                    Pos += Match.Len(0)
+                }
+            }
+        }
+    }
+
+    for LibPath in LibraryPaths {
+        SteamAppsCommon := RTrim(LibPath, "\/") . "\steamapps\common"
+        if DirExist(SteamAppsCommon) {
+            loop files, SteamAppsCommon . "\*", "D" {
+                FolderName := A_LoopFileName
+                FullGamePath := PathUtil.Normalize(A_LoopFileFullPath)
+                CleanPathLower := StrLower(FullGamePath)
+
+                IsDuplicatePath := false
+                for ExistingGame in MatchedGameList {
+                    if (StrLower(ExistingGame.GameInstallPath) == CleanPathLower) {
+                        IsDuplicatePath := true
+                        break
                     }
-                    if (!IsDuplicatePath) {
-                        MatchedGameList.Push({
-                            FullRegistryPath: CurrentFullKey,
-                            RegistryKeyName: A_LoopRegName,
-                            SoftwareDisplayName: CurrentDisplayName,
-                            GameInstallPath: CurrentInstallPath
-                        })
-                    }
+                }
+
+                if (!IsDuplicatePath) {
+                    MatchedGameList.Push({
+                        FullRegistryPath: SystemSteamRoot,
+                        RegistryKeyName: FolderName,
+                        SoftwareDisplayName: FolderName,
+                        GameInstallPath: FullGamePath,
+                        ScanMethod: "steam"
+                    })
                 }
             }
         }
