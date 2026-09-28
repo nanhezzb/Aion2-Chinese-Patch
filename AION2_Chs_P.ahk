@@ -56,7 +56,6 @@ global g_ClientUpdateData := Map()
 global g_ServersConfigData := []
 global g_CloudBulletinData := Map()
 
-global g_IsDialogShowing := false
 global g_IsLocalInitComplete := false
 global g_InstallPath := ""
 global g_RequestTimeoutSeconds := 30
@@ -400,7 +399,7 @@ LoadLocalManifests() {
 }
 
 StartCloudSync() {
-    global g_ConfigFile, g_RequestTimeoutSeconds, g_IsLocalInitComplete, g_IsDialogShowing, g_NeedLayoutUpdate, g_CloudBulletinData, g_ClientUpdateData, g_IsSyncing, g_CleanPreUrl, g_AppManifestFilename, g_PatchManifestFilename, TextTipInfo, TabCtrl, BtnChinese, BtnRestore, MainGui, MainStatusBar
+    global g_ConfigFile, g_RequestTimeoutSeconds, g_IsLocalInitComplete, g_NeedLayoutUpdate, g_CloudBulletinData, g_ClientUpdateData, g_IsSyncing, g_CleanPreUrl, g_AppManifestFilename, g_PatchManifestFilename, TextTipInfo, TabCtrl, BtnChinese, BtnRestore, MainGui, MainStatusBar
 
     if (!g_IsLocalInitComplete)
         return
@@ -443,12 +442,7 @@ StartCloudSync() {
             SafeIniWrite(g_RequestTimeoutSeconds, g_ConfigFile, "Settings", "RequestTimeoutSeconds")
 
             RefreshServerComboBox()
-
-            if (!g_IsDialogShowing) {
-                SetStatusBarText("云端配置同步成功，已更新至最新数据。")
-            } else {
-                SetStatusBarText("云端配置同步成功，重启程序生效。")
-            }
+            SetStatusBarText("云端配置同步成功，已更新至最新数据。")
         } else {
             SetStatusBarText("连接超时或离线，已加载本地配置文件。")
         }
@@ -665,14 +659,6 @@ RefreshUi() {
         BtnReset.Opt("+Disabled")
         BtnScan.Focus()
     }
-}
-
-SafeRefreshUi() {
-    global g_IsDialogShowing, MainGui
-    if (g_IsDialogShowing || !WinExist(MainGui))
-        return
-    RefreshServerComboBox()
-    RefreshServerData()
 }
 
 SetInstallPath(NewPath, IsManualReset := 0) {
@@ -1673,8 +1659,7 @@ ApplyTab1Layout() {
 ; ==============================================================================
 
 ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpdate := false) {
-    global MainGui, g_IsDialogShowing, g_DialogCallbacks, g_ClientUpdateData
-    g_IsDialogShowing := true
+    global MainGui, g_DialogCallbacks, g_ClientUpdateData
 
     MsgId := 1001
     UpdateGui := Gui("+Owner" . MainGui.Hwnd, "软件更新提示")
@@ -1700,7 +1685,6 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
     CloseDialog(Result := 0) {
         MainGui.Opt("-Disabled")
         UpdateGui.Destroy()
-        g_IsDialogShowing := false
         if (IsForceUpdate)
             ExitApp()
         else
@@ -1718,8 +1702,7 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
 }
 
 ShowBulletinDialog(ContentText, BulletinVersion) {
-    global MainGui, g_IsDialogShowing, g_LastSeenBulletinVersion, g_DialogCallbacks
-    g_IsDialogShowing := true
+    global MainGui, g_LastSeenBulletinVersion, g_DialogCallbacks
 
     MsgId := 1002
     BulletinGui := Gui("+Owner" . MainGui.Hwnd, "最新公告")
@@ -1734,7 +1717,6 @@ ShowBulletinDialog(ContentText, BulletinVersion) {
         SaveAllConfig()
         MainGui.Opt("-Disabled")
         BulletinGui.Destroy()
-        g_IsDialogShowing := false
         RefreshUi()
     }
 
@@ -1748,8 +1730,7 @@ ShowBulletinDialog(ContentText, BulletinVersion) {
 }
 
 ShowConfirmDialog(Text, Callback := "") {
-    global MainGui, g_IsDialogShowing, g_DialogCallbacks
-    g_IsDialogShowing := true
+    global MainGui, g_DialogCallbacks
 
     MsgId := 1003
     ConfirmGui := Gui("+Owner" . MainGui.Hwnd, "提示")
@@ -1763,7 +1744,6 @@ ShowConfirmDialog(Text, Callback := "") {
     CloseDialog(UserChoice) {
         MainGui.Opt("-Disabled")
         ConfirmGui.Destroy()
-        g_IsDialogShowing := false
         RefreshUi()
         if (Callback)
             Callback(UserChoice)
@@ -1780,8 +1760,7 @@ ShowConfirmDialog(Text, Callback := "") {
 }
 
 ShowMessageDialog(Text, Callback := "") {
-    global MainGui, g_IsDialogShowing, g_DialogCallbacks
-    g_IsDialogShowing := true
+    global MainGui, g_DialogCallbacks
 
     MsgId := 1004
     MessageGui := Gui("+Owner" . MainGui.Hwnd, "提示")
@@ -1794,7 +1773,6 @@ ShowMessageDialog(Text, Callback := "") {
     CloseDialog(*) {
         MainGui.Opt("-Disabled")
         MessageGui.Destroy()
-        g_IsDialogShowing := false
         RefreshUi()
         if (Callback)
             Callback()
@@ -1810,8 +1788,7 @@ ShowMessageDialog(Text, Callback := "") {
 }
 
 ShowMultiBranchDialog(Branches, Callback := "") {
-    global g_CurrentServer, MainGui, g_IsDialogShowing
-    g_IsDialogShowing := true
+    global g_CurrentServer, MainGui
 
     ChoiceGui := Gui("+Owner" . MainGui.Hwnd, "选择补丁分支")
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
@@ -1886,7 +1863,6 @@ ShowMultiBranchDialog(Branches, Callback := "") {
 
         MainGui.Opt("-Disabled")
         ChoiceGui.Destroy()
-        g_IsDialogShowing := false
         RefreshUi()
 
         if (Callback)
@@ -1899,8 +1875,7 @@ ShowMultiBranchDialog(Branches, Callback := "") {
 }
 
 ShowMultiPathDialog(ValidGames, Callback := "") {
-    global g_CurrentServer, MainGui, g_IsDialogShowing
-    g_IsDialogShowing := true
+    global g_CurrentServer, MainGui
 
     ChoiceGui := Gui("+Owner" . MainGui.Hwnd, "选择游戏目录")
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
@@ -1969,7 +1944,6 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
 
         MainGui.Opt("-Disabled")
         ChoiceGui.Destroy()
-        g_IsDialogShowing := false
         RefreshUi()
 
         if (Callback)
