@@ -1,7 +1,7 @@
 {
     "cloud_bulletin": {
         "latest_bulletin_version": "1.0.0.0",
-        "changelog": "",
+        "changelog": "公告",
         "release_timestamp": 1789981021
     },
     "servers_config": [
