@@ -3,7 +3,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 1.5.0.0
+;@Ahk2Exe-SetVersion 1.6.0.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 ;@Ahk2Exe-SetMainIcon AutoHotkey\icon.ico
 
@@ -32,14 +32,14 @@ UiResult := UniqueInstance.Ensure(Map(
 ; 全局常量与变量定义
 ; ==============================================================================
 global g_ProjectName := "AION2 Chs Patch"
-global g_CurrentAppVersion := "1.5.0.0"
-global g_CurrentAppVersionShort := "1.5"
+global g_CurrentAppVersion := "1.6.0.0"
+global g_CurrentAppVersionShort := "1.6"
 global g_LastSeenBulletinVersion := "1.1.0.0"
 
 global g_ConfigFile := "config.ini"
 global g_AppManifestFilename := "app_manifest.json"
 global g_PatchManifestFilename := "patch_manifest.json"
-global g_PatchsCacheDir := "patches"
+global g_PatchesCacheDir := "patches"
 
 global g_DefaultPreUrl := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/main"
 global g_DefaultProxyMirrors := [
@@ -124,94 +124,6 @@ WM_SETCURSOR(wParam, lParam, msg, hwnd) {
 }
 
 ; ==============================================================================
-; 资源加载与卡片 UI 渲染组件
-; ==============================================================================
-LoadEmbeddedPictureHandle(RelativePath) {
-    static BitmapCacheMap := Map()
-
-    NormalizedPath := PathUtil.Normalize(A_ScriptDir . "\" . RelativePath)
-    if (BitmapCacheMap.Has(NormalizedPath)) {
-        return BitmapCacheMap[NormalizedPath]
-    }
-
-    try {
-        TempFilePath := PathUtil.Normalize(A_Temp . "\" . A_TickCount . "_" . Random(1000, 9999) . ".tmp")
-        if InStr(NormalizedPath, "GuGuai.png") {
-            FileInstall("AutoHotkey\GuGuai.png", TempFilePath, 1)
-        } else if InStr(NormalizedPath, "AK.png") {
-            FileInstall("AutoHotkey\AK.png", TempFilePath, 1)
-        } else if InStr(NormalizedPath, "XaoYao.png") {
-            FileInstall("AutoHotkey\XaoYao.png", TempFilePath, 1)
-        } else if FileExist(NormalizedPath) {
-            FileCopy(NormalizedPath, TempFilePath, 1)
-        } else {
-            return 0
-        }
-
-        hBitmap := LoadPicture(TempFilePath)
-        try FileDelete(TempFilePath)
-
-        if (hBitmap) {
-            BitmapCacheMap[NormalizedPath] := hBitmap
-            return hBitmap
-        }
-    } catch {
-        return 0
-    }
-    return 0
-}
-
-CreateCardControl(GuiObj, OptionsMap) {
-    global g_CardHwndMap
-
-    PosX := OptionsMap.HasProp("x") ? OptionsMap.x : 15
-    PosY := OptionsMap.HasProp("y") ? OptionsMap.y : 15
-    IconRes := OptionsMap.HasProp("icon") ? OptionsMap.icon : "🚀"
-    TitleText := OptionsMap.HasProp("title") ? OptionsMap.title : "默认标题"
-    DescText := OptionsMap.HasProp("desc") ? OptionsMap.desc : "默认描述信息…"
-    TargetUrl := OptionsMap.HasProp("url") ? OptionsMap.url : ""
-    CardWidth := OptionsMap.HasProp("width") ? OptionsMap.width : 536
-    CardHeight := OptionsMap.HasProp("height") ? OptionsMap.height : 75
-    ShowBorder := OptionsMap.HasProp("border") ? OptionsMap.border : true
-    ClickHandler := (*) => (TargetUrl != "" ? Run(TargetUrl) : false)
-    if (ShowBorder) {
-        GuiObj.Add("GroupBox", Format("x{} y{} w{} h{}", PosX, PosY, CardWidth, CardHeight))
-    }
-    if (StrLen(IconRes) <= 4) {
-        IconCtrl := GuiObj.Add("Text", Format("x{} y{} w40 h40 +0x100 +0x200 Center BackgroundTrans", PosX + 15, PosY +
-            18), IconRes).SetFont("s20", "Segoe UI Emoji")
-    } else {
-        hBitmap := LoadEmbeddedPictureHandle(IconRes)
-        if (hBitmap != 0) {
-            IconCtrl := GuiObj.Add("Picture", Format("x{} y{} w40 h40 +0x100 BackgroundTrans", PosX + 15, PosY + 18),
-                "HBITMAP:*" . hBitmap)
-        } else {
-            IconCtrl := GuiObj.Add("Text", Format("x{} y{} w40 h40 +0x100 +0x200 Center BackgroundTrans", PosX + 15,
-                PosY + 18), "❌").SetFont("s12", "Microsoft YaHei")
-        }
-    }
-
-    IconCtrl.OnEvent("Click", ClickHandler)
-    g_CardHwndMap[IconCtrl.Hwnd] := true
-    TextX := PosX + 65
-    TextW := CardWidth - 80
-
-    GuiObj.Add("Text", Format("x{} y{} w{} c333333 BackgroundTrans", TextX, PosY + 15, TextW), TitleText).SetFont(
-        "s10 bold", "Microsoft YaHei")
-    GuiObj.Add("Text", Format("x{} y{} w{} c666666 BackgroundTrans", TextX, PosY + 38, TextW), DescText).SetFont(
-        "s9 norm", "Microsoft YaHei")
-    MaskX := PosX + 2
-    MaskY := PosY + 2
-    MaskW := CardWidth - 4
-    MaskH := CardHeight - 4
-
-    ClickMaskCtrl := GuiObj.Add("Text", Format("x{} y{} w{} h{} +0x100 BackgroundTrans", MaskX, MaskY, MaskW, MaskH),
-        "")
-    ClickMaskCtrl.OnEvent("Click", ClickHandler)
-    g_CardHwndMap[ClickMaskCtrl.Hwnd] := true
-}
-
-; ==============================================================================
 ; 主界面 GUI 构建
 ; ==============================================================================
 global MainGui := Gui(, "AION2 一键汉化工具 " . g_CurrentAppVersionShort)
@@ -234,16 +146,18 @@ global BtnReset := MainGui.Add("Button", "x484 y201 w60 h26 +Disabled", "重置"
 
 MainGui.Add("GroupBox", "x17 y255 w536 h145", "使用须知 * ")
 global TextExplain := MainGui.AddText("x31 y280 w510 h105", "")
+
+global BtnUpdate := MainGui.Add("Button", "x177 y419 w100 h30 +Hidden", "更新补丁")
 global BtnChinese := MainGui.Add("Button", "x177 y419 w100 h30", "一键汉化")
 global BtnRestore := MainGui.Add("Button", "x289 y419 w100 h30", "撤销汉化")
-global TextTipInfo := MainGui.Add("Text", "x0 y405 w575 +Hidden cRed Center", "建议关闭游戏后进行汉化操作。")
+global TextTipInfo := MainGui.Add("Text", "x0 y405 w575 +Hidden cRed Center", "建议先退出游戏再进行汉化。")
 
 TabCtrl.UseTab(2)
 
 CreateCardControl(MainGui, {
     x: 17,
     y: 45,
-    icon: "AutoHotkey\XaoYao.png",
+    icon: ".\AutoHotkey\XaoYao.png",
     title: "逍遥加速器",
     desc: "24 小时免费加速，支持 Steam、PURPLE、EA、Epic、暴雪等游戏平台，使用“平台加速”功能，加速平台内全部游戏（含塔2 国际服）。",
     url: "https://www.xiaoyao.co/index.htm",
@@ -255,7 +169,7 @@ CreateCardControl(MainGui, {
 CreateCardControl(MainGui, {
     x: 17,
     y: 140,
-    icon: "AutoHotkey\GuGuai.png",
+    icon: ".\AutoHotkey\GuGuai.png",
     title: "古怪加速器",
     desc: "Bilibili 搜索口令获取永久时长， 0 - 16 时免费加速，极速稳定支持全球网游。",
     url: "https://www.ggkuai.com/",
@@ -267,7 +181,7 @@ CreateCardControl(MainGui, {
 CreateCardControl(MainGui, {
     x: 17,
     y: 215,
-    icon: "AutoHotkey\AK.png",
+    icon: ".\AutoHotkey\AK.png",
     title: "AK加速器",
     desc: "0 - 14 时免费加速，支持全球网游加速。",
     url: "https://www.akspeedy.com/html/invite_new/invite_download.html?inviter=3Xtkus4t",
@@ -285,10 +199,11 @@ ComboServerList.OnEvent("Change", (*) => SelectServer())
 BtnScan.OnEvent("Click", (*) => OnScanButtonClick())
 BtnBrowse.OnEvent("Click", BrowseFolder)
 BtnReset.OnEvent("Click", DoResetConfig)
+BtnUpdate.OnEvent("Click", DoUpdatePatch)
 BtnChinese.OnEvent("Click", DoChinesePatch)
 BtnRestore.OnEvent("Click", DoRestorePatch)
 MainGui.OnEvent("Close", (*) => ExitApp())
-TabCtrl.OnEvent("Change", OnTabChange)
+TabCtrl.OnEvent("Change", (*) => RefreshUi())
 
 ; ==============================================================================
 ; 应用程序启动主流程
@@ -356,13 +271,13 @@ ParseAndApplyManifest(JsonContent, IsPatchFile := false) {
         if (Type(Parsed) != "Map")
             return false
 
-        if (Parsed.Has("client_update"))
+        if (Parsed.Has("client_update") && Type(Parsed["client_update"]) == "Map")
             g_ClientUpdateData := Parsed["client_update"]
 
-        if (IsPatchFile && Parsed.Has("servers_config"))
+        if (IsPatchFile && Parsed.Has("servers_config") && Type(Parsed["servers_config"]) == "Array")
             g_ServersConfigData := NormalizeServerConfig(Parsed["servers_config"])
 
-        if (IsPatchFile && Parsed.Has("cloud_bulletin"))
+        if (IsPatchFile && Parsed.Has("cloud_bulletin") && Type(Parsed["cloud_bulletin"]) == "Map")
             g_CloudBulletinData := Parsed["cloud_bulletin"]
 
         if (Parsed.Has("global_config") && Type(Parsed["global_config"]) == "Map") {
@@ -399,7 +314,7 @@ LoadLocalManifests() {
 }
 
 StartCloudSync() {
-    global g_ConfigFile, g_RequestTimeoutSeconds, g_IsLocalInitComplete, g_NeedLayoutUpdate, g_CloudBulletinData, g_ClientUpdateData, g_IsSyncing, g_CleanPreUrl, g_AppManifestFilename, g_PatchManifestFilename, TextTipInfo, TabCtrl, BtnChinese, BtnRestore, MainGui, MainStatusBar
+    global g_ConfigFile, g_RequestTimeoutSeconds, g_IsLocalInitComplete, g_IsSyncing, g_CleanPreUrl, g_AppManifestFilename, g_PatchManifestFilename, MainStatusBar
 
     if (!g_IsLocalInitComplete)
         return
@@ -447,30 +362,50 @@ StartCloudSync() {
             SetStatusBarText("连接超时或离线，已加载本地配置文件。")
         }
 
-        if (Type(g_ClientUpdateData) == "Map" && g_ClientUpdateData.Count > 0)
-            CheckAppUpdate(g_ClientUpdateData)
+        ExecuteCheckChain()
 
-        if (Type(g_CloudBulletinData) == "Map" && g_CloudBulletinData.Count > 0)
-            CheckBulletin(g_CloudBulletinData)
     } finally {
         g_IsSyncing := false
         RefreshUi()
+    }
+}
 
-        if (TabCtrl.Value == 1) {
-            ApplyTab1Layout()
-            g_NeedLayoutUpdate := false
-        } else {
-            g_NeedLayoutUpdate := true
+ExecuteCheckChain() {
+    global g_ClientUpdateData, g_CloudBulletinData, g_CurrentServer
+
+    CheckTasks := []
+
+    if (Type(g_ClientUpdateData) == "Map" && g_ClientUpdateData.Count > 0) {
+        CheckTasks.Push((OnNext) => CheckClientUpdate(g_ClientUpdateData, OnNext))
+    }
+
+    if (Type(g_CloudBulletinData) == "Map" && g_CloudBulletinData.Count > 0) {
+        CheckTasks.Push((OnNext) => CheckBulletin(g_CloudBulletinData, OnNext))
+    }
+
+    if (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has("patch_branches")) {
+        CheckTasks.Push((OnNext) => CheckPatchUpdate(g_CurrentServer, OnNext))
+    }
+
+    TaskIndex := 1
+    NextTask() {
+        if (TaskIndex <= CheckTasks.Length) {
+            CurrentTask := CheckTasks[TaskIndex]
+            TaskIndex++
+            CurrentTask(NextTask)
         }
     }
+
+    NextTask()
 }
 
 InitProxyMirrors(MirrorsArray) {
     global g_CleanProxyMirrors := []
     if (Type(MirrorsArray) == "Array") {
         for Mirror in MirrorsArray {
-            if (Mirror != "")
-                g_CleanProxyMirrors.Push(RTrim(Mirror, "/"))
+            StrMirror := SafeString(Mirror)
+            if (StrMirror != "")
+                g_CleanProxyMirrors.Push(RTrim(StrMirror, "/"))
         }
     }
 }
@@ -479,24 +414,32 @@ ReadConfig() {
     global g_ConfigCache, g_ConfigFile, g_ServersConfigData, g_LastSeenBulletinVersion
     g_LastSeenBulletinVersion := SafeIniRead(g_ConfigFile, "Settings", "LastSeenBulletinVersion", "1.0.0.0")
 
+    g_ConfigCache := {
+        Settings: {
+            LastServerID: SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "LastServerID", 102), 102)
+        }
+    }
+
     IniSections := SafeIniReadSections(g_ConfigFile)
     if (IniSections != "") {
         loop parse, IniSections, "`n", "`r" {
             SecName := Trim(A_LoopField)
             if (SubStr(SecName, 1, 8) == "Profile_") {
-                S_ID := Number(SafeIniRead(g_ConfigFile, SecName, "server_id", 0))
-                B_ID := Number(SafeIniRead(g_ConfigFile, SecName, "branch_id", 0))
+                S_ID := SafeNumber(SafeIniRead(g_ConfigFile, SecName, "server_id", 0), 0)
+                B_ID := SafeNumber(SafeIniRead(g_ConfigFile, SecName, "branch_id", 0), 0)
                 I_Path := SafeIniRead(g_ConfigFile, SecName, "install_path", "")
 
                 if (S_ID > 0 && I_Path != "") {
                     NormalizedIPath := PathUtil.Normalize(I_Path)
-                    g_ConfigCache.%SecName% := {
+                    StandardKey := GetProfileKey(S_ID, NormalizedIPath, B_ID)
+
+                    g_ConfigCache.%StandardKey% := {
                         ServerID: S_ID,
                         BranchID: B_ID,
                         InstallPath: NormalizedIPath,
-                        IsPatched: Number(SafeIniRead(g_ConfigFile, SecName, "is_patched", 0)),
+                        IsPatched: SafeNumber(SafeIniRead(g_ConfigFile, SecName, "is_patched", 0), 0),
                         LocalPatchVersion: SafeIniRead(g_ConfigFile, SecName, "local_patch_version", ""),
-                        LocalPatchBranchID: Number(SafeIniRead(g_ConfigFile, SecName, "local_patch_branch_id", B_ID))
+                        LocalPatchBranchID: SafeNumber(SafeIniRead(g_ConfigFile, SecName, "local_patch_branch_id", B_ID), B_ID)
                     }
                 }
             }
@@ -521,7 +464,7 @@ ReadConfig() {
 
         g_ConfigCache.%Sec% := {
             InstallPath: SavedInstallPath,
-            IsManualReset: Number(SafeIniRead(g_ConfigFile, Sec, "is_manual_reset", 0))
+            IsManualReset: SafeNumber(SafeIniRead(g_ConfigFile, Sec, "is_manual_reset", 0), 0)
         }
     }
 
@@ -530,6 +473,7 @@ ReadConfig() {
 
 SaveAllConfig() {
     global g_ConfigCache, g_ConfigFile, g_ServersConfigData, g_LastSeenBulletinVersion
+
     if (g_ConfigCache.HasOwnProp("Settings") && g_ConfigCache.Settings.HasOwnProp("LastServerID")) {
         SafeIniWrite(g_ConfigCache.Settings.LastServerID, g_ConfigFile, "Settings", "LastServerID")
     }
@@ -543,20 +487,44 @@ SaveAllConfig() {
         }
     }
 
+    ExistingSections := SafeIniReadSections(g_ConfigFile)
+    if (ExistingSections != "") {
+        loop parse, ExistingSections, "`n", "`r" {
+            SecName := Trim(A_LoopField)
+            if (SubStr(SecName, 1, 8) == "Profile_") {
+                try IniDelete(g_ConfigFile, SecName)
+            }
+        }
+    }
+
+    WrittenProfiles := Map()
+
     for KeyName, ConfigObj in g_ConfigCache.OwnProps() {
         if (SubStr(KeyName, 1, 8) == "Profile_" && Type(ConfigObj) == "Object") {
-            if (ConfigObj.HasOwnProp("ServerID"))
-                SafeIniWrite(ConfigObj.ServerID, g_ConfigFile, KeyName, "server_id")
-            if (ConfigObj.HasOwnProp("BranchID"))
-                SafeIniWrite(ConfigObj.BranchID, g_ConfigFile, KeyName, "branch_id")
-            if (ConfigObj.HasOwnProp("InstallPath"))
-                SafeIniWrite(ConfigObj.InstallPath, g_ConfigFile, KeyName, "install_path")
-            if (ConfigObj.HasOwnProp("IsPatched"))
-                SafeIniWrite(ConfigObj.IsPatched, g_ConfigFile, KeyName, "is_patched")
-            if (ConfigObj.HasOwnProp("LocalPatchVersion"))
-                SafeIniWrite(ConfigObj.LocalPatchVersion, g_ConfigFile, KeyName, "local_patch_version")
-            if (ConfigObj.HasOwnProp("LocalPatchBranchID"))
-                SafeIniWrite(ConfigObj.LocalPatchBranchID, g_ConfigFile, KeyName, "local_patch_branch_id")
+            ServerID := ConfigObj.HasOwnProp("ServerID") ? ConfigObj.ServerID : 0
+            BranchID := ConfigObj.HasOwnProp("BranchID") ? ConfigObj.BranchID : 1
+            InstallPath := ConfigObj.HasOwnProp("InstallPath") ? ConfigObj.InstallPath : ""
+
+            if (ServerID == 0 || InstallPath == "")
+                continue
+
+            UniqueSignature := ServerID . "|" . BranchID . "|" . StrLower(PathUtil.Normalize(InstallPath))
+            if (WrittenProfiles.Has(UniqueSignature))
+                continue
+
+            WrittenProfiles[UniqueSignature] := true
+            StandardSectionName := GetProfileKey(ServerID, InstallPath, BranchID)
+
+            SafeIniWrite(ServerID, g_ConfigFile, StandardSectionName, "server_id")
+            SafeIniWrite(BranchID, g_ConfigFile, StandardSectionName, "branch_id")
+            SafeIniWrite(PathUtil.Normalize(InstallPath), g_ConfigFile, StandardSectionName, "install_path")
+
+            if ConfigObj.HasOwnProp("IsPatched")
+                SafeIniWrite(ConfigObj.IsPatched, g_ConfigFile, StandardSectionName, "is_patched")
+            if ConfigObj.HasOwnProp("LocalPatchVersion")
+                SafeIniWrite(ConfigObj.LocalPatchVersion, g_ConfigFile, StandardSectionName, "local_patch_version")
+            if ConfigObj.HasOwnProp("LocalPatchBranchID")
+                SafeIniWrite(ConfigObj.LocalPatchBranchID, g_ConfigFile, StandardSectionName, "local_patch_branch_id")
         }
     }
 }
@@ -565,8 +533,15 @@ RefreshServerComboBox() {
     global g_ServersConfigData, ComboServerList, g_ConfigFile, g_CurrentServer, g_ConfigCache
 
     DropDownOptions := []
-    SavedLastId := Number(SafeIniRead(g_ConfigFile, "Settings", "LastServerID", 102))
+    SavedLastId := SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "LastServerID", 102), 102)
     TargetIndex := 1
+
+    if (g_ServersConfigData.Length == 0) {
+        ComboServerList.Delete()
+        ComboServerList.Add([])
+        g_CurrentServer := Map()
+        return
+    }
 
     loop g_ServersConfigData.Length {
         Server := g_ServersConfigData[A_Index]
@@ -579,7 +554,7 @@ RefreshServerComboBox() {
     ComboServerList.Add(DropDownOptions)
     ComboServerList.Value := TargetIndex
 
-    if (g_ServersConfigData.Length >= TargetIndex) {
+    if (TargetIndex <= g_ServersConfigData.Length) {
         g_CurrentServer := g_ServersConfigData[TargetIndex]
         if (!g_ConfigCache.HasOwnProp("Settings"))
             g_ConfigCache.Settings := {}
@@ -627,10 +602,109 @@ RefreshServerData() {
     RefreshUi()
 }
 
+GetLocalPatchInfo() {
+    global g_ConfigCache, g_CurrentServer, g_InstallPath
+
+    DefaultResult := Map(
+        "isPatched", 0,
+        "localVersion", "",
+        "branchId", 1,
+        "profileKey", ""
+    )
+
+    if (g_InstallPath == "" || !g_CurrentServer.Has("id"))
+        return DefaultResult
+
+    ServerId := g_CurrentServer["id"]
+    NormalizedCurrentPath := StrLower(PathUtil.Normalize(g_InstallPath))
+
+    for KeyName, ConfigObj in g_ConfigCache.OwnProps() {
+        if (SubStr(KeyName, 1, 8) == "Profile_" && Type(ConfigObj) == "Object") {
+            if (ConfigObj.HasOwnProp("ServerID") && ConfigObj.ServerID == ServerId) {
+                if (ConfigObj.HasOwnProp("InstallPath") && ConfigObj.InstallPath != "" && StrLower(PathUtil.Normalize(ConfigObj.InstallPath)) == NormalizedCurrentPath) {
+                    BackupDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . KeyName)
+                    IsPatchedByBackup := (DirExist(BackupDir) || FileExist(BackupDir . "\backup_manifest.json"))
+                    IsPatchedByConfig := (ConfigObj.HasOwnProp("IsPatched") && ConfigObj.IsPatched == 1)
+
+                    if (IsPatchedByBackup || IsPatchedByConfig) {
+                        LocalVer := ConfigObj.HasOwnProp("LocalPatchVersion") ? ConfigObj.LocalPatchVersion : ""
+                        if (LocalVer == "") {
+                            ManifestPath := BackupDir . "\backup_manifest.json"
+                            if FileExist(ManifestPath) {
+                                try {
+                                    Parsed := JSON.parse(FileRead(ManifestPath, "UTF-8"))
+                                    if (Type(Parsed) == "Map" && Parsed.Has("patch_version")) {
+                                        LocalVer := SafeString(Parsed["patch_version"])
+                                    }
+                                }
+                            }
+                        }
+                        return Map(
+                            "isPatched", 1,
+                            "localVersion", LocalVer,
+                            "branchId", ConfigObj.HasOwnProp("LocalPatchBranchID") ? ConfigObj.LocalPatchBranchID : 1,
+                            "profileKey", KeyName
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    BackupBaseDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup")
+    if DirExist(BackupBaseDir) {
+        loop files, BackupBaseDir . "\*", "D" {
+            ManifestPath := A_LoopFileFullPath . "\backup_manifest.json"
+            if FileExist(ManifestPath) {
+                try {
+                    Parsed := JSON.parse(FileRead(ManifestPath, "UTF-8"))
+                    if (Type(Parsed) == "Map" && Parsed.Has("install_path")) {
+                        if (StrLower(PathUtil.Normalize(Parsed["install_path"])) == NormalizedCurrentPath) {
+                            return Map(
+                                "isPatched", 1,
+                                "localVersion", Parsed.Has("patch_version") ? SafeString(Parsed["patch_version"]) : "",
+                                "branchId", Parsed.Has("branch_id") ? SafeNumber(Parsed["branch_id"], 1) : 1,
+                                "profileKey", A_LoopFileName
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return DefaultResult
+}
+
 RefreshUi() {
-    global BtnBrowse, BtnChinese, BtnRestore, BtnReset, BtnScan, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing
+    global BtnBrowse, BtnChinese, BtnRestore, BtnReset, BtnScan, BtnUpdate, ComboServerList, EditInstallPath
+    global g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, TabCtrl, TextTipInfo, MainGui
+
+    if (TabCtrl.Value != 1) {
+        TextTipInfo.Opt("+Hidden")
+        return
+    }
+
+    ShowGameRunningTip := (!g_IsSyncing && IsGameProcessRunning())
+
+    if (ShowGameRunningTip) {
+        TextTipInfo.Opt("-Hidden")
+        TabCtrl.Move(, , , 470)
+        BtnUpdate.Move(177, 428)
+        BtnChinese.Move(177, 428)
+        BtnRestore.Move(289, 428)
+        MainGui.Show("h500")
+    } else {
+        TextTipInfo.Opt("+Hidden")
+        TabCtrl.Move(, , , 460)
+        BtnUpdate.Move(177, 418)
+        BtnChinese.Move(177, 418)
+        BtnRestore.Move(289, 418)
+        MainGui.Show("h490")
+    }
 
     if (g_IsPatching || g_IsSyncing) {
+        BtnUpdate.Opt("+Disabled")
         BtnChinese.Opt("+Disabled")
         BtnRestore.Opt("+Disabled")
         BtnScan.Opt("+Disabled")
@@ -647,14 +721,30 @@ RefreshUi() {
     if (!g_CurrentServer.Has("id"))
         return
 
-    IsPatched := CheckIsPatchedStatus()
+    Info := GetLocalPatchInfo()
+    IsPatched := Info["isPatched"]
+    UpdateBranches := GetPatchUpdates(g_CurrentServer)
 
-    BtnChinese.Opt(IsPatched == 1 ? "+Disabled" : "-Disabled")
+    if (UpdateBranches.Length > 0) {
+        BtnUpdate.Opt("-Hidden")
+        BtnUpdate.Opt("-Disabled")
+        BtnChinese.Opt("+Hidden")
+    } else {
+        BtnUpdate.Opt("+Hidden")
+        BtnChinese.Opt("-Hidden")
+        BtnChinese.Opt(IsPatched == 1 ? "+Disabled" : "-Disabled")
+    }
+
     BtnRestore.Opt("-Disabled")
 
     if (EditInstallPath.Value) {
         BtnReset.Opt("-Disabled")
-        (IsPatched != 1) ? BtnChinese.Focus() : BtnRestore.Focus()
+        if (UpdateBranches.Length > 0)
+            BtnUpdate.Focus()
+        else if (IsPatched != 1)
+            BtnChinese.Focus()
+        else
+            BtnRestore.Focus()
     } else {
         BtnReset.Opt("+Disabled")
         BtnScan.Focus()
@@ -681,6 +771,10 @@ SetInstallPath(NewPath, IsManualReset := 0) {
 
 SelectServer() {
     global g_ConfigCache, g_CurrentServer, g_InstallPath, ComboServerList, g_ServersConfigData
+
+    if (ComboServerList.Value <= 0 || ComboServerList.Value > g_ServersConfigData.Length)
+        return
+
     g_CurrentServer := g_ServersConfigData[ComboServerList.Value]
 
     if (!g_ConfigCache.HasOwnProp("Settings"))
@@ -693,6 +787,38 @@ SelectServer() {
 
     if (g_InstallPath == "")
         AutoDetectInstallPath()
+}
+
+DoUpdatePatch(*) {
+    global g_InstallPath, g_IsPatching, g_CurrentServer
+
+    if (!g_InstallPath || !DirExist(g_InstallPath)) {
+        ShowMessageDialog("先设置 AION2 游戏的安装目录。")
+        RefreshUi()
+        return
+    }
+
+    UpdateBranches := GetPatchUpdates(g_CurrentServer)
+    if (UpdateBranches.Length == 0) {
+        ShowMessageDialog("当前无需要更新的汉化补丁。")
+        RefreshUi()
+        return
+    }
+
+    g_IsPatching := true
+    RefreshUi()
+
+    ShowMultiBranchDialog(UpdateBranches, HandleUpdateBranchSelected, true)
+}
+
+HandleUpdateBranchSelected(SelectedBranch) {
+    global g_IsPatching
+    if (!SelectedBranch) {
+        g_IsPatching := false
+        RefreshUi()
+        return
+    }
+    ExecuteChinesePatch(SelectedBranch, true)
 }
 
 DoChinesePatch(*) {
@@ -715,21 +841,33 @@ DoChinesePatch(*) {
     BtnChinese.Opt("+Disabled")
 
     if (Branches.Length == 1) {
-        ExecuteChinesePatch(Branches[1])
+        ExecuteChinesePatch(Branches[1], false)
     } else {
-        ShowMultiBranchDialog(Branches, (SelectedBranch) => (
-            SelectedBranch ? ExecuteChinesePatch(SelectedBranch) : (g_IsPatching := false, RefreshUi())
-        ))
+        ShowMultiBranchDialog(Branches, HandleChineseBranchSelected, false)
     }
 }
 
-ExecuteChinesePatch(PatchBranch) {
+HandleChineseBranchSelected(SelectedBranch) {
+    global g_IsPatching
+    if (!SelectedBranch) {
+        g_IsPatching := false
+        RefreshUi()
+        return
+    }
+    ExecuteChinesePatch(SelectedBranch, false)
+}
+
+ExecuteChinesePatch(PatchBranch, IsUpdate := false) {
     global g_InstallPath, g_IsPatching
 
     try {
+        if (IsUpdate) {
+            DoRestorePatchInternal(true)
+        }
+
         ActionsArray := PatchBranch["actions"]
         if (ActionsArray.Length == 0) {
-            ShowMessageDialog("未发现有效的汉化补丁执行方案。")
+            ShowMessageDialog(IsUpdate ? "更新汉化补丁操作执行失败：`r`n`r`n未发现有效的汉化补丁执行方案。" : "未发现有效的汉化补丁执行方案。")
             g_IsPatching := false
             return
         }
@@ -739,32 +877,47 @@ ExecuteChinesePatch(PatchBranch) {
 
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
+
+            RelPath := SafeGet(Act, "target_relative_path", "")
+            if InStr(RelPath, "..")
+                continue
+
             if (Act["type"] == "add" || Act["type"] == "replace") {
                 if (Act["file_md5"] == "d41d8cd98f00b204e9800998ecf8427e")
                     continue
-                if FileExist(PathUtil.Normalize(g_InstallPath . "\" . Act["target_relative_path"])) {
+                if FileExist(PathUtil.Normalize(g_InstallPath . "\" . RelPath)) {
                     HasAnyInstalled := true
                     break
                 }
             }
         }
 
-        if (HasAnyInstalled) {
-            ShowConfirmDialog("检测到游戏目录中已存在汉化补丁文件，是否直接覆盖更新？", (IsConfirmed) => (
-                IsConfirmed ? ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) : (g_IsPatching := false, RefreshUi())
-            ))
+        if (HasAnyInstalled && !IsUpdate) {
+            ContextMap := Map("branch", PatchBranch, "actions", ActionsArray, "branchId", BranchId, "isUpdate", IsUpdate)
+            ShowConfirmDialog("检测到汉化补丁文件，是否直接覆盖？", (IsConfirmed) => HandleOverlapConfirmation(IsConfirmed, ContextMap))
         } else {
-            ApplyPatchBranch(PatchBranch, ActionsArray, BranchId)
+            ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate)
         }
     } catch Error as Err {
-        ShowMessageDialog("汉化失败：`r`n" . Err.Message)
+        ErrMsg := IsUpdate ? ("更新汉化补丁操作执行失败：`r`n`r`n" . Err.Message) : ("汉化发生未知错误：`r`n`r`n" . Err.Message)
+        ShowMessageDialog(ErrMsg)
         g_IsPatching := false
         RefreshUi()
     }
 }
 
-ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) {
-    global g_InstallPath, g_CurrentServer, g_PatchsCacheDir, g_ConfigCache, g_ProjectName, g_IsPatching, MainStatusBar
+HandleOverlapConfirmation(IsConfirmed, ContextMap) {
+    global g_IsPatching
+    if (IsConfirmed) {
+        ApplyPatchBranch(ContextMap["branch"], ContextMap["actions"], ContextMap["branchId"], ContextMap["isUpdate"])
+    } else {
+        g_IsPatching := false
+        RefreshUi()
+    }
+}
+
+ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
+    global g_InstallPath, g_CurrentServer, g_PatchesCacheDir, g_ConfigCache, g_ProjectName, g_IsPatching, MainStatusBar
 
     try {
         ServerId := g_CurrentServer.Has("id") ? g_CurrentServer["id"] : "default"
@@ -773,7 +926,7 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) {
         ProfileKey := GetProfileKey(ServerId, NormalizedInstallPath, BranchId)
         BackupRootDir := GetBackupRootDir(ServerId, NormalizedInstallPath, BranchId)
 
-        LocalCacheRootDir := PathUtil.Normalize(A_ScriptDir . "\" . g_PatchsCacheDir)
+        LocalCacheRootDir := PathUtil.Normalize(A_ScriptDir . "\" . g_PatchesCacheDir)
         if !DirExist(LocalCacheRootDir)
             DirCreate(LocalCacheRootDir)
 
@@ -823,13 +976,13 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) {
             if (!DownloadPatchFileAsync(RemoteFileUrl, TmpFile, Act)) {
                 if FileExist(TmpFile)
                     FileDelete(TmpFile)
-                throw Error("补丁文件 [" . Act["filename"] . "] 下载失败。")
+                throw Error("汉化补丁文件 [" . Act["filename"] . "] 下载失败。")
             }
 
             if (Act["file_md5"] != "" && HashFileMd5(TmpFile) != Act["file_md5"]) {
                 if FileExist(TmpFile)
                     FileDelete(TmpFile)
-                throw Error("文件 [" . Act["filename"] . "] MD5 不匹配，补丁文件下载失败。")
+                throw Error("文件 [" . Act["filename"] . "] MD5 不匹配，汉化补丁文件下载失败。")
             }
 
             if FileExist(LocalCacheFile)
@@ -854,8 +1007,13 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) {
 
         loop ActionsArray.Length {
             Act := ActionsArray[A_Index]
-            FinalPath := PathUtil.Normalize(NormalizedInstallPath . "\" . Act["target_relative_path"])
-            BackupPath := PathUtil.Normalize(BackupRootDir . "\" . Act["target_relative_path"])
+            RelPath := Act["target_relative_path"]
+
+            if InStr(RelPath, "..")
+                throw Error("非法配置：路径包含非法相对级别跳转 [" . RelPath . "]")
+
+            FinalPath := PathUtil.Normalize(NormalizedInstallPath . "\" . RelPath)
+            BackupPath := PathUtil.Normalize(BackupRootDir . "\" . RelPath)
             SplitPath(FinalPath, , &FDir)
             SplitPath(BackupPath, , &BDir)
 
@@ -920,10 +1078,13 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) {
         SaveAllConfig()
 
         SetStatusBarText()
-        ShowMessageDialog("补丁文件已成功释放至游戏目录。`r`n`r`n汉化完成。")
+        SuccMsg := IsUpdate ? "汉化补丁已更新至最新版本。`r`n`r`n更新完成。" : "汉化补丁文件已成功释放至游戏目录。`r`n`r`n汉化完成。"
+        ShowMessageDialog(SuccMsg)
     } catch Error as Err {
         SetStatusBarText()
-        ShowMessageDialog("汉化失败：`r`n`r`n" . Err.Message)
+        FailMsg := IsUpdate ? ("更新汉化补丁操作执行失败：`r`n`r`n" . Err.Message . "`r`n`r`n建议在 PURPLE 或 Steam 中执行文件完整性校验。")
+            : ("汉化操作执行失败：`r`n`r`n" . Err.Message . "`r`n`r`n建议在 PURPLE 或 Steam 中执行文件完整性校验。")
+        ShowMessageDialog(FailMsg)
     } finally {
         g_IsPatching := false
         RefreshUi()
@@ -931,188 +1092,12 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId) {
 }
 
 DoRestorePatch(*) {
-    global g_InstallPath, g_CurrentServer, g_ConfigCache, g_IsPatching
-
+    global g_IsPatching
     g_IsPatching := true
     RefreshUi()
 
     try {
-        if (!g_InstallPath || !DirExist(g_InstallPath))
-            throw Error("先设置 AION2 游戏的安装目录。")
-
-        ServerId := g_CurrentServer.Has("id") ? g_CurrentServer["id"] : "default"
-        NormalizedInstallPath := PathUtil.Normalize(g_InstallPath)
-
-        LocalManifestPath := ""
-        BackupRootDir := ""
-        ProfileKey := ""
-        SavedBranchID := 1
-
-        BackupBaseDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup")
-        if DirExist(BackupBaseDir) {
-            loop files, BackupBaseDir . "\*", "D" {
-                FolderName := A_LoopFileName
-                if (SubStr(FolderName, 1, 8) == "Profile_") {
-                    TestManifestPath := A_LoopFileFullPath . "\backup_manifest.json"
-                    if FileExist(TestManifestPath) {
-                        try {
-                            ParsedTmp := JSON.parse(FileRead(TestManifestPath, "UTF-8"))
-                            if (Type(ParsedTmp) == "Map" && ParsedTmp.Has("install_path")) {
-                                if (StrLower(PathUtil.Normalize(ParsedTmp["install_path"])) == StrLower(NormalizedInstallPath)) {
-                                    ProfileKey := FolderName
-                                    BackupRootDir := PathUtil.Normalize(A_LoopFileFullPath)
-                                    LocalManifestPath := TestManifestPath
-                                    if (ParsedTmp.Has("branch_id"))
-                                        SavedBranchID := ParsedTmp["branch_id"]
-                                    if (ParsedTmp.Has("server_id"))
-                                        ServerId := ParsedTmp["server_id"]
-                                    break
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if (LocalManifestPath == "") {
-            SavedBranchID := GetSavedBranchID()
-            ProfileKey := GetProfileKey(ServerId, NormalizedInstallPath, SavedBranchID)
-            BackupRootDir := GetBackupRootDir(ServerId, NormalizedInstallPath, SavedBranchID)
-            LocalManifestPath := BackupRootDir . "\backup_manifest.json"
-        }
-
-        ActionsArray := []
-        PatchBranch := ""
-
-        if FileExist(LocalManifestPath) {
-            try {
-                Parsed := JSON.parse(FileRead(LocalManifestPath, "UTF-8"))
-                if (Type(Parsed) == "Map" && Parsed.Has("actions") && Type(Parsed["actions"]) == "Array") {
-                    ActionsArray := Parsed["actions"]
-                }
-            }
-        }
-
-        if (ActionsArray.Length == 0) {
-            Branches := g_CurrentServer["patch_branches"]
-            if (Branches.Length == 0)
-                throw Error("当前服务器未发现可用的撤销配置。")
-
-            for Branch in Branches {
-                if (Branch["id"] == SavedBranchID) {
-                    PatchBranch := Branch
-                    break
-                }
-            }
-            if (!PatchBranch && Branches.Length > 0)
-                PatchBranch := Branches[1]
-
-            if (PatchBranch && PatchBranch.Has("actions"))
-                ActionsArray := PatchBranch["actions"]
-        }
-
-        if (ActionsArray.Length == 0)
-            throw Error("当前补丁配置异常，缺少撤销执行动作及备份清单。")
-
-        BranchId := SavedBranchID ? SavedBranchID : (PatchBranch && PatchBranch.Has("id") ? PatchBranch["id"] : 1)
-
-        HasAnyPatchFile := false
-        loop ActionsArray.Length {
-            Act := ActionsArray[A_Index]
-            ActType := Act.Has("type") ? Act["type"] : "add"
-            TargetPath := PathUtil.Normalize(NormalizedInstallPath . "\" . Act["target_relative_path"])
-            BackupPath := PathUtil.Normalize(BackupRootDir . "\" . Act["target_relative_path"])
-            if (ActType == "add") {
-                if FileExist(TargetPath) {
-                    HasAnyPatchFile := true
-                    break
-                }
-            } else if (ActType == "replace" || ActType == "delete") {
-                if FileExist(BackupPath) {
-                    HasAnyPatchFile := true
-                    break
-                }
-            }
-        }
-
-        IsPatched := CheckIsPatchedStatus()
-
-        if (IsPatched == 0 && !HasAnyPatchFile && !DirExist(BackupRootDir))
-            throw Error("当前游戏未应用汉化，无需执行撤销操作。")
-
-        if (IsPatched == 1 && !HasAnyPatchFile && !DirExist(BackupRootDir)) {
-            if (ProfileKey != "" && g_ConfigCache.HasOwnProp(ProfileKey)) {
-                g_ConfigCache.%ProfileKey%.IsPatched := 0
-                g_ConfigCache.%ProfileKey%.LocalPatchVersion := ""
-                g_ConfigCache.%ProfileKey%.LocalPatchBranchID := 0
-                SaveAllConfig()
-            }
-            throw Error("游戏目录内未检测到汉化补丁文件，已重置配置状态。")
-        }
-
-        FailedFiles := []
-
-        loop ActionsArray.Length {
-            Act := ActionsArray[A_Index]
-            ActType := Act.Has("type") ? Act["type"] : "add"
-            FinalPath := PathUtil.Normalize(NormalizedInstallPath . "\" . Act["target_relative_path"])
-            BackupPath := PathUtil.Normalize(BackupRootDir . "\" . Act["target_relative_path"])
-            SplitPath(FinalPath, , &FDir)
-
-            if (ActType == "add") {
-                if FileExist(FinalPath) {
-                    try {
-                        FileDelete(FinalPath)
-                    } catch {
-                        FailedFiles.Push(Act["target_relative_path"])
-                    }
-                }
-            }
-            else if (ActType == "replace" || ActType == "delete") {
-                if (!FileExist(BackupPath)) {
-                    continue
-                }
-
-                if (FDir != "" && !DirExist(FDir)) {
-                    try {
-                        DirCreate(FDir)
-                    } catch {
-                        FailedFiles.Push(Act["target_relative_path"])
-                        continue
-                    }
-                }
-
-                try {
-                    FileCopy(BackupPath, FinalPath, 1)
-                    try FileDelete(BackupPath)
-                } catch {
-                    FailedFiles.Push(Act["target_relative_path"])
-                }
-            }
-        }
-
-        if (ProfileKey != "") {
-            if (!g_ConfigCache.HasOwnProp(ProfileKey))
-                g_ConfigCache.%ProfileKey% := {}
-            g_ConfigCache.%ProfileKey%.IsPatched := 0
-            g_ConfigCache.%ProfileKey%.LocalPatchVersion := ""
-            g_ConfigCache.%ProfileKey%.LocalPatchBranchID := 0
-            SaveAllConfig()
-        }
-
-        if (FailedFiles.Length == 0 && DirExist(BackupRootDir)) {
-            try DirDelete(BackupRootDir, 1)
-        }
-
-        if (FailedFiles.Length > 0) {
-            FailMessage := "部分备份文件还原失败，建议在 PURPLE 或 Steam 中执行文件完整性校验。"
-            ShowMessageDialog(FailMessage)
-            return
-        }
-
-        ShowMessageDialog("已清除汉化补丁，恢复游戏默认语言。`r`n`r`n撤销完成。")
-
+        DoRestorePatchInternal(false)
     } catch Error as Err {
         SetStatusBarText()
         ShowMessageDialog(Err.Message)
@@ -1122,38 +1107,303 @@ DoRestorePatch(*) {
     }
 }
 
-CheckAppUpdate(UpdateMap) {
+DoRestorePatchInternal(IsSilent := false) {
+    global g_InstallPath, g_CurrentServer, g_ConfigCache
+
+    if (!g_InstallPath || !DirExist(g_InstallPath))
+        throw Error("先设置 AION2 游戏的安装目录。")
+
+    ServerId := g_CurrentServer.Has("id") ? g_CurrentServer["id"] : "default"
+    NormalizedInstallPath := PathUtil.Normalize(g_InstallPath)
+
+    LocalManifestPath := ""
+    BackupRootDir := ""
+    ProfileKey := ""
+    SavedBranchID := 1
+
+    BackupBaseDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup")
+    if DirExist(BackupBaseDir) {
+        loop files, BackupBaseDir . "\*", "D" {
+            FolderName := A_LoopFileName
+            if (SubStr(FolderName, 1, 8) == "Profile_") {
+                TestManifestPath := A_LoopFileFullPath . "\backup_manifest.json"
+                if FileExist(TestManifestPath) {
+                    try {
+                        ParsedTmp := JSON.parse(FileRead(TestManifestPath, "UTF-8"))
+                        if (Type(ParsedTmp) == "Map" && ParsedTmp.Has("install_path")) {
+                            if (StrLower(PathUtil.Normalize(ParsedTmp["install_path"])) == StrLower(NormalizedInstallPath)) {
+                                ProfileKey := FolderName
+                                BackupRootDir := PathUtil.Normalize(A_LoopFileFullPath)
+                                LocalManifestPath := TestManifestPath
+                                if (ParsedTmp.Has("branch_id"))
+                                    SavedBranchID := SafeNumber(ParsedTmp["branch_id"], 1)
+                                if (ParsedTmp.Has("server_id"))
+                                    ServerId := ParsedTmp["server_id"]
+                                break
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if (LocalManifestPath == "") {
+        SavedBranchID := GetSavedBranchID()
+        ProfileKey := GetProfileKey(ServerId, NormalizedInstallPath, SavedBranchID)
+        BackupRootDir := GetBackupRootDir(ServerId, NormalizedInstallPath, SavedBranchID)
+        LocalManifestPath := BackupRootDir . "\backup_manifest.json"
+    }
+
+    ActionsArray := []
+    PatchBranch := ""
+
+    if FileExist(LocalManifestPath) {
+        try {
+            Parsed := JSON.parse(FileRead(LocalManifestPath, "UTF-8"))
+            if (Type(Parsed) == "Map" && Parsed.Has("actions") && Type(Parsed["actions"]) == "Array") {
+                ActionsArray := Parsed["actions"]
+            }
+        }
+    }
+
+    if (ActionsArray.Length == 0) {
+        Branches := g_CurrentServer["patch_branches"]
+        if (Branches.Length == 0)
+            throw Error("当前服务器未发现可用的撤销配置。")
+
+        for Branch in Branches {
+            if (Branch["id"] == SavedBranchID) {
+                PatchBranch := Branch
+                break
+            }
+        }
+        if (!PatchBranch && Branches.Length > 0)
+            PatchBranch := Branches[1]
+
+        if (PatchBranch && PatchBranch.Has("actions"))
+            ActionsArray := PatchBranch["actions"]
+    }
+
+    if (ActionsArray.Length == 0)
+        throw Error("当前汉化补丁配置异常，缺少撤销执行动作及备份清单。")
+
+    BranchId := SavedBranchID ? SavedBranchID : (PatchBranch && PatchBranch.Has("id") ? PatchBranch["id"] : 1)
+
+    HasAnyPatchFile := false
+    loop ActionsArray.Length {
+        Act := ActionsArray[A_Index]
+        RelPath := SafeGet(Act, "target_relative_path", "")
+
+        if InStr(RelPath, "..")
+            continue
+
+        ActType := Act.Has("type") ? Act["type"] : "add"
+        TargetPath := PathUtil.Normalize(NormalizedInstallPath . "\" . RelPath)
+        BackupPath := PathUtil.Normalize(BackupRootDir . "\" . RelPath)
+        if (ActType == "add") {
+            if FileExist(TargetPath) {
+                HasAnyPatchFile := true
+                break
+            }
+        } else if (ActType == "replace" || ActType == "delete") {
+            if FileExist(BackupPath) {
+                HasAnyPatchFile := true
+                break
+            }
+        }
+    }
+
+    Info := GetLocalPatchInfo()
+    IsPatched := Info["isPatched"]
+
+    if (IsPatched == 0 && !HasAnyPatchFile && !DirExist(BackupRootDir)) {
+        if (!IsSilent)
+            throw Error("当前游戏未应用汉化，无需执行撤销操作。")
+        return
+    }
+
+    if (IsPatched == 1 && !HasAnyPatchFile && !DirExist(BackupRootDir)) {
+        if (ProfileKey != "" && g_ConfigCache.HasOwnProp(ProfileKey)) {
+            g_ConfigCache.%ProfileKey%.IsPatched := 0
+            g_ConfigCache.%ProfileKey%.LocalPatchVersion := ""
+            g_ConfigCache.%ProfileKey%.LocalPatchBranchID := 0
+            SaveAllConfig()
+        }
+        if (!IsSilent)
+            throw Error("未检测到汉化补丁文件，已重置配置状态。")
+        return
+    }
+
+    FailedFiles := []
+
+    loop ActionsArray.Length {
+        Act := ActionsArray[A_Index]
+        RelPath := SafeGet(Act, "target_relative_path", "")
+
+        if InStr(RelPath, "..")
+            continue
+
+        ActType := Act.Has("type") ? Act["type"] : "add"
+        FinalPath := PathUtil.Normalize(NormalizedInstallPath . "\" . RelPath)
+        BackupPath := PathUtil.Normalize(BackupRootDir . "\" . RelPath)
+        SplitPath(FinalPath, , &FDir)
+
+        if (ActType == "add") {
+            if FileExist(FinalPath) {
+                try {
+                    FileDelete(FinalPath)
+                } catch {
+                    FailedFiles.Push(RelPath)
+                }
+            }
+        }
+        else if (ActType == "replace" || ActType == "delete") {
+            if (!FileExist(BackupPath)) {
+                continue
+            }
+
+            if (FDir != "" && !DirExist(FDir)) {
+                try {
+                    DirCreate(FDir)
+                } catch {
+                    FailedFiles.Push(RelPath)
+                    continue
+                }
+            }
+
+            try {
+                FileCopy(BackupPath, FinalPath, 1)
+                try FileDelete(BackupPath)
+            } catch {
+                FailedFiles.Push(RelPath)
+            }
+        }
+    }
+
+    if (ProfileKey != "") {
+        if (!g_ConfigCache.HasOwnProp(ProfileKey))
+            g_ConfigCache.%ProfileKey% := {}
+        g_ConfigCache.%ProfileKey%.IsPatched := 0
+        g_ConfigCache.%ProfileKey%.LocalPatchVersion := ""
+        g_ConfigCache.%ProfileKey%.LocalPatchBranchID := 0
+        SaveAllConfig()
+    }
+
+    if (FailedFiles.Length == 0 && DirExist(BackupRootDir)) {
+        try DirDelete(BackupRootDir, 1)
+    }
+
+    if (FailedFiles.Length > 0) {
+        FailMessage := "部分备份文件还原失败，建议在 PURPLE 或 Steam 中执行文件完整性校验。"
+        if (!IsSilent)
+            ShowMessageDialog(FailMessage)
+        else
+            throw Error(FailMessage)
+        return
+    }
+
+    if (!IsSilent)
+        ShowMessageDialog("已清除汉化补丁，恢复游戏默认语言。`r`n`r`n撤销完成。")
+}
+
+CheckClientUpdate(UpdateMap, OnComplete := "") {
     global g_CurrentAppVersion
 
-    if (Type(UpdateMap) != "Map" || !UpdateMap.Has("latest_client_version"))
+    if (Type(UpdateMap) != "Map" || !UpdateMap.Has("latest_client_version")) {
+        if (OnComplete)
+            OnComplete()
         return
+    }
 
-    LatestVersion := String(UpdateMap["latest_client_version"])
-    MinRequiredVersion := UpdateMap.Has("min_required_version") ? String(UpdateMap["min_required_version"]) : ""
-    ChangelogText := UpdateMap.Has("changelog") ? String(UpdateMap["changelog"]) : ""
+    LatestVersion := SafeString(UpdateMap["latest_client_version"])
+    MinRequiredVersion := UpdateMap.Has("min_required_version") ? SafeString(UpdateMap["min_required_version"]) : ""
+    ChangelogText := UpdateMap.Has("changelog") ? SafeString(UpdateMap["changelog"]) : ""
 
     IsForceUpdate := (MinRequiredVersion != "" && VerCompare(MinRequiredVersion, g_CurrentAppVersion) > 0)
     HasNewVersion := (LatestVersion != "" && VerCompare(LatestVersion, g_CurrentAppVersion) > 0)
 
     if (IsForceUpdate || HasNewVersion) {
-        DownloadUrlMain := UpdateMap.Has("client_download_url_main") ? String(UpdateMap["client_download_url_main"]) : ""
-        DownloadUrlMinor := UpdateMap.Has("client_download_url_minor") ? String(UpdateMap["client_download_url_minor"]) : ""
+        DownloadUrlMain := UpdateMap.Has("client_download_url_main") ? SafeString(UpdateMap["client_download_url_main"]) : ""
+        DownloadUrlMinor := UpdateMap.Has("client_download_url_minor") ? SafeString(UpdateMap["client_download_url_minor"]) : ""
 
-        ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpdate)
+        ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpdate, OnComplete)
+    } else {
+        if (OnComplete)
+            OnComplete()
     }
 }
 
-CheckBulletin(BulletinMap) {
+CheckBulletin(BulletinMap, OnComplete := "") {
     global g_LastSeenBulletinVersion
 
-    if (Type(BulletinMap) != "Map" || !BulletinMap.Has("latest_bulletin_version"))
+    if (Type(BulletinMap) != "Map" || !BulletinMap.Has("latest_bulletin_version")) {
+        if (OnComplete)
+            OnComplete()
         return
+    }
 
-    LatestVersion := String(BulletinMap["latest_bulletin_version"])
-    BulletinText := BulletinMap.Has("changelog") ? String(BulletinMap["changelog"]) : ""
+    LatestVersion := SafeString(BulletinMap["latest_bulletin_version"])
+    BulletinText := BulletinMap.Has("changelog") ? SafeString(BulletinMap["changelog"]) : ""
 
     if (LatestVersion != "" && VerCompare(LatestVersion, g_LastSeenBulletinVersion) > 0 && BulletinText != "") {
-        ShowBulletinDialog(BulletinText, LatestVersion)
+        ShowBulletinDialog(BulletinText, LatestVersion, OnComplete)
+    } else {
+        if (OnComplete)
+            OnComplete()
+    }
+}
+
+GetPatchUpdates(ServerMap) {
+    UpdatesList := []
+    if (Type(ServerMap) != "Map" || !ServerMap.Has("patch_branches"))
+        return UpdatesList
+
+    LocalInfo := GetLocalPatchInfo()
+    if (LocalInfo["isPatched"] == 0 || LocalInfo["localVersion"] == "")
+        return UpdatesList
+
+    for Branch in ServerMap["patch_branches"] {
+        BranchId := Branch["id"]
+        if (BranchId == LocalInfo["branchId"]) {
+            LatestVer := Branch.Has("latest_patch_version") ? SafeString(Branch["latest_patch_version"]) : "1.0.0.0"
+            if (VerCompare(LatestVer, LocalInfo["localVersion"]) > 0) {
+                UpdatesList.Push({
+                    Branch: Branch,
+                    LocalVersion: LocalInfo["localVersion"],
+                    LatestVersion: LatestVer
+                })
+            }
+        }
+    }
+
+    return UpdatesList
+}
+
+CheckPatchUpdate(ServerMap, OnComplete := "") {
+    global g_IsPatching
+
+    if (Type(ServerMap) != "Map" || !ServerMap.Has("patch_branches")) {
+        if (OnComplete)
+            OnComplete()
+        return
+    }
+
+    UpdatesList := GetPatchUpdates(ServerMap)
+    if (UpdatesList.Length > 0 && !g_IsPatching) {
+        g_IsPatching := true
+        RefreshUi()
+
+        DialogCallback(selected) {
+            HandleUpdateBranchSelected(selected)
+            if (OnComplete)
+                OnComplete()
+        }
+
+        ShowMultiBranchDialog(UpdatesList, DialogCallback, true)
+    } else {
+        if (OnComplete)
+            OnComplete()
     }
 }
 
@@ -1237,10 +1487,13 @@ SelectFastestMirrorNode() {
 DownloadPatchFileAsync(RemoteFileUrl, DestPath, FileAction) {
     global g_CleanPreUrl, g_BestDownloadPrefix, g_BestLatency, MainStatusBar
 
-    CleanRemotePath := LTrim(StrReplace(RemoteFileUrl, "\", "/"), "/")
+    CleanRemotePath := StrReplace(RemoteFileUrl, "\", "/")
+    CleanRemotePath := RegExReplace(CleanRemotePath, "i)^https?://", "")
+    CleanRemotePath := LTrim(CleanRemotePath, "/")
+
     TargetUrl := (g_BestDownloadPrefix != "") ? g_BestDownloadPrefix . "/" . g_CleanPreUrl . "/" . CleanRemotePath : g_CleanPreUrl . "/" . CleanRemotePath
 
-    TotalBytes := FileAction["file_size"]
+    TotalBytes := SafeNumber(FileAction["file_size"], 0)
 
     SplitPath(DestPath, , &ParentDir)
     if (ParentDir != "" && !DirExist(ParentDir))
@@ -1388,7 +1641,7 @@ HashStringMd5(Text) {
             return ""
         }
 
-        DllCall("Advapi32\CryptHashData", "Ptr", hHash, "Ptr", Buf, "UInt", ReqSize - 1, "UInt", 0)
+        DllCall("Advapi32\CryptHashData", "Ptr", hHash, "Ptr", ReqSize - 1, "UInt", 0)
 
         HashLen := 16
         HashBuf := Buffer(HashLen)
@@ -1452,7 +1705,7 @@ GetSavedBranchID() {
                         Parsed := JSON.parse(FileRead(ManifestPath, "UTF-8"))
                         if (Type(Parsed) == "Map" && Parsed.Has("install_path") && Parsed.Has("branch_id")) {
                             if (StrLower(PathUtil.Normalize(Parsed["install_path"])) == NormalizedCurrentPath)
-                                return Parsed["branch_id"]
+                                return SafeNumber(Parsed["branch_id"], 1)
                         }
                     }
                 }
@@ -1461,51 +1714,7 @@ GetSavedBranchID() {
     }
 
     Sec := "Server_" . ServerId
-    return (g_ConfigCache.HasOwnProp(Sec) && Type(g_ConfigCache.%Sec%) == "Object" && g_ConfigCache.%Sec%.HasOwnProp("LocalPatchBranchID")) ? g_ConfigCache.%Sec%.LocalPatchBranchID : 1
-}
-
-CheckIsPatchedStatus() {
-    global g_ConfigCache, g_CurrentServer, g_InstallPath
-    if (g_InstallPath == "" || !g_CurrentServer.Has("id"))
-        return 0
-
-    ServerId := g_CurrentServer["id"]
-    NormalizedCurrentPath := StrLower(PathUtil.Normalize(g_InstallPath))
-
-    for KeyName, ConfigObj in g_ConfigCache.OwnProps() {
-        if (SubStr(KeyName, 1, 8) == "Profile_" && Type(ConfigObj) == "Object") {
-            if (ConfigObj.HasOwnProp("ServerID") && ConfigObj.ServerID == ServerId) {
-                if (ConfigObj.HasOwnProp("InstallPath") && ConfigObj.InstallPath != "" && StrLower(PathUtil.Normalize(ConfigObj.InstallPath)) == NormalizedCurrentPath) {
-                    BackupDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . KeyName)
-                    if (DirExist(BackupDir) || FileExist(BackupDir . "\backup_manifest.json"))
-                        return 1
-                    if (ConfigObj.HasOwnProp("IsPatched") && ConfigObj.IsPatched == 1)
-                        return 1
-                }
-            }
-        }
-    }
-
-    BackupBaseDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup")
-    if DirExist(BackupBaseDir) {
-        loop files, BackupBaseDir . "\*", "D" {
-            FolderName := A_LoopFileName
-            if (SubStr(FolderName, 1, 8) == "Profile_") {
-                ManifestPath := A_LoopFileFullPath . "\backup_manifest.json"
-                if FileExist(ManifestPath) {
-                    try {
-                        Parsed := JSON.parse(FileRead(ManifestPath, "UTF-8"))
-                        if (Type(Parsed) == "Map" && Parsed.Has("install_path")) {
-                            if (StrLower(PathUtil.Normalize(Parsed["install_path"])) == NormalizedCurrentPath)
-                                return 1
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return 0
+    return (g_ConfigCache.HasOwnProp(Sec) && Type(g_ConfigCache.%Sec%) == "Object" && g_ConfigCache.%Sec%.HasOwnProp("LocalPatchBranchID")) ? SafeNumber(g_ConfigCache.%Sec%.LocalPatchBranchID, 1) : 1
 }
 
 OnScanButtonClick() {
@@ -1518,11 +1727,17 @@ OnScanButtonClick() {
         SetInstallPath(SelectedFolder, 0)
         SetStatusBarText("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
     } else if (ValidGames.Length > 1) {
-        ShowMultiPathDialog(ValidGames, (SelectedFolder) => (
-            SelectedFolder != "" ? (SetInstallPath(SelectedFolder, 0), SetStatusBarText("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")) : false
-        ))
+        ShowMultiPathDialog(ValidGames, HandleScanPathSelected)
     } else {
         ShowMessageDialog("未检测到有效的安装目录，通过[浏览…]按钮手动指定。")
+    }
+}
+
+HandleScanPathSelected(SelectedFolder) {
+    global g_CurrentServer
+    if (SelectedFolder != "") {
+        SetInstallPath(SelectedFolder, 0)
+        SetStatusBarText("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
     }
 }
 
@@ -1543,16 +1758,17 @@ AutoDetectInstallPath() {
 }
 
 FormatFileSize(Bytes) {
-    if (!IsNumber(Bytes) || Bytes <= 0)
+    NumericBytes := SafeNumber(Bytes, 0)
+    if (NumericBytes <= 0)
         return "0 B"
-    if (Bytes < 1024)
-        return Bytes . " B"
-    else if (Bytes < 1048576)
-        return Format("{:.2f} KB", Bytes / 1024)
-    else if (Bytes < 1073741824)
-        return Format("{:.2f} MB", Bytes / 1048576)
+    if (NumericBytes < 1024)
+        return NumericBytes . " B"
+    else if (NumericBytes < 1048576)
+        return Format("{:.2f} KB", NumericBytes / 1024)
+    else if (NumericBytes < 1073741824)
+        return Format("{:.2f} MB", NumericBytes / 1048576)
     else
-        return Format("{:.2f} GB", Bytes / 1073741824)
+        return Format("{:.2f} GB", NumericBytes / 1073741824)
 }
 
 WriteFileAtomic(FilePath, TextContent := "") {
@@ -1621,44 +1837,11 @@ UpdateServerNoticeText() {
         "`r`n4. 本工具为第三方扩展，使用即代表您自愿承担所有风险。"
 }
 
-OnTabChange(ctrl, *) {
-    global g_NeedLayoutUpdate
-
-    if (ctrl.Value == 1) {
-        if (g_NeedLayoutUpdate) {
-            ApplyTab1Layout()
-            g_NeedLayoutUpdate := false
-        } else {
-            if (IsGameProcessRunning()) {
-                TextTipInfo.Opt("-Hidden")
-            }
-        }
-    } else {
-        TextTipInfo.Opt("+Hidden")
-    }
-}
-
-ApplyTab1Layout() {
-    if (IsGameProcessRunning()) {
-        TextTipInfo.Opt("-Hidden")
-        TabCtrl.Move(, , , 470)
-        BtnChinese.Move(, 428)
-        BtnRestore.Move(, 428)
-        MainGui.Show("h500")
-    } else {
-        TextTipInfo.Opt("+Hidden")
-        TabCtrl.Move(, , , 460)
-        BtnChinese.Move(, 418)
-        BtnRestore.Move(, 418)
-        MainGui.Show("h490")
-    }
-}
-
 ; ==============================================================================
 ; 模态对话框封装
 ; ==============================================================================
 
-ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpdate := false) {
+ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpdate := false, OnCloseCallback := "") {
     global MainGui, g_DialogCallbacks, g_ClientUpdateData
 
     MsgId := 1001
@@ -1666,17 +1849,17 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
     UpdateGui.SetFont(, "Microsoft YaHei UI")
 
     LatestVersion := (Type(g_ClientUpdateData) == "Map" && g_ClientUpdateData.Has("latest_client_version"))
-        ? "发现新版本 v" . String(g_ClientUpdateData["latest_client_version"]) . "。"
+        ? "发现新版本 v" . SafeString(g_ClientUpdateData["latest_client_version"]) . "。"
         : "发现新版本。"
 
     if (IsForceUpdate)
-        UpdateGui.Add("Text", "x20 y20 w360", "当前版本过低，必须升级为最新版本才能使用。")
+        UpdateGui.Add("Text", "x20 y20 w360", "当前版本过低，必须升级为最新版本才能使用。").SetFont("bold")
     else
         UpdateGui.Add("Text", "x20 y20 w360", LatestVersion)
 
     UpdateGui.Add("Edit", "x20 y45 w360 h150 ReadOnly", ChangelogText)
 
-    BtnDownloadMinor := UpdateGui.Add("Button", "x280 y225 w100 h30", "备用下载")
+    BtnDownloadMinor := UpdateGui.Add("Button", "x280 y225 w100 h30", "Github 下载")
     BtnDownloadMain := UpdateGui.Add("Button", "x168 y225 w100 h30 Default", "主线路下载")
 
     BtnDownloadMain.OnEvent("Click", (*) => (DownloadUrlMain != "" ? Run(DownloadUrlMain) : false))
@@ -1689,6 +1872,9 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
             ExitApp()
         else
             RefreshUi()
+
+        if (OnCloseCallback)
+            OnCloseCallback()
     }
 
     g_DialogCallbacks[MsgId] := CloseDialog
@@ -1701,7 +1887,7 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
     BtnDownloadMain.Focus()
 }
 
-ShowBulletinDialog(ContentText, BulletinVersion) {
+ShowBulletinDialog(ContentText, BulletinVersion, OnCloseCallback := "") {
     global MainGui, g_LastSeenBulletinVersion, g_DialogCallbacks
 
     MsgId := 1002
@@ -1718,6 +1904,9 @@ ShowBulletinDialog(ContentText, BulletinVersion) {
         MainGui.Opt("-Disabled")
         BulletinGui.Destroy()
         RefreshUi()
+
+        if (OnCloseCallback)
+            OnCloseCallback()
     }
 
     g_DialogCallbacks[MsgId] := CloseDialog
@@ -1787,37 +1976,53 @@ ShowMessageDialog(Text, Callback := "") {
     MessageGui.Show("w350 h150")
 }
 
-ShowMultiBranchDialog(Branches, Callback := "") {
+ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
     global g_CurrentServer, MainGui
 
-    ChoiceGui := Gui("+Owner" . MainGui.Hwnd, "选择补丁分支")
+    DlgTitle := IsUpdateList ? "选择汉化补丁来源" : "选择汉化补丁来源"
+    ChoiceGui := Gui("+Owner" . MainGui.Hwnd, DlgTitle)
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
-    ChoiceGui.Add("Text", "x20 y15 w410 h25", "选择 AION2 " . g_CurrentServer["name"] . " 汉化补丁来源，不同来源游戏内翻译完成度可能不同。")
 
+    TipText := IsUpdateList ? "当前汉化补丁有更新。" : ("选择 AION2 " . g_CurrentServer["name"] . " 汉化补丁来源，不同来源游戏内翻译完成度可能不同。")
+    ChoiceGui.Add("Text", "x20 y15 w410 h25", TipText).SetFont("bold")
+
+    VerHeaderTitle := IsUpdateList ? "版本信息" : "版本信息"
     LV := ChoiceGui.Add("ListView", "x20 y45 w410 h140 -Multi", [
         "来源",
-        "版本",
+        VerHeaderTitle,
         "更新时间"
     ])
     LV_ApplyExplorerTheme(LV)
-    LV.ModifyCol(1, 130)
-    LV.ModifyCol(2, 100)
-    LV.ModifyCol(3, 180)
+    LV.ModifyCol(1, 120)
+    LV.ModifyCol(2, 130)
+    LV.ModifyCol(3, 160)
 
-    for Index, Branch in Branches {
-        ReleaseTime := Branch.Has("release_timestamp")
-            ? FormatTime(DateAdd("19700101000000", Branch["release_timestamp"] + DateDiff(A_Now, A_NowUTC, "Seconds"),
-                "Seconds"), "yyyy-MM-dd HH:mm:ss")
-            : "未知"
-        Ver := Branch.Has("latest_patch_version") ? Branch["latest_patch_version"] : "1.0.0.0"
-        Src := Branch.Has("source") ? Branch["source"] : "default"
+    for Index, Item in Branches {
+        BranchObj := IsUpdateList ? Item.Branch : Item
 
-        RowNumber := LV.Add("", Src, Ver, ReleaseTime)
+        TsVal := SafeGet(BranchObj, "release_timestamp", 0)
+        ReleaseTime := "未知"
+        if (IsNumber(TsVal) && TsVal > 0) {
+            try {
+                ReleaseTime := FormatTime(DateAdd("19700101000000", TsVal + DateDiff(A_Now, A_NowUTC, "Seconds"), "Seconds"), "yyyy-MM-dd HH:mm:ss")
+            }
+        }
+
+        if (IsUpdateList) {
+            VerStr := Item.LocalVersion . " -> " . Item.LatestVersion
+        } else {
+            VerStr := BranchObj.Has("latest_patch_version") ? SafeString(BranchObj["latest_patch_version"]) : "1.0.0.0"
+        }
+
+        Src := BranchObj.Has("source") ? SafeString(BranchObj["source"]) : "default"
+
+        RowNumber := LV.Add("", Src, VerStr, ReleaseTime)
         LV_SetItemLParam(LV.Hwnd, RowNumber, Index)
     }
 
+    ConfirmBtnText := IsUpdateList ? "确认更新" : "确认"
     BtnCancel := ChoiceGui.Add("Button", "x346 y200 w84 h30", "取消")
-    BtnConfirm := ChoiceGui.Add("Button", "x234 y200 w100 h30 +Disabled", "确认")
+    BtnConfirm := ChoiceGui.Add("Button", "x234 y200 w100 h30 +Disabled", ConfirmBtnText)
 
     LV.OnEvent("ItemSelect", (Ctrl, Item, Selected) => BtnConfirm.Opt(LV.GetNext(0) > 0 ? "-Disabled" : "+Disabled"))
     BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
@@ -1857,7 +2062,7 @@ ShowMultiBranchDialog(Branches, Callback := "") {
             if (RowNumber) {
                 RealIdx := LV_GetItemLParam(LV.Hwnd, RowNumber)
                 if (RealIdx > 0 && RealIdx <= Branches.Length)
-                    SelectedBranch := Branches[RealIdx]
+                    SelectedBranch := IsUpdateList ? Branches[RealIdx].Branch : Branches[RealIdx]
             }
         }
 
@@ -1869,9 +2074,20 @@ ShowMultiBranchDialog(Branches, Callback := "") {
             Callback(SelectedBranch)
     }
 
-    MainGui.Opt("+Disabled")
+    MainGui.Opt("-Disabled")
     ChoiceGui.Show("w450 h250")
-    LV.Modify(0, "-Select")
+
+    if (IsUpdateList && Branches.Length > 0) {
+        LV.Modify(1, "Select Focus")
+
+        SelectedBranch := Branches[1]
+
+        BtnConfirm.Enabled := true
+    } else {
+        LV.Modify(0, "-Select")
+        SelectedBranch := ""
+        BtnConfirm.Enabled := false
+    }
 }
 
 ShowMultiPathDialog(ValidGames, Callback := "") {
@@ -1950,7 +2166,7 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
             Callback(UserChoicePath)
     }
 
-    MainGui.Opt("+Disabled")
+    MainGui.Opt("-Disabled")
     ChoiceGui.Show("w450 h250")
     LV.Modify(0, "-Select")
 }
@@ -2002,10 +2218,11 @@ SafeRegRead(KeyPath, ValueName := "") {
 }
 
 IsKeywordMatch(DisplayName, Keywords) {
-    if (Keywords.Length = 0)
+    if (Type(Keywords) != "Array" || Keywords.Length = 0)
         return true
     for Keyword in Keywords {
-        if (InStr(DisplayName, Keyword))
+        StrKw := SafeString(Keyword)
+        if (StrKw != "" && InStr(DisplayName, StrKw))
             return true
     }
     return false
@@ -2167,6 +2384,10 @@ ScanGamesFromSteam() {
 
         CleanRaw := StrReplace(RawPath, "\\", "\")
         CleanRaw := StrReplace(CleanRaw, '\"', '"')
+
+        if (InStr(CleanRaw, "`n") || InStr(CleanRaw, "`r"))
+            return
+
         CleanPath := PathUtil.Normalize(CleanRaw)
 
         if !DirExist(CleanPath)
@@ -2312,6 +2533,14 @@ LV_SetHeaderSortArrow(LV, sort_col, desc := false) {
 ; 安全解析与常规辅助工具
 ; ==============================================================================
 
+SafeNumber(Val, DefaultVal := 0) {
+    return IsNumber(Val) ? Number(Val) : DefaultVal
+}
+
+SafeString(Val, DefaultVal := "") {
+    return (Val is Primitive) ? String(Val) : DefaultVal
+}
+
 SafeGet(Obj, Key, DefaultValue := "") {
     if (Type(Obj) == "Map" || Type(Obj) == "Array") && Obj.Has(Key)
         return Obj[Key]
@@ -2344,10 +2573,10 @@ SafeIniWrite(Value, Filename, Section, Key) {
 }
 
 GetLocalCachePath(Act) {
-    global g_PatchsCacheDir
-    FileNameOnly := (Type(Act) == "Map") ? Act["filename"] : Act
+    global g_PatchesCacheDir
+    FileNameOnly := (Type(Act) == "Map") ? SafeString(Act["filename"]) : SafeString(Act)
     FileNameOnly := LTrim(StrReplace(FileNameOnly, "/", "\"), "\")
-    return PathUtil.Normalize(A_ScriptDir . "\" . g_PatchsCacheDir . "\" . FileNameOnly)
+    return PathUtil.Normalize(A_ScriptDir . "\" . g_PatchesCacheDir . "\" . FileNameOnly)
 }
 
 NormalizeServerConfig(ServersArray) {
@@ -2359,9 +2588,9 @@ NormalizeServerConfig(ServersArray) {
         if (Type(Srv) != "Map")
             continue
         SafeSrv := Map(
-            "id", SafeGet(Srv, "id", 1),
-            "name", SafeGet(Srv, "name", "未知服务器"),
-            "display", SafeGet(Srv, "display", "未知服务器"),
+            "id", SafeNumber(SafeGet(Srv, "id", 1), 1),
+            "name", SafeString(SafeGet(Srv, "name", "未知服务器"), "未知服务器"),
+            "display", SafeString(SafeGet(Srv, "display", "未知服务器"), "未知服务器"),
             "keywords", SafeGet(Srv, "keywords", [
                 "AION"
             ]),
@@ -2373,11 +2602,11 @@ NormalizeServerConfig(ServersArray) {
                 if (Type(Br) != "Map")
                     continue
                 SafeBr := Map(
-                    "id", SafeGet(Br, "id", 1),
-                    "source", SafeGet(Br, "source", "default"),
-                    "latest_patch_version", SafeGet(Br, "latest_patch_version", "1.0.0.0"),
-                    "changelog", SafeGet(Br, "changelog", ""),
-                    "release_timestamp", SafeGet(Br, "release_timestamp", 0),
+                    "id", SafeNumber(SafeGet(Br, "id", 1), 1),
+                    "source", SafeString(SafeGet(Br, "source", "default"), "default"),
+                    "latest_patch_version", SafeString(SafeGet(Br, "latest_patch_version", "1.0.0.0"), "1.0.0.0"),
+                    "changelog", SafeString(SafeGet(Br, "changelog", "")),
+                    "release_timestamp", SafeNumber(SafeGet(Br, "release_timestamp", 0), 0),
                     "actions", []
                 )
                 Actions := SafeGet(Br, "actions", [])
@@ -2386,26 +2615,29 @@ NormalizeServerConfig(ServersArray) {
                         if (Type(Act) != "Map")
                             continue
 
-                        RemoteFile := SafeGet(Act, "remote_filename", "")
+                        RemoteFile := SafeString(SafeGet(Act, "remote_filename", ""))
 
                         SplitPath(RemoteFile, &ExtractedName)
-                        FileNameVal := SafeGet(Act, "filename", "")
+                        FileNameVal := SafeString(SafeGet(Act, "filename", ""))
                         if (FileNameVal == "")
                             FileNameVal := ExtractedName
 
                         CleanRemoteUrl := StrReplace(RemoteFile, "\", "/")
+                        CleanRemoteUrl := RegExReplace(CleanRemoteUrl, "i)^https?://", "")
                         CleanRemoteUrl := LTrim(CleanRemoteUrl, "/")
 
-                        CleanTargetPath := StrReplace(SafeGet(Act, "target_relative_path", ""), "/", "\")
+                        CleanTargetPath := StrReplace(SafeString(SafeGet(Act, "target_relative_path", "")), "/", "\")
                         CleanTargetPath := LTrim(CleanTargetPath, "\")
+                        if InStr(CleanTargetPath, "..")
+                            continue
 
                         SafeAct := Map(
-                            "type", SafeGet(Act, "type", "add"),
+                            "type", SafeString(SafeGet(Act, "type", "add"), "add"),
                             "filename", FileNameVal,
                             "remote_filename", CleanRemoteUrl,
                             "target_relative_path", CleanTargetPath,
-                            "file_md5", SafeGet(Act, "file_md5", ""),
-                            "file_size", Number(SafeGet(Act, "file_size", 0))
+                            "file_md5", SafeString(SafeGet(Act, "file_md5", "")),
+                            "file_size", SafeNumber(SafeGet(Act, "file_size", 0), 0)
                         )
                         SafeBr["actions"].Push(SafeAct)
                     }
@@ -2430,10 +2662,99 @@ IsGameProcessRunning() {
     }
 
     for ProcName in ProcessList {
-        if (ProcName != "" && ProcessExist(ProcName)) {
+        StrProc := SafeString(ProcName)
+        if (StrProc != "" && ProcessExist(StrProc)) {
             return true
         }
     }
 
     return false
+}
+
+; ==============================================================================
+; 资源加载与卡片 UI 渲染组件
+; ==============================================================================
+LoadEmbeddedPictureHandle(RelativePath) {
+    static BitmapCacheMap := Map()
+
+    NormalizedPath := PathUtil.Normalize(A_ScriptDir . "\" . RelativePath)
+    if (BitmapCacheMap.Has(NormalizedPath)) {
+        return BitmapCacheMap[NormalizedPath]
+    }
+
+    try {
+        TempFilePath := PathUtil.Normalize(A_Temp . "\" . A_TickCount . "_" . Random(1000, 9999) . ".tmp")
+        if InStr(NormalizedPath, "GuGuai.png") {
+            FileInstall("AutoHotkey\GuGuai.png", TempFilePath, 1)
+        } else if InStr(NormalizedPath, "AK.png") {
+            FileInstall("AutoHotkey\AK.png", TempFilePath, 1)
+        } else if InStr(NormalizedPath, "XaoYao.png") {
+            FileInstall("AutoHotkey\XaoYao.png", TempFilePath, 1)
+        } else if FileExist(NormalizedPath) {
+            FileCopy(NormalizedPath, TempFilePath, 1)
+        } else {
+            return 0
+        }
+
+        hBitmap := LoadPicture(TempFilePath)
+        try FileDelete(TempFilePath)
+
+        if (hBitmap) {
+            BitmapCacheMap[NormalizedPath] := hBitmap
+            return hBitmap
+        }
+    } catch {
+        return 0
+    }
+    return 0
+}
+
+CreateCardControl(GuiObj, OptionsMap) {
+    global g_CardHwndMap
+
+    PosX := OptionsMap.HasProp("x") ? OptionsMap.x : 15
+    PosY := OptionsMap.HasProp("y") ? OptionsMap.y : 15
+    IconRes := OptionsMap.HasProp("icon") ? OptionsMap.icon : "🚀"
+    TitleText := OptionsMap.HasProp("title") ? OptionsMap.title : "默认标题"
+    DescText := OptionsMap.HasProp("desc") ? OptionsMap.desc : "默认描述信息…"
+    TargetUrl := OptionsMap.HasProp("url") ? OptionsMap.url : ""
+    CardWidth := OptionsMap.HasProp("width") ? OptionsMap.width : 536
+    CardHeight := OptionsMap.HasProp("height") ? OptionsMap.height : 75
+    ShowBorder := OptionsMap.HasProp("border") ? OptionsMap.border : true
+    ClickHandler := (*) => (TargetUrl != "" ? Run(TargetUrl) : false)
+    if (ShowBorder) {
+        GuiObj.Add("GroupBox", Format("x{} y{} w{} h{}", PosX, PosY, CardWidth, CardHeight))
+    }
+    if (StrLen(IconRes) <= 4) {
+        IconCtrl := GuiObj.Add("Text", Format("x{} y{} w40 h40 +0x100 +0x200 Center BackgroundTrans", PosX + 15, PosY +
+            18), IconRes).SetFont("s20", "Segoe UI Emoji")
+    } else {
+        hBitmap := LoadEmbeddedPictureHandle(IconRes)
+        if (hBitmap != 0) {
+            IconCtrl := GuiObj.Add("Picture", Format("x{} y{} w40 h40 +0x100 BackgroundTrans", PosX + 15, PosY + 18),
+                "HBITMAP:*" . hBitmap)
+        } else {
+            IconCtrl := GuiObj.Add("Text", Format("x{} y{} w40 h40 +0x100 +0x200 Center BackgroundTrans", PosX + 15,
+                PosY + 18), "❌").SetFont("s12", "Microsoft YaHei")
+        }
+    }
+
+    IconCtrl.OnEvent("Click", ClickHandler)
+    g_CardHwndMap[IconCtrl.Hwnd] := true
+    TextX := PosX + 65
+    TextW := CardWidth - 80
+
+    GuiObj.Add("Text", Format("x{} y{} w{} c333333 BackgroundTrans", TextX, PosY + 15, TextW), TitleText).SetFont(
+        "s10 bold", "Microsoft YaHei")
+    GuiObj.Add("Text", Format("x{} y{} w{} c666666 BackgroundTrans", TextX, PosY + 38, TextW), DescText).SetFont(
+        "s9 norm", "Microsoft YaHei")
+    MaskX := PosX + 2
+    MaskY := PosY + 2
+    MaskW := CardWidth - 4
+    MaskH := CardHeight - 4
+
+    ClickMaskCtrl := GuiObj.Add("Text", Format("x{} y{} w{} h{} +0x100 BackgroundTrans", MaskX, MaskY, MaskW, MaskH),
+        "")
+    ClickMaskCtrl.OnEvent("Click", ClickHandler)
+    g_CardHwndMap[ClickMaskCtrl.Hwnd] := true
 }
