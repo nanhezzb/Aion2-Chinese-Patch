@@ -12,7 +12,7 @@
 
 ### 📋 汉化支持
 
-* **区服适配**：完美支持**国际服（Steam / PURPLE）**及**台服（PURPLE）**。
+* **区服适配**：**国际服（Steam / PURPLE）**及**台服（PURPLE）**。
 * **系统支持**：64位 Windows 10 & Windows 11。
 
 ***
