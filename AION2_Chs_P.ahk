@@ -36,7 +36,7 @@ UniqueInstance.Ensure(Map(
 global g_ProjectName := "AION2 Chs Patch"
 global g_CurrentAppVersion := "1.7.0.0"
 global g_CurrentAppVersionShort := "1.7"
-global g_LastSeenBulletinVersion := "1.1.0.0"
+global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
 global g_AppManifestFilename := "app_manifest.json"
