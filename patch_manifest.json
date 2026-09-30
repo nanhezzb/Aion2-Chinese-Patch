@@ -14,8 +14,8 @@
             ],
             "patch_branches": [
                 {
-                    "id": 2,
-                    "source": "奇游",
+                    "id": 4,
+                    "source": "UU",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1790778626,
