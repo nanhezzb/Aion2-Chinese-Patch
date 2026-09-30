@@ -34,8 +34,8 @@ UniqueInstance.Ensure(Map(
 ; ==============================================================================
 
 global g_ProjectName := "AION2 Chs Patch"
-global g_CurrentAppVersion := "1.6.0.0"
-global g_CurrentAppVersionShort := "1.6"
+global g_CurrentAppVersion := "1.7.0.0"
+global g_CurrentAppVersionShort := "1.7"
 global g_LastSeenBulletinVersion := "1.1.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -130,7 +130,12 @@ global TextTipInfo := MainGui.Add("Text", "x0 y405 w575 +Hidden cRed Center", "�
 global BtnUpdate := MainGui.Add("Button", "x177 y418 w100 h30 +Hidden", "更新补丁")
 global BtnChinese := MainGui.Add("Button", "x177 y418 w100 h30", "一键汉化")
 global BtnRestore := MainGui.Add("Button", "x289 y418 w100 h30", "撤销汉化")
-global PicCheckInvalidation := MainGui.Add("Picture", "x525 y420 w24 h24 +0x0100", ".\AutoHotkey\refresh.png")
+global hRefreshBtn := LoadEmbeddedPictureHandle("AutoHotkey\refresh.png")
+if (hRefreshBtn != 0) {
+    global PicCheckInvalidation := MainGui.Add("Picture", "x110 y18 w25 h25 +BackgroundTrans Icon10", "HBITMAP:*" . hRefreshBtn)
+} else {
+    global PicCheckInvalidation := MainGui.Add("Text", "x110 y18 w25 h25 +0x200 Center", "🔄")
+}
 g_CursorHwndMap[PicCheckInvalidation.Hwnd] := true
 AddToolTip(PicCheckInvalidation, "检测本地补丁是否失效，刷新界面按钮状态。")
 
@@ -2886,6 +2891,8 @@ LoadEmbeddedPictureHandle(RelativePath) {
             FileInstall("AutoHotkey\AK.png", TempFilePath, 1)
         } else if InStr(NormalizedPath, "XaoYao.png") {
             FileInstall("AutoHotkey\XaoYao.png", TempFilePath, 1)
+        } else if InStr(NormalizedPath, "refresh.png") {
+            FileInstall("AutoHotkey\refresh.png", TempFilePath, 1)
         } else if FileExist(NormalizedPath) {
             FileCopy(NormalizedPath, TempFilePath, 1)
         } else {
