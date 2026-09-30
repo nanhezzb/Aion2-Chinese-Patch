@@ -3,7 +3,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 1.6.0.0
+;@Ahk2Exe-SetVersion 1.7.0.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 ;@Ahk2Exe-SetMainIcon AutoHotkey\icon.ico
 
@@ -22,7 +22,8 @@ Persistent true
 ; ==============================================================================
 ; 单实例与权限保障
 ; ==============================================================================
-UiResult := UniqueInstance.Ensure(Map(
+
+UniqueInstance.Ensure(Map(
     "preferRunAsAdmin", true,
     "allowCoexist", true,
     "showReport", true
@@ -31,6 +32,7 @@ UiResult := UniqueInstance.Ensure(Map(
 ; ==============================================================================
 ; 全局常量与变量定义
 ; ==============================================================================
+
 global g_ProjectName := "AION2 Chs Patch"
 global g_CurrentAppVersion := "1.6.0.0"
 global g_CurrentAppVersionShort := "1.6"
@@ -72,10 +74,12 @@ global g_ConfigCache := {
 global g_DialogCallbacks := Map()
 global g_IsPatching := false
 global g_IsSyncing := false
-global g_NeedLayoutUpdate := false
 
-; 卡片交互句柄映射
-global g_CardHwndMap := Map()
+; 统一响应句柄映射
+global g_CursorHwndMap := Map()
+
+; 图片状态记录
+global g_IsPicInvalidationEnabled := true
 
 ; Win32 API 控制常量
 global LVM_FIRST := 0x1000
@@ -98,34 +102,9 @@ global HDF_SORTDOWN := 0x0200
 global HDF_SORTUP := 0x0400
 
 ; ==============================================================================
-; 自定义消息与事件监听
-; ==============================================================================
-OnMessage(0x0900, HandleDialogEvent)
-OnMessage(0x0020, WM_SETCURSOR)
-
-HandleDialogEvent(wParam, lParam, msg, hwnd) {
-    if (g_DialogCallbacks.Has(wParam)) {
-        CallbackFunc := g_DialogCallbacks[wParam]
-        g_DialogCallbacks.Delete(wParam)
-        CallbackFunc(lParam)
-    }
-}
-
-WM_SETCURSOR(wParam, lParam, msg, hwnd) {
-    global g_CardHwndMap
-    static hHandCursor := 0
-    if (g_CardHwndMap.Has(wParam)) {
-        if (!hHandCursor) {
-            hHandCursor := DllCall("LoadCursor", "ptr", 0, "int", 32649, "ptr")
-        }
-        DllCall("SetCursor", "ptr", hHandCursor)
-        return true
-    }
-}
-
-; ==============================================================================
 ; 主界面 GUI 构建
 ; ==============================================================================
+
 global MainGui := Gui(, "AION2 一键汉化工具 " . g_CurrentAppVersionShort)
 MainGui.SetFont("s9", "Microsoft YaHei")
 
@@ -147,46 +126,49 @@ global BtnReset := MainGui.Add("Button", "x484 y201 w60 h26 +Disabled", "重置"
 MainGui.Add("GroupBox", "x17 y255 w536 h145", "使用须知 * ")
 global TextExplain := MainGui.AddText("x31 y280 w510 h105", "")
 
-global BtnUpdate := MainGui.Add("Button", "x177 y419 w100 h30 +Hidden", "更新补丁")
-global BtnChinese := MainGui.Add("Button", "x177 y419 w100 h30", "一键汉化")
-global BtnRestore := MainGui.Add("Button", "x289 y419 w100 h30", "撤销汉化")
 global TextTipInfo := MainGui.Add("Text", "x0 y405 w575 +Hidden cRed Center", "建议先退出游戏再进行汉化。")
+global BtnUpdate := MainGui.Add("Button", "x177 y418 w100 h30 +Hidden", "更新补丁")
+global BtnChinese := MainGui.Add("Button", "x177 y418 w100 h30", "一键汉化")
+global BtnRestore := MainGui.Add("Button", "x289 y418 w100 h30", "撤销汉化")
+global PicCheckInvalidation := MainGui.Add("Picture", "x525 y420 w24 h24 +0x0100", ".\AutoHotkey\refresh.png")
+g_CursorHwndMap[PicCheckInvalidation.Hwnd] := true
+AddToolTip(PicCheckInvalidation, "检测本地补丁是否失效，刷新界面按钮状态。")
 
 TabCtrl.UseTab(2)
 
 CreateCardControl(MainGui, {
-    x: 17,
+    x: 12,
     y: 45,
     icon: ".\AutoHotkey\XaoYao.png",
     title: "逍遥加速器",
     desc: "24 小时免费加速，支持 Steam、PURPLE、EA、Epic、暴雪等游戏平台，使用“平台加速”功能，加速平台内全部游戏（含塔2 国际服）。",
     url: "https://www.xiaoyao.co/index.htm",
     width: 536,
-    height: 90,
+    height: 79,
     border: true
 })
 
 CreateCardControl(MainGui, {
-    x: 17,
-    y: 140,
+    x: 12,
+    y: 129,
     icon: ".\AutoHotkey\GuGuai.png",
     title: "古怪加速器",
     desc: "Bilibili 搜索口令获取永久时长， 0 - 16 时免费加速，极速稳定支持全球网游。",
     url: "https://www.ggkuai.com/",
     width: 536,
-    height: 70,
+    height: 77,
     border: true
 })
 
 CreateCardControl(MainGui, {
-    x: 17,
-    y: 215,
+    x: 12,
+    y: 211,
     icon: ".\AutoHotkey\AK.png",
     title: "AK加速器",
     desc: "0 - 14 时免费加速，支持全球网游加速。",
     url: "https://www.akspeedy.com/html/invite_new/invite_download.html?inviter=3Xtkus4t",
     width: 536,
-    height: 70,
+    height: 77,
     border: true
 })
 
@@ -194,7 +176,13 @@ TabCtrl.UseTab(0)
 
 global MainStatusBar := MainGui.Add("StatusBar", "")
 
-; 绑定控件事件
+; ==============================================================================
+; 统一注册监听
+; ==============================================================================
+
+TabCtrl.OnEvent("Change", (*) => RefreshUi())
+MainGui.OnEvent("Close", (*) => ExitApp())
+
 ComboServerList.OnEvent("Change", (*) => SelectServer())
 BtnScan.OnEvent("Click", (*) => OnScanButtonClick())
 BtnBrowse.OnEvent("Click", BrowseFolder)
@@ -202,12 +190,12 @@ BtnReset.OnEvent("Click", DoResetConfig)
 BtnUpdate.OnEvent("Click", DoUpdatePatch)
 BtnChinese.OnEvent("Click", DoChinesePatch)
 BtnRestore.OnEvent("Click", DoRestorePatch)
-MainGui.OnEvent("Close", (*) => ExitApp())
-TabCtrl.OnEvent("Change", (*) => RefreshUi())
+PicCheckInvalidation.OnEvent("Click", OnPicCheckInvalidationClick)
 
 ; ==============================================================================
 ; 应用程序启动主流程
 ; ==============================================================================
+
 g_DefaultServers := NormalizeServerConfig([
     Map(
         "id", 102,
@@ -261,7 +249,7 @@ InitializeApp() {
 }
 
 ParseAndApplyManifest(JsonContent, IsPatchFile := false) {
-    global g_ClientUpdateData, g_ServersConfigData, g_CloudBulletinData, g_GlobalConfigData
+    global g_ClientUpdateData, g_ServersConfigData, g_CloudBulletinData, g_GlobalConfigData, g_DefaultProxyMirrors, g_DefaultGameProcesses
 
     if (JsonContent == "")
         return false
@@ -623,7 +611,7 @@ GetLocalPatchInfo() {
             if (ConfigObj.HasOwnProp("ServerID") && ConfigObj.ServerID == ServerId) {
                 if (ConfigObj.HasOwnProp("InstallPath") && ConfigObj.InstallPath != "" && StrLower(PathUtil.Normalize(ConfigObj.InstallPath)) == NormalizedCurrentPath) {
                     BackupDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . KeyName)
-                    IsPatchedByBackup := (DirExist(BackupDir) || FileExist(BackupDir . "\backup_manifest.json"))
+                    IsPatchedByBackup := (DirExist(BackupDir) && FileExist(BackupDir . "\backup_manifest.json"))
                     IsPatchedByConfig := (ConfigObj.HasOwnProp("IsPatched") && ConfigObj.IsPatched == 1)
 
                     if (IsPatchedByBackup || IsPatchedByConfig) {
@@ -678,7 +666,7 @@ GetLocalPatchInfo() {
 
 RefreshUi() {
     global BtnBrowse, BtnChinese, BtnRestore, BtnReset, BtnScan, BtnUpdate, ComboServerList, EditInstallPath
-    global g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, TabCtrl, TextTipInfo, MainGui
+    global g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, TabCtrl, TextTipInfo, MainGui, PicCheckInvalidation
 
     if (TabCtrl.Value != 1) {
         TextTipInfo.Opt("+Hidden")
@@ -693,6 +681,7 @@ RefreshUi() {
         BtnUpdate.Move(177, 428)
         BtnChinese.Move(177, 428)
         BtnRestore.Move(289, 428)
+        PicCheckInvalidation.Move(525, 430)
         MainGui.Show("h500")
     } else {
         TextTipInfo.Opt("+Hidden")
@@ -700,6 +689,7 @@ RefreshUi() {
         BtnUpdate.Move(177, 418)
         BtnChinese.Move(177, 418)
         BtnRestore.Move(289, 418)
+        PicCheckInvalidation.Move(525, 420)
         MainGui.Show("h490")
     }
 
@@ -711,12 +701,15 @@ RefreshUi() {
         BtnBrowse.Opt("+Disabled")
         BtnReset.Opt("+Disabled")
         ComboServerList.Opt("+Disabled")
+        SetPatchStatusPicState(false)
+
         return
     }
 
     ComboServerList.Opt("-Disabled")
     BtnScan.Opt("-Disabled")
     BtnBrowse.Opt("-Disabled")
+    SetPatchStatusPicState(true)
 
     if (!g_CurrentServer.Has("id"))
         return
@@ -875,17 +868,28 @@ ExecuteChinesePatch(PatchBranch, IsUpdate := false) {
         BranchId := PatchBranch["id"]
         HasAnyInstalled := false
 
-        loop ActionsArray.Length {
-            Act := ActionsArray[A_Index]
-
+        for Act in ActionsArray {
             RelPath := SafeGet(Act, "target_relative_path", "")
             if InStr(RelPath, "..")
                 continue
 
-            if (Act["type"] == "add" || Act["type"] == "replace") {
-                if (Act["file_md5"] == "d41d8cd98f00b204e9800998ecf8427e")
-                    continue
-                if FileExist(PathUtil.Normalize(g_InstallPath . "\" . RelPath)) {
+            ActType := Act.Has("type") ? Act["type"] : "add"
+            TargetMd5 := StrLower(SafeString(SafeGet(Act, "file_md5", "")))
+
+            if (ActType != "add" && ActType != "replace")
+                continue
+
+            TargetPath := PathUtil.Normalize(g_InstallPath . "\" . RelPath)
+
+            if FileExist(TargetPath) {
+                if (ActType == "replace") {
+
+                    if (TargetMd5 != "" && HashFileMd5(TargetPath) == TargetMd5) {
+                        HasAnyInstalled := true
+                        break
+                    }
+                } else {
+
                     HasAnyInstalled := true
                     break
                 }
@@ -925,6 +929,7 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
 
         ProfileKey := GetProfileKey(ServerId, NormalizedInstallPath, BranchId)
         BackupRootDir := GetBackupRootDir(ServerId, NormalizedInstallPath, BranchId)
+        BackupTextFile := A_ScriptDir . "\rawBackup\" . g_ProjectName . " 备份文件夹.txt"
 
         LocalCacheRootDir := PathUtil.Normalize(A_ScriptDir . "\" . g_PatchesCacheDir)
         if !DirExist(LocalCacheRootDir)
@@ -996,6 +1001,9 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
         if !DirExist(BackupRootDir)
             DirCreate(BackupRootDir)
 
+        if !FileExist(BackupTextFile)
+            FileAppend("", BackupTextFile, "UTF-8-RAW")
+
         ManifestMap := Map(
             "server_id", ServerId,
             "branch_id", BranchId,
@@ -1025,9 +1033,6 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
                 if FileExist(FinalPath) {
                     if (BDir != "" && !DirExist(BDir))
                         DirCreate(BDir)
-                    BackupTextFile := A_ScriptDir . "\rawBackup\" . g_ProjectName . " 备份文件夹.txt"
-                    if !FileExist(BackupTextFile)
-                        FileAppend("", BackupTextFile, "UTF-8-RAW")
                     if (!FileExist(BackupPath))
                         FileCopy(FinalPath, BackupPath, 1)
                     FileDelete(FinalPath)
@@ -1187,8 +1192,6 @@ DoRestorePatchInternal(IsSilent := false) {
 
     if (ActionsArray.Length == 0)
         throw Error("当前汉化补丁配置异常，缺少撤销执行动作及备份清单。")
-
-    BranchId := SavedBranchID ? SavedBranchID : (PatchBranch && PatchBranch.Has("id") ? PatchBranch["id"] : 1)
 
     HasAnyPatchFile := false
     loop ActionsArray.Length {
@@ -1722,7 +1725,7 @@ OnScanButtonClick() {
 
     ValidGames := GetValidGamePaths()
 
-    if (ValidGames.Length = 1) {
+    if (ValidGames.Length == 1) {
         SelectedFolder := ValidGames[1].GameInstallPath
         SetInstallPath(SelectedFolder, 0)
         SetStatusBarText("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
@@ -1750,7 +1753,7 @@ AutoDetectInstallPath() {
 
     ValidGames := GetValidGamePaths()
 
-    if (ValidGames.Length = 1) {
+    if (ValidGames.Length == 1) {
         SelectedFolder := ValidGames[1].GameInstallPath
         SetInstallPath(SelectedFolder, 0)
         SetStatusBarText("已自动识别并设置安装目录。")
@@ -1813,7 +1816,7 @@ DoResetConfig(*) {
 BrowseFolder(*) {
     global g_CurrentServer, EditInstallPath
     SelectedFolder := FileSelect("D", EditInstallPath.Value, "选择 AION2 " . g_CurrentServer["name"] . "安装目录：")
-    if (SelectedFolder = "")
+    if (SelectedFolder == "")
         return
 
     NormalizedSelectedFolder := PathUtil.Normalize(SelectedFolder)
@@ -1828,7 +1831,7 @@ BrowseFolder(*) {
 UpdateServerNoticeText() {
     global g_CurrentServer, TextExplain
     ServerName := g_CurrentServer["name"]
-    RuleText := "1. 选择 AION2 " . ServerName . "的安装目录，" . ((g_CurrentServer["id"] = 102) ? "例如 D:\Games\AION2_TW。" : "例如 D:\Games\AION 2。")
+    RuleText := "1. 选择 AION2 " . ServerName . "的安装目录，" . ((g_CurrentServer["id"] == 102) ? "例如 D:\Games\AION2_TW。" : "例如 D:\Games\AION2。")
     TextExplain.Value := RuleText .
         "`r`n2. 汉化完成后启动或重启 AION2，使汉化文件生效。" .
         "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE / Steam 修复文件；" .
@@ -1990,12 +1993,11 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
     LV := ChoiceGui.Add("ListView", "x20 y45 w410 h140 -Multi", [
         "来源",
         VerHeaderTitle,
+        "补丁大小",
         "更新时间"
     ])
     LV_ApplyExplorerTheme(LV)
-    LV.ModifyCol(1, 120)
-    LV.ModifyCol(2, 130)
-    LV.ModifyCol(3, 160)
+    LV.Opt("-Redraw")
 
     for Index, Item in Branches {
         BranchObj := IsUpdateList ? Item.Branch : Item
@@ -2016,9 +2018,26 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
 
         Src := BranchObj.Has("source") ? SafeString(BranchObj["source"]) : "default"
 
-        RowNumber := LV.Add("", Src, VerStr, ReleaseTime)
+        TotalSize := 0
+        if (BranchObj.Has("actions") && Type(BranchObj["actions"]) == "Array") {
+            for Act in BranchObj["actions"] {
+                ActType := Act.Has("type") ? Act["type"] : "add"
+                if (ActType == "add" || ActType == "replace") {
+                    TotalSize += SafeNumber(SafeGet(Act, "file_size", 0), 0)
+                }
+            }
+        }
+        PatchSizeStr := FormatFileSize(TotalSize)
+
+        RowNumber := LV.Add("", Src, VerStr, PatchSizeStr, ReleaseTime)
         LV_SetItemLParam(LV.Hwnd, RowNumber, Index)
     }
+
+    LV.ModifyCol(1, "AutoHdr")
+    LV.ModifyCol(2, "AutoHdr")
+    LV.ModifyCol(3, "AutoHdr")
+    LV.ModifyCol(4, "AutoHdr")
+    LV.Opt("+Redraw")
 
     ConfirmBtnText := IsUpdateList ? "确认更新" : "确认"
     BtnCancel := ChoiceGui.Add("Button", "x346 y200 w84 h30", "取消")
@@ -2074,14 +2093,12 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
             Callback(SelectedBranch)
     }
 
-    MainGui.Opt("-Disabled")
+    MainGui.Opt("+Disabled")
     ChoiceGui.Show("w450 h250")
 
     if (IsUpdateList && Branches.Length > 0) {
         LV.Modify(1, "Select Focus")
-
         SelectedBranch := Branches[1]
-
         BtnConfirm.Enabled := true
     } else {
         LV.Modify(0, "-Select")
@@ -2166,7 +2183,7 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
             Callback(UserChoicePath)
     }
 
-    MainGui.Opt("-Disabled")
+    MainGui.Opt("+Disabled")
     ChoiceGui.Show("w450 h250")
     LV.Modify(0, "-Select")
 }
@@ -2218,7 +2235,7 @@ SafeRegRead(KeyPath, ValueName := "") {
 }
 
 IsKeywordMatch(DisplayName, Keywords) {
-    if (Type(Keywords) != "Array" || Keywords.Length = 0)
+    if (Type(Keywords) != "Array" || Keywords.Length == 0)
         return true
     for Keyword in Keywords {
         StrKw := SafeString(Keyword)
@@ -2460,11 +2477,11 @@ LV_SetItemLParam(lv, row, param) {
     static LVM_SETITEMW := 0x104C
     static LVIF_PARAM := 0x0004
 
-    lvitem := Buffer(A_PtrSize = 8 ? 48 : 36, 0)
+    lvitem := Buffer(A_PtrSize == 8 ? 48 : 36, 0)
     NumPut("UInt", LVIF_PARAM, lvitem, 0)
     NumPut("Int", row - 1, lvitem, 4)
 
-    offset_lparam := A_PtrSize = 8 ? 40 : 32
+    offset_lparam := A_PtrSize == 8 ? 40 : 32
     NumPut("Ptr", Integer(param), lvitem, offset_lparam)
 
     return SendMessage(LVM_SETITEMW, 0, lvitem.Ptr, lv)
@@ -2474,13 +2491,13 @@ LV_GetItemLParam(lv, row) {
     static LVM_GETITEMW := 0x104B
     static LVIF_PARAM := 0x0004
 
-    lvitem := Buffer(A_PtrSize = 8 ? 48 : 36, 0)
+    lvitem := Buffer(A_PtrSize == 8 ? 48 : 36, 0)
     NumPut("UInt", LVIF_PARAM, lvitem, 0)
     NumPut("Int", row - 1, lvitem, 4)
 
     SendMessage(LVM_GETITEMW, 0, lvitem.Ptr, lv)
 
-    offset_lparam := A_PtrSize = 8 ? 40 : 32
+    offset_lparam := A_PtrSize == 8 ? 40 : 32
     return NumGet(lvitem, offset_lparam, "Ptr")
 }
 
@@ -2502,8 +2519,8 @@ LV_SetHeaderSortArrow(LV, sort_col, desc := false) {
     if !hHeader
         return
 
-    hdi_size := (A_PtrSize = 8) ? 72 : 48
-    fmt_offset := (A_PtrSize = 8) ? 28 : 20
+    hdi_size := (A_PtrSize == 8) ? 72 : 48
+    fmt_offset := (A_PtrSize == 8) ? 28 : 20
     hdi := Buffer(hdi_size, 0)
     col_count := LV.GetCount("Col")
 
@@ -2519,7 +2536,7 @@ LV_SetHeaderSortArrow(LV, sort_col, desc := false) {
         fmt &= ~HDF_SORTUP
         fmt &= ~HDF_SORTDOWN
 
-        if (A_Index = sort_col)
+        if (A_Index == sort_col)
             fmt |= desc ? HDF_SORTDOWN : HDF_SORTUP
 
         NumPut("UInt", HDI_FORMAT, hdi, 0)
@@ -2671,9 +2688,188 @@ IsGameProcessRunning() {
     return false
 }
 
+AddToolTip(Control, Text) {
+    static ToolTips := Map()
+    static CurrentShowingHwnd := 0
+
+    if (!ToolTips.Count) {
+        OnMessage(0x0200, WM_MOUSEMOVE)
+    }
+    ToolTips[Control.Hwnd] := Text
+
+    WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
+        static PrevHwnd := 0
+        global MainStatusBar
+
+        if (hwnd != PrevHwnd) {
+            PrevHwnd := hwnd
+
+            if (ToolTips.Has(hwnd)) {
+                CurrentShowingHwnd := hwnd
+                SetStatusBarText(ToolTips[hwnd])
+            }
+            else if (CurrentShowingHwnd != 0) {
+                CurrentShowingHwnd := 0
+                if (IsSet(MainStatusBar)) {
+                    SetStatusBarText()
+
+                } else {
+                    ToolTip()
+                }
+            }
+        }
+    }
+}
+
+SetPatchStatusPicState(IsEnabled) {
+    global PicCheckInvalidation, g_IsPicInvalidationEnabled
+    if (!IsSet(PicCheckInvalidation))
+        return
+
+    g_IsPicInvalidationEnabled := IsEnabled
+
+    if (IsEnabled) {
+        PicCheckInvalidation.Opt("-Disabled")
+
+        SetControlAlpha(PicCheckInvalidation.Hwnd, 255)
+    } else {
+        PicCheckInvalidation.Opt("+Disabled")
+
+        SetControlAlpha(PicCheckInvalidation.Hwnd, 90)
+    }
+}
+
+SetControlAlpha(hwnd, alpha := 255) {
+
+    style := DllCall("GetWindowLong", "ptr", hwnd, "int", -20, "ptr")
+    if (alpha < 255) {
+        DllCall("SetWindowLong", "ptr", hwnd, "int", -20, "ptr", style | 0x80000)
+        DllCall("SetLayeredWindowAttributes", "ptr", hwnd, "uint", 0, "uchar", alpha, "uint", 0x2)
+    } else {
+        DllCall("SetWindowLong", "ptr", hwnd, "int", -20, "ptr", style & ~0x80000)
+    }
+    DllCall("RedrawWindow", "ptr", hwnd, "ptr", 0, "ptr", 0, "uint", 0x1)
+}
+
+CheckPatchInvalidation() {
+    global g_InstallPath, g_CurrentServer, g_ConfigCache
+
+    LocalInfo := GetLocalPatchInfo()
+    if (LocalInfo["isPatched"] == 0)
+        return false
+
+    if (g_InstallPath == "" || !DirExist(g_InstallPath))
+        return false
+
+    ServerId := g_CurrentServer.Has("id") ? g_CurrentServer["id"] : "default"
+    NormalizedInstallPath := PathUtil.Normalize(g_InstallPath)
+    ProfileKey := LocalInfo["profileKey"]
+    BranchId := LocalInfo.Has("branchId") ? LocalInfo["branchId"] : 1
+
+    BackupRootDir := GetBackupRootDir(ServerId, NormalizedInstallPath, BranchId)
+    if (!DirExist(BackupRootDir) && ProfileKey != "") {
+        BackupRootDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . ProfileKey)
+    }
+    ManifestPath := BackupRootDir . "\backup_manifest.json"
+
+    IsInvalidated := false
+
+    if (!FileExist(ManifestPath)) {
+        IsInvalidated := true
+    } else {
+        ActionsArray := []
+        try {
+            ParsedManifest := JSON.parse(FileRead(ManifestPath, "UTF-8"))
+            if (Type(ParsedManifest) == "Map" && ParsedManifest.Has("actions") && Type(ParsedManifest["actions"]) == "Array") {
+                ActionsArray := ParsedManifest["actions"]
+            }
+        } catch {
+            IsInvalidated := true
+        }
+
+        if (!IsInvalidated && ActionsArray.Length == 0) {
+            IsInvalidated := true
+        }
+
+        if (!IsInvalidated) {
+            loop ActionsArray.Length {
+                Act := ActionsArray[A_Index]
+                RelPath := SafeGet(Act, "target_relative_path", "")
+
+                if (RelPath == "" || InStr(RelPath, ".."))
+                    continue
+
+                ActType := SafeString(SafeGet(Act, "type", "add"), "add")
+                TargetPath := PathUtil.Normalize(NormalizedInstallPath . "\" . RelPath)
+                ExpectedMd5 := StrLower(SafeString(SafeGet(Act, "file_md5", "")))
+
+                if (ActType == "add") {
+                    if (!FileExist(TargetPath)) {
+                        IsInvalidated := true
+                        break
+                    }
+                }
+                else if (ActType == "replace") {
+                    if (!FileExist(TargetPath)) {
+                        IsInvalidated := true
+                        break
+                    }
+                    if (ExpectedMd5 != "" && ExpectedMd5 != "d41d8cd98f00b204e9800998ecf8427e") {
+                        if (HashFileMd5(TargetPath) != ExpectedMd5) {
+                            IsInvalidated := true
+                            break
+                        }
+                    }
+                }
+                else if (ActType == "delete") {
+                    if (FileExist(TargetPath)) {
+                        IsInvalidated := true
+                        break
+                    }
+                }
+
+            }
+        }
+    }
+
+    if (IsInvalidated) {
+        if (ProfileKey != "" && g_ConfigCache.HasOwnProp(ProfileKey)) {
+            g_ConfigCache.%ProfileKey%.IsPatched := 0
+            g_ConfigCache.%ProfileKey%.LocalPatchVersion := ""
+            g_ConfigCache.%ProfileKey%.LocalPatchBranchID := 0
+        } else {
+            for KeyName, ConfigObj in g_ConfigCache.OwnProps() {
+                if (SubStr(KeyName, 1, 8) == "Profile_" && Type(ConfigObj) == "Object") {
+                    ConfigObj.IsPatched := 0
+                    ConfigObj.LocalPatchVersion := ""
+                    ConfigObj.LocalPatchBranchID := 0
+                }
+            }
+        }
+
+        SaveAllConfig()
+        RefreshUi()
+        return true
+    }
+
+    return false
+}
+
+OnPicCheckInvalidationClick(*) {
+    global g_IsPicInvalidationEnabled
+    if (!g_IsPicInvalidationEnabled)
+        return
+    Result := CheckPatchInvalidation()
+    if Result
+        SetStatusBarText("汉化补丁已失效，已重置补丁状态。")
+    else
+        SetStatusBarText("汉化补丁状态正常。")
+}
+
 ; ==============================================================================
 ; 资源加载与卡片 UI 渲染组件
 ; ==============================================================================
+
 LoadEmbeddedPictureHandle(RelativePath) {
     static BitmapCacheMap := Map()
 
@@ -2710,7 +2906,7 @@ LoadEmbeddedPictureHandle(RelativePath) {
 }
 
 CreateCardControl(GuiObj, OptionsMap) {
-    global g_CardHwndMap
+    global g_CursorHwndMap
 
     PosX := OptionsMap.HasProp("x") ? OptionsMap.x : 15
     PosY := OptionsMap.HasProp("y") ? OptionsMap.y : 15
@@ -2726,23 +2922,23 @@ CreateCardControl(GuiObj, OptionsMap) {
         GuiObj.Add("GroupBox", Format("x{} y{} w{} h{}", PosX, PosY, CardWidth, CardHeight))
     }
     if (StrLen(IconRes) <= 4) {
-        IconCtrl := GuiObj.Add("Text", Format("x{} y{} w40 h40 +0x100 +0x200 Center BackgroundTrans", PosX + 15, PosY +
+        IconCtrl := GuiObj.Add("Text", Format("x{} y{} w48 h48 +0x100 +0x200 Center BackgroundTrans", PosX + 15, PosY +
             18), IconRes).SetFont("s20", "Segoe UI Emoji")
     } else {
         hBitmap := LoadEmbeddedPictureHandle(IconRes)
         if (hBitmap != 0) {
-            IconCtrl := GuiObj.Add("Picture", Format("x{} y{} w40 h40 +0x100 BackgroundTrans", PosX + 15, PosY + 18),
+            IconCtrl := GuiObj.Add("Picture", Format("x{} y{} w48 h48 +0x100 BackgroundTrans", PosX + 15, PosY + 18),
                 "HBITMAP:*" . hBitmap)
         } else {
-            IconCtrl := GuiObj.Add("Text", Format("x{} y{} w40 h40 +0x100 +0x200 Center BackgroundTrans", PosX + 15,
+            IconCtrl := GuiObj.Add("Text", Format("x{} y{} w48 h48 +0x100 +0x200 Center BackgroundTrans", PosX + 15,
                 PosY + 18), "❌").SetFont("s12", "Microsoft YaHei")
         }
     }
 
     IconCtrl.OnEvent("Click", ClickHandler)
-    g_CardHwndMap[IconCtrl.Hwnd] := true
-    TextX := PosX + 65
-    TextW := CardWidth - 80
+    g_CursorHwndMap[IconCtrl.Hwnd] := true
+    TextX := PosX + 75
+    TextW := CardWidth - 85
 
     GuiObj.Add("Text", Format("x{} y{} w{} c333333 BackgroundTrans", TextX, PosY + 15, TextW), TitleText).SetFont(
         "s10 bold", "Microsoft YaHei")
@@ -2756,5 +2952,36 @@ CreateCardControl(GuiObj, OptionsMap) {
     ClickMaskCtrl := GuiObj.Add("Text", Format("x{} y{} w{} h{} +0x100 BackgroundTrans", MaskX, MaskY, MaskW, MaskH),
         "")
     ClickMaskCtrl.OnEvent("Click", ClickHandler)
-    g_CardHwndMap[ClickMaskCtrl.Hwnd] := true
+    g_CursorHwndMap[ClickMaskCtrl.Hwnd] := true
+}
+
+; ==============================================================================
+; 自定义消息与事件监听
+; ==============================================================================
+
+OnMessage(0x0900, HandleDialogEvent)
+OnMessage(0x0020, WM_SETCURSOR)
+
+HandleDialogEvent(wParam, lParam, msg, hwnd) {
+    if (g_DialogCallbacks.Has(wParam)) {
+        CallbackFunc := g_DialogCallbacks[wParam]
+        g_DialogCallbacks.Delete(wParam)
+        CallbackFunc(lParam)
+    }
+}
+
+WM_SETCURSOR(wParam, lParam, msg, hwnd) {
+    global g_CursorHwndMap, PicCheckInvalidation, g_IsPicInvalidationEnabled
+    static hHandCursor := 0
+
+    if (IsSet(PicCheckInvalidation) && wParam == PicCheckInvalidation.Hwnd && !g_IsPicInvalidationEnabled)
+        return
+
+    if (g_CursorHwndMap.Has(wParam)) {
+        if (!hHandCursor) {
+            hHandCursor := DllCall("LoadCursor", "ptr", 0, "int", 32649, "ptr")
+        }
+        DllCall("SetCursor", "ptr", hHandCursor)
+        return true
+    }
 }
