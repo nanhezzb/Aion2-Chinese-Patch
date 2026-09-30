@@ -1,7 +1,7 @@
 {
     "cloud_bulletin": {
         "latest_bulletin_version": "1.1.0.0",
-        "changelog": "如使用 PURPLE 进入国际服，由于 PURPLE 每次启动后都会检查 & 修复游戏文件，必须在右下角按钮变成“运行游戏”后再进行汉化操作。",
+        "changelog": "如使用 PURPLE 进入国际服，由于 PURPLE 每次启动后都会检查 & 修复游戏文件，必须在右下角按钮变成“运行游戏”后再进行汉化操作。\r\n\r\n国际服可以先试试第一个补丁来源是否正常汉化。",
         "release_timestamp": 1789981021
     },
     "servers_config": [
