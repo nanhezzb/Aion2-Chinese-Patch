@@ -78,9 +78,6 @@ global g_IsSyncing := false
 ; 统一响应句柄映射
 global g_CursorHwndMap := Map()
 
-; 图片状态记录
-global g_IsPicInvalidationEnabled := true
-
 ; Win32 API 控制常量
 global LVM_FIRST := 0x1000
 global LVM_GETHEADER := LVM_FIRST + 31
@@ -130,14 +127,8 @@ global TextTipInfo := MainGui.Add("Text", "x0 y405 w575 +Hidden cRed Center", "�
 global BtnUpdate := MainGui.Add("Button", "x177 y418 w100 h30 +Hidden", "更新补丁")
 global BtnChinese := MainGui.Add("Button", "x177 y418 w100 h30", "一键汉化")
 global BtnRestore := MainGui.Add("Button", "x289 y418 w100 h30", "撤销汉化")
-global hRefreshBtn := LoadEmbeddedPictureHandle("AutoHotkey\refresh.png")
-if (hRefreshBtn != 0) {
-    global PicCheckInvalidation := MainGui.Add("Picture", "x110 y18 w25 h25 +BackgroundTrans Icon10", "HBITMAP:*" . hRefreshBtn)
-} else {
-    global PicCheckInvalidation := MainGui.Add("Text", "x110 y18 w25 h25 +0x200 Center", "🔄")
-}
-g_CursorHwndMap[PicCheckInvalidation.Hwnd] := true
-AddToolTip(PicCheckInvalidation, "检测本地补丁是否失效，刷新界面按钮状态。")
+global BtnRefreshStatus := MainGui.Add("Button", "x484 y422 w60 h26", "刷新")
+AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面按钮状态。")
 
 TabCtrl.UseTab(2)
 
@@ -195,7 +186,7 @@ BtnReset.OnEvent("Click", DoResetConfig)
 BtnUpdate.OnEvent("Click", DoUpdatePatch)
 BtnChinese.OnEvent("Click", DoChinesePatch)
 BtnRestore.OnEvent("Click", DoRestorePatch)
-PicCheckInvalidation.OnEvent("Click", OnPicCheckInvalidationClick)
+BtnRefreshStatus.OnEvent("Click", OnBtnRefreshStatusClick)
 
 ; ==============================================================================
 ; 应用程序启动主流程
@@ -671,7 +662,7 @@ GetLocalPatchInfo() {
 
 RefreshUi() {
     global BtnBrowse, BtnChinese, BtnRestore, BtnReset, BtnScan, BtnUpdate, ComboServerList, EditInstallPath
-    global g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, TabCtrl, TextTipInfo, MainGui, PicCheckInvalidation
+    global g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, TabCtrl, TextTipInfo, MainGui, BtnRefreshStatus
 
     if (TabCtrl.Value != 1) {
         TextTipInfo.Opt("+Hidden")
@@ -686,7 +677,7 @@ RefreshUi() {
         BtnUpdate.Move(177, 428)
         BtnChinese.Move(177, 428)
         BtnRestore.Move(289, 428)
-        PicCheckInvalidation.Move(525, 430)
+        BtnRefreshStatus.Move(484, 432)
         MainGui.Show("h500")
     } else {
         TextTipInfo.Opt("+Hidden")
@@ -694,7 +685,7 @@ RefreshUi() {
         BtnUpdate.Move(177, 418)
         BtnChinese.Move(177, 418)
         BtnRestore.Move(289, 418)
-        PicCheckInvalidation.Move(525, 420)
+        BtnRefreshStatus.Move(484, 422)
         MainGui.Show("h490")
     }
 
@@ -706,7 +697,7 @@ RefreshUi() {
         BtnBrowse.Opt("+Disabled")
         BtnReset.Opt("+Disabled")
         ComboServerList.Opt("+Disabled")
-        SetPatchStatusPicState(false)
+        BtnRefreshStatus.Opt("+Disabled")
 
         return
     }
@@ -714,7 +705,7 @@ RefreshUi() {
     ComboServerList.Opt("-Disabled")
     BtnScan.Opt("-Disabled")
     BtnBrowse.Opt("-Disabled")
-    SetPatchStatusPicState(true)
+    BtnRefreshStatus.Opt("-Disabled")
 
     if (!g_CurrentServer.Has("id"))
         return
@@ -2711,7 +2702,7 @@ AddToolTip(Control, Text) {
 
             if (ToolTips.Has(hwnd)) {
                 CurrentShowingHwnd := hwnd
-                SetStatusBarText(ToolTips[hwnd])
+                MainStatusBar.SetText("`t" . ToolTips[hwnd])
             }
             else if (CurrentShowingHwnd != 0) {
                 CurrentShowingHwnd := 0
@@ -2724,36 +2715,6 @@ AddToolTip(Control, Text) {
             }
         }
     }
-}
-
-SetPatchStatusPicState(IsEnabled) {
-    global PicCheckInvalidation, g_IsPicInvalidationEnabled
-    if (!IsSet(PicCheckInvalidation))
-        return
-
-    g_IsPicInvalidationEnabled := IsEnabled
-
-    if (IsEnabled) {
-        PicCheckInvalidation.Opt("-Disabled")
-
-        SetControlAlpha(PicCheckInvalidation.Hwnd, 255)
-    } else {
-        PicCheckInvalidation.Opt("+Disabled")
-
-        SetControlAlpha(PicCheckInvalidation.Hwnd, 90)
-    }
-}
-
-SetControlAlpha(hwnd, alpha := 255) {
-
-    style := DllCall("GetWindowLong", "ptr", hwnd, "int", -20, "ptr")
-    if (alpha < 255) {
-        DllCall("SetWindowLong", "ptr", hwnd, "int", -20, "ptr", style | 0x80000)
-        DllCall("SetLayeredWindowAttributes", "ptr", hwnd, "uint", 0, "uchar", alpha, "uint", 0x2)
-    } else {
-        DllCall("SetWindowLong", "ptr", hwnd, "int", -20, "ptr", style & ~0x80000)
-    }
-    DllCall("RedrawWindow", "ptr", hwnd, "ptr", 0, "ptr", 0, "uint", 0x1)
 }
 
 CheckPatchInvalidation() {
@@ -2860,15 +2821,12 @@ CheckPatchInvalidation() {
     return false
 }
 
-OnPicCheckInvalidationClick(*) {
-    global g_IsPicInvalidationEnabled
-    if (!g_IsPicInvalidationEnabled)
-        return
+OnBtnRefreshStatusClick(*) {
     Result := CheckPatchInvalidation()
     if Result
         SetStatusBarText("汉化补丁已失效，已重置补丁状态。")
     else
-        SetStatusBarText("汉化补丁状态正常。")
+        SetStatusBarText("所有状态均正常。")
 }
 
 ; ==============================================================================
@@ -2891,8 +2849,6 @@ LoadEmbeddedPictureHandle(RelativePath) {
             FileInstall("AutoHotkey\AK.png", TempFilePath, 1)
         } else if InStr(NormalizedPath, "XaoYao.png") {
             FileInstall("AutoHotkey\XaoYao.png", TempFilePath, 1)
-        } else if InStr(NormalizedPath, "refresh.png") {
-            FileInstall("AutoHotkey\refresh.png", TempFilePath, 1)
         } else if FileExist(NormalizedPath) {
             FileCopy(NormalizedPath, TempFilePath, 1)
         } else {
@@ -2967,28 +2923,11 @@ CreateCardControl(GuiObj, OptionsMap) {
 ; ==============================================================================
 
 OnMessage(0x0900, HandleDialogEvent)
-OnMessage(0x0020, WM_SETCURSOR)
 
 HandleDialogEvent(wParam, lParam, msg, hwnd) {
     if (g_DialogCallbacks.Has(wParam)) {
         CallbackFunc := g_DialogCallbacks[wParam]
         g_DialogCallbacks.Delete(wParam)
         CallbackFunc(lParam)
-    }
-}
-
-WM_SETCURSOR(wParam, lParam, msg, hwnd) {
-    global g_CursorHwndMap, PicCheckInvalidation, g_IsPicInvalidationEnabled
-    static hHandCursor := 0
-
-    if (IsSet(PicCheckInvalidation) && wParam == PicCheckInvalidation.Hwnd && !g_IsPicInvalidationEnabled)
-        return
-
-    if (g_CursorHwndMap.Has(wParam)) {
-        if (!hHandCursor) {
-            hHandCursor := DllCall("LoadCursor", "ptr", 0, "int", 32649, "ptr")
-        }
-        DllCall("SetCursor", "ptr", hHandCursor)
-        return true
     }
 }
