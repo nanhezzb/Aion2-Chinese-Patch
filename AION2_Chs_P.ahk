@@ -2923,11 +2923,24 @@ CreateCardControl(GuiObj, OptionsMap) {
 ; ==============================================================================
 
 OnMessage(0x0900, HandleDialogEvent)
+OnMessage(0x0020, WM_SETCURSOR)
 
 HandleDialogEvent(wParam, lParam, msg, hwnd) {
     if (g_DialogCallbacks.Has(wParam)) {
         CallbackFunc := g_DialogCallbacks[wParam]
         g_DialogCallbacks.Delete(wParam)
         CallbackFunc(lParam)
+    }
+}
+
+WM_SETCURSOR(wParam, lParam, msg, hwnd) {
+    global g_CursorHwndMap
+    static hHandCursor := 0
+    if (g_CursorHwndMap.Has(wParam) && g_CursorHwndMap[wParam]) {
+        if (!hHandCursor) {
+            hHandCursor := DllCall("LoadCursor", "ptr", 0, "int", 32649, "ptr")
+        }
+        DllCall("SetCursor", "ptr", hHandCursor)
+        return true
     }
 }
