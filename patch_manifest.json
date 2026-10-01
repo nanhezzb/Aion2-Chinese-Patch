@@ -12,6 +12,8 @@
             "keywords": [
                 "AION"
             ],
+            "steam_url": "steam://rungameid/3393110",
+            "purple_url": "--game-id A2_TW_L_GA_PURPLE",
             "patch_branches": [
                 {
                     "id": 4,
@@ -59,6 +61,7 @@
             "keywords": [
                 "AION"
             ],
+            "purple_url": "--game-id A2_WW_L_GA_PURPLE",
             "patch_branches": [
                 {
                     "id": 3,
