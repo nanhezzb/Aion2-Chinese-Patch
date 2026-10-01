@@ -74,7 +74,7 @@ global g_ConfigCache := {
 global g_DialogCallbacks := Map()
 global g_IsPatching := false
 global g_IsSyncing := false
-
+global g_WindowsOffset := 0
 ; 统一响应句柄映射
 global g_CursorHwndMap := Map()
 
@@ -124,11 +124,11 @@ MainGui.Add("GroupBox", "x17 y255 w536 h145", "使用须知 * ")
 global TextExplain := MainGui.AddText("x31 y280 w510 h105", "")
 
 global TextTipInfo := MainGui.Add("Text", "x0 y405 w575 +Hidden cRed Center", "建议先退出游戏再进行汉化。")
-global BtnUpdate := MainGui.Add("Button", "x177 y418 w100 h30 +Hidden", "更新补丁")
-global BtnChinese := MainGui.Add("Button", "x177 y418 w100 h30", "一键汉化")
-global BtnRestore := MainGui.Add("Button", "x289 y418 w100 h30", "撤销汉化")
-global BtnRefreshStatus := MainGui.Add("Button", "x484 y422 w60 h26", "刷新")
-AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面按钮状态。")
+global BtnUpdate := MainGui.Add("Button", "x20 y418 w100 h30 +Hidden", "更新补丁")
+global BtnChinese := MainGui.Add("Button", "x20 y418 w100 h30", "一键汉化")
+global BtnRestore := MainGui.Add("Button", "x132 y418 w100 h30", "撤销汉化")
+global BtnRefreshStatus := MainGui.Add("Button", "x244 y418 w60 h30", "刷新")
+AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
 
 TabCtrl.UseTab(2)
 
@@ -228,10 +228,13 @@ InitializeApp()
 ; ==============================================================================
 
 InitializeApp() {
-    global g_IsLocalInitComplete, g_IsSyncing, MainGui
+    global g_IsLocalInitComplete, g_IsSyncing, MainGui, g_WindowsOffset
 
     g_IsSyncing := true
     MainGui.Show("w570 h490")
+
+    g_WindowsOffset := GetWindowFrameOffset(MainGui)
+
     RefreshUi()
     SetStatusBarText("正在初始化环境…")
 
@@ -674,19 +677,19 @@ RefreshUi() {
     if (ShowGameRunningTip) {
         TextTipInfo.Opt("-Hidden")
         TabCtrl.Move(, , , 470)
-        BtnUpdate.Move(177, 428)
-        BtnChinese.Move(177, 428)
-        BtnRestore.Move(289, 428)
-        BtnRefreshStatus.Move(484, 432)
-        MainGui.Show("h500")
+        BtnUpdate.Move(20, 428)
+        BtnChinese.Move(20, 428)
+        BtnRestore.Move(132, 428)
+        BtnRefreshStatus.Move(244, 428)
+        MainGui.Move(, , , 500 + g_WindowsOffset.h)
     } else {
         TextTipInfo.Opt("+Hidden")
         TabCtrl.Move(, , , 460)
-        BtnUpdate.Move(177, 418)
-        BtnChinese.Move(177, 418)
-        BtnRestore.Move(289, 418)
-        BtnRefreshStatus.Move(484, 422)
-        MainGui.Show("h490")
+        BtnUpdate.Move(20, 418)
+        BtnChinese.Move(20, 418)
+        BtnRestore.Move(132, 418)
+        BtnRefreshStatus.Move(244, 418)
+        MainGui.Move(, , , 490 + g_WindowsOffset.h)
     }
 
     if (g_IsPatching || g_IsSyncing) {
@@ -829,11 +832,7 @@ DoChinesePatch(*) {
     g_IsPatching := true
     BtnChinese.Opt("+Disabled")
 
-    if (Branches.Length == 1) {
-        ExecuteChinesePatch(Branches[1], false)
-    } else {
-        ShowMultiBranchDialog(Branches, HandleChineseBranchSelected, false)
-    }
+    ShowMultiBranchDialog(Branches, HandleChineseBranchSelected, false)
 }
 
 HandleChineseBranchSelected(SelectedBranch) {
@@ -1721,11 +1720,7 @@ OnScanButtonClick() {
 
     ValidGames := GetValidGamePaths()
 
-    if (ValidGames.Length == 1) {
-        SelectedFolder := ValidGames[1].GameInstallPath
-        SetInstallPath(SelectedFolder, 0)
-        SetStatusBarText("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
-    } else if (ValidGames.Length > 1) {
+    if (ValidGames.Length >= 1) {
         ShowMultiPathDialog(ValidGames, HandleScanPathSelected)
     } else {
         ShowMessageDialog("未检测到有效的安装目录，通过[浏览…]按钮手动指定。")
@@ -1860,6 +1855,7 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
 
     BtnDownloadMinor := UpdateGui.Add("Button", "x280 y225 w100 h30", "Github 下载")
     BtnDownloadMain := UpdateGui.Add("Button", "x168 y225 w100 h30 Default", "主线路下载")
+    BtnDownloadMain.Focus()
 
     BtnDownloadMain.OnEvent("Click", (*) => (DownloadUrlMain != "" ? Run(DownloadUrlMain) : false))
     BtnDownloadMinor.OnEvent("Click", (*) => (DownloadUrlMinor != "" ? Run(DownloadUrlMinor) : false))
@@ -1896,6 +1892,7 @@ ShowBulletinDialog(ContentText, BulletinVersion, OnCloseCallback := "") {
     BulletinGui.Add("Edit", "x20 y20 w360 h150 ReadOnly -WantReturn", ContentText)
 
     BtnConfirm := BulletinGui.Add("Button", "x280 y200 w100 h30 Default", "我知道了")
+    BtnConfirm.Focus()
 
     CloseDialog(*) {
         g_LastSeenBulletinVersion := BulletinVersion
@@ -1928,6 +1925,7 @@ ShowConfirmDialog(Text, Callback := "") {
 
     BtnCancel := ConfirmGui.Add("Button", "x246 y102 w84 h30", "取消")
     BtnConfirm := ConfirmGui.Add("Button", "x134 y102 w100 h30 Default", "确认")
+    BtnConfirm.Focus()
 
     CloseDialog(UserChoice) {
         MainGui.Opt("-Disabled")
@@ -1957,6 +1955,7 @@ ShowMessageDialog(Text, Callback := "") {
     MessageGui.Add("Text", "x20 y20 w310 h60", Text)
 
     BtnConfirm := MessageGui.Add("Button", "x230 y102 w100 h30 Default", "确认")
+    BtnConfirm.Focus()
 
     CloseDialog(*) {
         MainGui.Opt("-Disabled")
@@ -2112,18 +2111,29 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
 
     LV := ChoiceGui.Add("ListView", "x20 y45 w410 h140 -Multi", [
         "名称",
-        "安装目录"
+        "安装目录",
+        "查找方式"
     ])
     LV_ApplyExplorerTheme(LV)
     LV.Opt("-Redraw")
 
     for Index, Game in ValidGames {
-        RowNumber := LV.Add("", Game.SoftwareDisplayName, Game.GameInstallPath)
+        RawMethod := Game.HasOwnProp("ScanMethod") ? Game.ScanMethod : (Type(Game) == "Map" && Game.Has("ScanMethod") ? Game["ScanMethod"] : "")
+
+        switch RawMethod {
+            case "reg_uninstall": ScanMethodStr := "注册表卸载项"
+            case "reg_plaync": ScanMethodStr := "PlayNC 注册表"
+            case "steam_library": ScanMethodStr := "Steam 库文件"
+            default: ScanMethodStr := RawMethod
+        }
+
+        RowNumber := LV.Add("", Game.SoftwareDisplayName, Game.GameInstallPath, ScanMethodStr)
         LV_SetItemLParam(LV.Hwnd, RowNumber, Index)
     }
 
     LV.ModifyCol(1, "AutoHdr")
     LV.ModifyCol(2, "AutoHdr")
+    LV.ModifyCol(3, "AutoHdr")
     LV.Opt("+Redraw")
 
     BtnCancel := ChoiceGui.Add("Button", "x346 y200 w84 h30", "取消")
@@ -2262,7 +2272,7 @@ ScanGamesFromUninstallReg(KeywordArray := []) {
             RegistryKeyName: RegName,
             SoftwareDisplayName: DisplayName,
             GameInstallPath: CleanPath,
-            ScanMethod: "uninstall"
+            ScanMethod: "reg_uninstall"
         })
     }
 
@@ -2324,7 +2334,7 @@ ScanGamesFromPlayNcReg() {
             RegistryKeyName: RegName,
             SoftwareDisplayName: RegName,
             GameInstallPath: CleanPath,
-            ScanMethod: "plaync"
+            ScanMethod: "reg_plaync"
         })
     }
 
@@ -2368,18 +2378,22 @@ ScanGamesFromSteam() {
             return
 
         CleanPathLower := StrLower(CleanPath)
-        for ExistingPath in SteamInstallPaths {
-            if (StrLower(ExistingPath) == CleanPathLower)
+        for ExistingItem in SteamInstallPaths {
+            if (StrLower(ExistingItem.Path) == CleanPathLower)
                 return
         }
-        SteamInstallPaths.Push(CleanPath)
+        SteamInstallPaths.Push({
+            Path: CleanPath,
+            RegPath: FullKey
+        })
     }
 
     SetRegView 64
     TryAddSteamPath(SystemSteamRoot, SafeRegRead(SystemSteamRoot, "InstallPath"))
 
     SetRegView 32
-    TryAddSteamPath(RegExReplace(SystemSteamRoot, "i)^HKEY_LOCAL_MACHINE\\SOFTWARE\\", "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\"), SafeRegRead(SystemSteamRoot, "InstallPath"))
+    WowKey := RegExReplace(SystemSteamRoot, "i)^HKEY_LOCAL_MACHINE\\SOFTWARE\\", "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\")
+    TryAddSteamPath(WowKey, SafeRegRead(WowKey, "InstallPath"))
 
     SetRegView "Default"
     TryAddSteamPath(UserSteamRoot, SafeRegRead(UserSteamRoot, "SteamPath"))
@@ -2391,7 +2405,7 @@ ScanGamesFromSteam() {
 
     LibraryPaths := []
 
-    TryAddLibraryPath(RawPath) {
+    TryAddLibraryPath(RawPath, SourceKey := "") {
         if (RawPath == "")
             return
 
@@ -2407,17 +2421,20 @@ ScanGamesFromSteam() {
             return
 
         CleanPathLower := StrLower(CleanPath)
-        for ExistingPath in LibraryPaths {
-            if (StrLower(ExistingPath) == CleanPathLower)
+        for ExistingItem in LibraryPaths {
+            if (StrLower(ExistingItem.Path) == CleanPathLower)
                 return
         }
-        LibraryPaths.Push(CleanPath)
+        LibraryPaths.Push({
+            Path: CleanPath,
+            RegPath: SourceKey
+        })
     }
 
-    for SteamPath in SteamInstallPaths {
-        TryAddLibraryPath(SteamPath)
+    for SteamItem in SteamInstallPaths {
+        TryAddLibraryPath(SteamItem.Path, SteamItem.RegPath)
 
-        LibraryFoldersFile := SteamPath . "\steamapps\libraryfolders.vdf"
+        LibraryFoldersFile := SteamItem.Path . "\steamapps\libraryfolders.vdf"
         if FileExist(LibraryFoldersFile) {
             try {
                 VdfContent := FileRead(LibraryFoldersFile, "UTF-8")
@@ -2426,15 +2443,15 @@ ScanGamesFromSteam() {
 
                 Pos := 1
                 while (Pos := RegExMatch(VdfContent, RegExPattern, &Match, Pos)) {
-                    TryAddLibraryPath(Match[1])
+                    TryAddLibraryPath(Match[1], SteamItem.RegPath)
                     Pos += Match.Len(0)
                 }
             }
         }
     }
 
-    for LibPath in LibraryPaths {
-        SteamAppsCommon := RTrim(LibPath, "\/") . "\steamapps\common"
+    for LibItem in LibraryPaths {
+        SteamAppsCommon := RTrim(LibItem.Path, "\/") . "\steamapps\common"
         if DirExist(SteamAppsCommon) {
             loop files, SteamAppsCommon . "\*", "D" {
                 FolderName := A_LoopFileName
@@ -2451,11 +2468,11 @@ ScanGamesFromSteam() {
 
                 if (!IsDuplicatePath) {
                     MatchedGameList.Push({
-                        FullRegistryPath: SystemSteamRoot,
+                        FullRegistryPath: LibItem.RegPath,
                         RegistryKeyName: FolderName,
                         SoftwareDisplayName: FolderName,
                         GameInstallPath: FullGamePath,
-                        ScanMethod: "steam"
+                        ScanMethod: "steam_library"
                     })
                 }
             }
@@ -2824,7 +2841,7 @@ CheckPatchInvalidation() {
 OnBtnRefreshStatusClick(*) {
     Result := CheckPatchInvalidation()
     if Result
-        SetStatusBarText("汉化补丁已失效，已重置补丁状态。")
+        SetStatusBarText("汉化补丁已失效，已重置按钮状态。")
     else
         SetStatusBarText("所有状态均正常。")
 }
@@ -2875,7 +2892,7 @@ CreateCardControl(GuiObj, OptionsMap) {
     PosY := OptionsMap.HasProp("y") ? OptionsMap.y : 15
     IconRes := OptionsMap.HasProp("icon") ? OptionsMap.icon : "🚀"
     TitleText := OptionsMap.HasProp("title") ? OptionsMap.title : "默认标题"
-    DescText := OptionsMap.HasProp("desc") ? OptionsMap.desc : "默认描述信息…"
+    DescText := OptionsMap.HasProp("desc") ? OptionsMap.desc : "默认描述…"
     TargetUrl := OptionsMap.HasProp("url") ? OptionsMap.url : ""
     CardWidth := OptionsMap.HasProp("width") ? OptionsMap.width : 536
     CardHeight := OptionsMap.HasProp("height") ? OptionsMap.height : 75
@@ -2942,5 +2959,29 @@ WM_SETCURSOR(wParam, lParam, msg, hwnd) {
         }
         DllCall("SetCursor", "ptr", hHandCursor)
         return true
+    }
+}
+
+GetWindowFrameOffset(GuiObj) {
+
+    rectWindow := Buffer(16, 0)
+    rectClient := Buffer(16, 0)
+
+    DllCall("GetWindowRect", "ptr", GuiObj.Hwnd, "ptr", rectWindow)
+
+    DllCall("GetClientRect", "ptr", GuiObj.Hwnd, "ptr", rectClient)
+
+    winWidth := NumGet(rectWindow, 8, "Int") - NumGet(rectWindow, 0, "Int")
+    winHeight := NumGet(rectWindow, 12, "Int") - NumGet(rectWindow, 4, "Int")
+
+    clientWidth := NumGet(rectClient, 8, "Int") - NumGet(rectClient, 0, "Int")
+    clientHeight := NumGet(rectClient, 12, "Int") - NumGet(rectClient, 4, "Int")
+
+    offsetW := winWidth - clientWidth
+    offsetH := winHeight - clientHeight
+
+    return {
+        w: offsetW,
+        h: offsetH
     }
 }
