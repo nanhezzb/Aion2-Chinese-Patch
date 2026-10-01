@@ -2968,8 +2968,8 @@ ShowConfirmDialog(Text, Callback := "") {
 
     ConfirmGui.Add("Text", "x20 y20 w310 h60", Text)
 
-    BtnCancel := ConfirmGui.Add("Button", "x246 y102 w84 h30", "取消")
-    BtnConfirm := ConfirmGui.Add("Button", "x134 y102 w100 h30 Default", "确认")
+    BtnCancel := ConfirmGui.Add("Button", "x346 y102 w84 h30", "取消")
+    BtnConfirm := ConfirmGui.Add("Button", "x234 y102 w100 h30 Default", "确认")
     BtnConfirm.Focus()
 
     CloseDialog(UserChoice) {
@@ -2986,7 +2986,7 @@ ShowConfirmDialog(Text, Callback := "") {
     BtnCancel.OnEvent("Click", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
     ConfirmGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
-    ConfirmGui.Show("w350 h150")
+    ConfirmGui.Show("w450 h150")
     MainGui.Opt("+Disabled")
 }
 
