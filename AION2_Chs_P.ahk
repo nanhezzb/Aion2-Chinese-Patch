@@ -3,7 +3,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 1.7.0.0
+;@Ahk2Exe-SetVersion 1.8.0.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 ;@Ahk2Exe-SetMainIcon AutoHotkey\icon.ico
 
@@ -34,8 +34,8 @@ UniqueInstance.Ensure(Map(
 ; ==============================================================================
 
 global g_ProjectName := "AION2 Chs Patch"
-global g_CurrentAppVersion := "1.7.0.0"
-global g_CurrentAppVersionShort := "1.7"
+global g_CurrentAppVersion := "1.8.0.0"
+global g_CurrentAppVersionShort := "1.8"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
