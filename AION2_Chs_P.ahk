@@ -505,6 +505,7 @@ ExecuteCheckChain() {
         try
             WinActivate("ahk_id " MainGui.Hwnd)
     }
+    
     NextTask()
 }
 
@@ -2883,7 +2884,7 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
     global g_ClientUpdateData, g_DialogCallbacks, MainGui
 
     MsgId := 1001
-    UpdateGui := Gui("+Owner" . MainGui.Hwnd, "软件更新提示")
+    UpdateGui := Gui("+Owner" . MainGui.Hwnd, "更新提示")
     UpdateGui.SetFont(, "Microsoft YaHei UI")
     MainGui.Opt("+Disabled")
 
@@ -2892,34 +2893,36 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
         : "发现新版本。"
 
     if (IsForceUpdate)
-        UpdateGui.Add("Text", "x20 y20 w360", "当前版本过低，必须升级为最新版本才能使用。").SetFont("bold")
+        UpdateGui.Add("Text", "x20 y20 w410", "当前版本过低，必须升级为最新版本才能使用。").SetFont("bold")
     else
-        UpdateGui.Add("Text", "x20 y20 w360", LatestVersion)
+        UpdateGui.Add("Text", "x20 y20 w410", LatestVersion)
 
-    UpdateGui.Add("Edit", "x20 y45 w360 h150 ReadOnly", ChangelogText)
+    UpdateGui.Add("Edit", "x20 y45 w410 h150 ReadOnly", ChangelogText)
 
-    BtnDownloadMinor := UpdateGui.Add("Button", "x280 y225 w100 h30", "Github 下载")
-    BtnDownloadMain := UpdateGui.Add("Button", "x168 y225 w100 h30 Default", "主线路下载")
+    BtnDownloadMinor := UpdateGui.Add("Button", "x330 y225 w100 h30", "Github 下载")
+    BtnDownloadMain := UpdateGui.Add("Button", "x218 y225 w100 h30 Default", "主线路下载")
     BtnDownloadMain.Focus()
 
     BtnDownloadMain.OnEvent("Click", (*) => (DownloadUrlMain != "" ? Run(DownloadUrlMain) : false))
     BtnDownloadMinor.OnEvent("Click", (*) => (DownloadUrlMinor != "" ? Run(DownloadUrlMinor) : false))
 
-    CloseDialog(*) {
+    CloseDialog(Result := 0) {
+        MainGui.Opt("-Disabled")
         UpdateGui.Destroy()
         if (IsForceUpdate)
             ExitApp()
+        else
+            RefreshUi()
 
         if (OnCloseCallback)
             OnCloseCallback()
     }
-
     g_DialogCallbacks[MsgId] := CloseDialog
 
     UpdateGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
     UpdateGui.OnEvent("Escape", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
-    UpdateGui.Show("w400 h275")
+    UpdateGui.Show("w450 h275")
     BtnDownloadMain.Focus()
 }
 
@@ -2931,16 +2934,18 @@ ShowBulletinDialog(ContentText, BulletinVersion, OnCloseCallback := "") {
     BulletinGui.SetFont(, "Microsoft YaHei UI")
     MainGui.Opt("+Disabled")
 
-    BulletinGui.Add("Edit", "x20 y20 w360 h150 ReadOnly -WantReturn", ContentText)
+    BulletinGui.Add("Edit", "x20 y20 w410 h150 ReadOnly -WantReturn", ContentText)
 
-    BtnConfirm := BulletinGui.Add("Button", "x280 y225 w100 h30 Default", "我知道了")
+    BtnConfirm := BulletinGui.Add("Button", "x330 y225 w100 h30 Default", "我知道了")
     BtnConfirm.Focus()
 
     g_LastSeenBulletinVersion := BulletinVersion
     SaveAllConfig()
 
     CloseDialog(*) {
+        MainGui.Opt("-Disabled")
         BulletinGui.Destroy()
+        RefreshUi()
 
         if (OnCloseCallback)
             OnCloseCallback()
@@ -2951,7 +2956,7 @@ ShowBulletinDialog(ContentText, BulletinVersion, OnCloseCallback := "") {
     BtnConfirm.OnEvent("Click", (*) => PostMessage(0x0900, MsgId, 1, , MainGui.Hwnd))
     BulletinGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
-    BulletinGui.Show("w400 h275")
+    BulletinGui.Show("w450 h275")
 }
 
 ShowConfirmDialog(Text, Callback := "") {
@@ -2970,7 +2975,7 @@ ShowConfirmDialog(Text, Callback := "") {
     CloseDialog(UserChoice) {
         MainGui.Opt("-Disabled")
         ConfirmGui.Destroy()
-
+        RefreshUi()
         if (Callback)
             Callback(UserChoice)
     }
@@ -3000,7 +3005,7 @@ ShowMessageDialog(Text, Callback := "") {
     CloseDialog(*) {
         MainGui.Opt("-Disabled")
         MessageGui.Destroy()
-
+        RefreshUi()
         if (Callback)
             Callback()
 
@@ -3018,7 +3023,7 @@ ShowMessageDialog(Text, Callback := "") {
 ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
     global g_CurrentServer, MainGui
 
-    DlgTitle := IsUpdateList ? "选择汉化补丁来源" : "选择汉化补丁来源"
+    DlgTitle := IsUpdateList ? "选择补丁来源" : "选择补丁来源"
     ChoiceGui := Gui("+Owner" . MainGui.Hwnd, DlgTitle)
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
     MainGui.Opt("+Disabled")
@@ -3077,8 +3082,8 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
     LV.Opt("+Redraw")
 
     ConfirmBtnText := IsUpdateList ? "确认更新" : "确认"
-    BtnCancel := ChoiceGui.Add("Button", "x346 y200 w84 h30", "取消")
-    BtnConfirm := ChoiceGui.Add("Button", "x234 y200 w100 h30 +Disabled", ConfirmBtnText)
+    BtnCancel := ChoiceGui.Add("Button", "x346 y225 w84 h30", "取消")
+    BtnConfirm := ChoiceGui.Add("Button", "x234 y225 w100 h30 +Disabled", ConfirmBtnText)
 
     LV.OnEvent("ItemSelect", (Ctrl, Item, Selected) => BtnConfirm.Opt(LV.GetNext(0) > 0 ? "-Disabled" : "+Disabled"))
     BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
@@ -3122,13 +3127,15 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
             }
         }
 
+        MainGui.Opt("-Disabled")
         ChoiceGui.Destroy()
+        RefreshUi()
 
         if (Callback)
             Callback(SelectedBranch)
     }
 
-    ChoiceGui.Show("w450 h250")
+    ChoiceGui.Show("w450 h275")
 
     if (IsUpdateList && Branches.Length > 0) {
         LV.Modify(1, "Select Focus")
@@ -3175,8 +3182,8 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
     LV.ModifyCol(3, "AutoHdr")
     LV.Opt("+Redraw")
 
-    BtnCancel := ChoiceGui.Add("Button", "x346 y200 w84 h30", "取消")
-    BtnConfirm := ChoiceGui.Add("Button", "x234 y200 w100 h30 +Disabled", "确认")
+    BtnCancel := ChoiceGui.Add("Button", "x346 y225 w84 h30", "取消")
+    BtnConfirm := ChoiceGui.Add("Button", "x234 y225 w100 h30 +Disabled", "确认")
 
     LV.OnEvent("ItemSelect", (Ctrl, Item, Selected) => BtnConfirm.Opt(LV.GetNext(0) > 0 ? "-Disabled" : "+Disabled"))
     BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
@@ -3221,12 +3228,14 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
         }
 
         MainGui.Opt("-Disabled")
+        ChoiceGui.Destroy()
+        RefreshUi()
 
         if (Callback)
             Callback(UserChoicePath)
     }
 
-    ChoiceGui.Show("w450 h250")
+    ChoiceGui.Show("w450 h275")
     LV.Modify(0, "-Select")
     MainGui.Opt("+Disabled")
 }
