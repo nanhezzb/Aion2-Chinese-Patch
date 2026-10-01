@@ -1,20 +1,44 @@
 #Requires AutoHotkey v2.0
-;@Ahk2Exe-SetName AION2 Chs Patch
-;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
-;@Ahk2Exe-SetProductName AION2 Chs Patch
-;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 1.8.0.0
-;@Ahk2Exe-SetCopyright Copyright © 2026
-;@Ahk2Exe-SetMainIcon AutoHotkey\icon.ico
 #Include ".\AutoHotkey\lib\UniqueInstance.ahk"
 #Include ".\AutoHotkey\lib\PathUtil.ahk"
 #Include ".\AutoHotkey\Lib\WinHttpRequest.ahk"
 #Include ".\AutoHotkey\lib\DownloadAsync.ahk"
 #Include ".\AutoHotkey\lib\JSON.ahk"
+;@Ahk2Exe-SetName AION2 Chs Patch
+;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
+;@Ahk2Exe-SetProductName AION2 Chs Patch
+;@Ahk2Exe-SetDescription AION2 一键汉化工具
+;@Ahk2Exe-SetVersion 2.0.0.0
+;@Ahk2Exe-SetCopyright Copyright © 2026
+;@Ahk2Exe-SetMainIcon AutoHotkey\icon.ico
+;@Ahk2Exe-AddResource .\AutoHotkey\icon.ico, ICON_ICO
+;@Ahk2Exe-AddResource .\AutoHotkey\steam.png, STEAM_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\steamdis.png, STEAM_DIS_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\purple.png, PURPLE_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\purpledis.png, PURPLE_DIS_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\XaoYao.png, XAOYAO_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\GuGuai.png, GUGUAI_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\AK.png, AK_PNG
+
 ;@format array_style: expand, object_style: expand
 
 Persistent true
 #SingleInstance Off
+
+; ==============================================================================
+; GDI+ 全局初始化
+; ==============================================================================
+
+global g_pGdiToken := InitGdiplus()
+
+InitGdiplus() {
+    pToken := 0
+    GdiplusStartupInput := Buffer(A_PtrSize = 8 ? 24 : 16, 0)
+    NumPut("UInt", 1, GdiplusStartupInput, 0)
+
+    DllCall("gdiplus\GdiplusStartup", "Ptr*", &pToken, "Ptr", GdiplusStartupInput, "Ptr", 0)
+    return pToken
+}
 
 ; ==============================================================================
 ; 单实例与权限保障
@@ -31,8 +55,8 @@ UniqueInstance.Ensure(Map(
 ; ==============================================================================
 
 global g_ProjectName := "AION2 Chs Patch"
-global g_CurrentAppVersion := "1.8.0.0"
-global g_CurrentAppVersionShort := "1.8"
+global g_CurrentAppVersion := "2.0.0.0"
+global g_CurrentAppVersionShort := "2.0"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -65,7 +89,8 @@ global g_BestLatency := 99999
 global g_CurrentServer := Map()
 global g_ConfigCache := {
     Settings: {
-        LastServerID: 102
+        LastServerID: 102,
+        MinimizeToTray: -1
     }
 }
 global g_DialogCallbacks := Map()
@@ -121,19 +146,26 @@ global BtnReset := MainGui.Add("Button", "x484 y201 w60 h26 +Disabled", "重置"
 MainGui.Add("GroupBox", "x17 y255 w536 h145", "使用须知 * ")
 global TextExplain := MainGui.AddText("x31 y280 w510 h105", "")
 
-global TextTipInfo := MainGui.Add("Text", "x0 y405 w575 +Hidden cRed Center", "建议先退出游戏再进行汉化。")
-global BtnUpdate := MainGui.Add("Button", "x177 y418 w100 h30 +Hidden", "更新补丁")
-global BtnChinese := MainGui.Add("Button", "x177 y418 w100 h30", "一键汉化")
-global BtnRestore := MainGui.Add("Button", "x289 y418 w100 h30", "撤销汉化")
-global BtnRefreshStatus := MainGui.Add("Button", "x484 y422 w60 h26", "刷新")
-AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面按钮状态。")
+global TextTipInfo := MainGui.Add("Text", "x22 y405 w575 +Hidden cRed", "建议先退出游戏再进行汉化。")
+global BtnUpdate := MainGui.Add("Button", "x20 y418 w100 h30 +Hidden", "更新补丁")
+global BtnChinese := MainGui.Add("Button", "x20 y418 w100 h30", "一键汉化")
+global BtnRestore := MainGui.Add("Button", "x132 y418 w100 h30", "撤销汉化")
+global BtnRefreshStatus := MainGui.Add("Button", "x244 y418 w60 h30", "刷新")
+AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
+
+global PicSteam := MainGui.Add("Picture", "x475 y421 w24 h24 BackgroundTrans", EnsureResourceExtracted(".\AutoHotkey\steamdis.png"))
+global TextSplit := MainGui.AddText("x507 y425 ccfcfcf", "l")
+global PicPurple := MainGui.Add("Picture", "x520 y420 w24 h24 BackgroundTrans", EnsureResourceExtracted(".\AutoHotkey\purpledis.png"))
+
+PicSteam.OnEvent("Click", (*) => LaunchPlatformUrl("steam_url", "Steam"))
+PicPurple.OnEvent("Click", (*) => LaunchPlatformUrl("purple_url", "PURPLE"))
 
 TabCtrl.UseTab(2)
 
 CreateCardControl(MainGui, {
     x: 12,
     y: 45,
-    icon: ".\AutoHotkey\XaoYao.png",
+    icon: EnsureResourceExtracted(".\AutoHotkey\XaoYao.png"),
     title: "逍遥加速器",
     desc: "24 小时免费加速，支持 Steam、PURPLE、EA、Epic、暴雪等游戏平台，使用“平台加速”功能，加速平台内全部游戏（含塔2 国际服）。",
     url: "https://www.xiaoyao.co/index.htm",
@@ -145,7 +177,7 @@ CreateCardControl(MainGui, {
 CreateCardControl(MainGui, {
     x: 12,
     y: 129,
-    icon: ".\AutoHotkey\GuGuai.png",
+    icon: EnsureResourceExtracted(".\AutoHotkey\GuGuai.png"),
     title: "古怪加速器",
     desc: "Bilibili 搜索口令获取永久时长， 0 - 16 时免费加速，极速稳定支持全球网游。",
     url: "https://www.ggkuai.com/",
@@ -157,7 +189,7 @@ CreateCardControl(MainGui, {
 CreateCardControl(MainGui, {
     x: 12,
     y: 211,
-    icon: ".\AutoHotkey\AK.png",
+    icon: EnsureResourceExtracted(".\AutoHotkey\AK.png"),
     title: "AK加速器",
     desc: "0 - 14 时免费加速，支持全球网游加速。",
     url: "https://www.akspeedy.com/html/invite_new/invite_download.html?inviter=3Xtkus4t",
@@ -175,7 +207,7 @@ global MainStatusBar := MainGui.Add("StatusBar", "")
 ; ==============================================================================
 
 TabCtrl.OnEvent("Change", (*) => RefreshUi())
-MainGui.OnEvent("Close", (*) => MainGui.Hide())
+MainGui.OnEvent("Close", OnMainGuiClose)
 
 ComboServerList.OnEvent("Change", (*) => SelectServer())
 BtnScan.OnEvent("Click", (*) => OnScanButtonClick())
@@ -185,16 +217,20 @@ BtnUpdate.OnEvent("Click", DoUpdatePatch)
 BtnChinese.OnEvent("Click", DoChinesePatch)
 BtnRestore.OnEvent("Click", DoRestorePatch)
 BtnRefreshStatus.OnEvent("Click", OnBtnRefreshStatusClick)
+PicSteam.OnEvent("Click", (*) => LaunchPlatformUrl("steam_url", "Steam"))
+PicPurple.OnEvent("Click", (*) => LaunchPlatformUrl("purple_url", "PURPLE"))
 
 ; 设置系统托盘图标
 #NoTrayIcon
 Tray := A_TrayMenu
 Tray.Delete()
 Tray.Add("显示主界面", (*) => MainGui.Show())
-Tray.Add("退出程序", (*) => ExitApp())
+Tray.Add("退出", (*) => ExitApp())
 Tray.Default := "显示主界面"
 Tray.ClickCount := 1
-TraySetIcon("AutoHotkey\icon.ico", , 1)
+
+TrayIconPath := A_IsCompiled ? A_ScriptFullPath : ".\AutoHotkey\icon.ico"
+TraySetIcon(TrayIconPath, , 1)
 A_IconHidden := false
 
 OnMessage(0x404, MyTrayClick)
@@ -206,6 +242,70 @@ MyTrayClick(wParam, lParam, msg, hwnd) {
 }
 
 ; ==============================================================================
+; 主窗口关闭事件逻辑处理
+; ==============================================================================
+
+OnMainGuiClose(*) {
+    global g_ConfigCache
+
+    MinimizeOption := g_ConfigCache.Settings.HasOwnProp("MinimizeToTray") ? g_ConfigCache.Settings.MinimizeToTray : -1
+
+    if (MinimizeOption == 1) {
+        MainGui.Hide()
+        return true
+    } else if (MinimizeOption == 0) {
+        ExitApp()
+        return true
+    }
+
+    ShowCloseConfirmDialog()
+    return true
+}
+
+ShowCloseConfirmDialog() {
+    global MainGui
+
+    CloseGui := Gui("+Owner" . MainGui.Hwnd, "关闭提示")
+    CloseGui.SetFont(, "Microsoft YaHei UI")
+
+    MainGui.Opt("+Disabled")
+
+    CloseGui.Add("Text", "x20 y20 w310 h50", "选择关闭主窗口时的默认操作。")
+
+    BtnMinimize := CloseGui.Add("Button", "x234 y100 w100 h30 Default", "隐藏到托盘")
+    BtnExit := CloseGui.Add("Button", "x346 y100 w84 h30", "退出")
+
+    BtnMinimize.OnEvent("Click", (*) => (
+        SaveCloseChoice(1),
+        MainGui.Opt("-Disabled"),
+        CloseGui.Destroy(),
+        MainGui.Hide()
+    ))
+
+    BtnExit.OnEvent("Click", (*) => (
+        SaveCloseChoice(0),
+        ExitApp()
+    ))
+
+    CloseGui.OnEvent("Close", (*) => (
+        MainGui.Opt("-Disabled"),
+        CloseGui.Destroy()
+    ))
+
+    CloseGui.Show("w450 h150")
+}
+
+; 辅助保存函数：将选择持久化到 config.ini
+SaveCloseChoice(Value) {
+    global g_ConfigCache, g_ConfigFile
+    if (!g_ConfigCache.HasOwnProp("Settings"))
+        g_ConfigCache.Settings := {}
+
+    g_ConfigCache.Settings.MinimizeToTray := Value
+    SafeIniWrite(Value, g_ConfigFile, "Settings", "MinimizeToTray")
+}
+
+; ==============================================================================
 ; 冷启动时缺省配置
 ; ==============================================================================
 
@@ -214,6 +314,8 @@ g_DefaultServers := NormalizeServerConfig([
         "id", 102,
         "name", "台服",
         "display", "台服 - PURPLE",
+        "steam_url", "steam://rungameid/3393110",
+        "purple_url", "--game-id A2_TW_L_GA_PURPLE",
         "keywords", [
             "AION"
         ],
@@ -245,7 +347,7 @@ InitializeApp()
 ; ==============================================================================
 
 InitializeApp() {
-    global g_IsLocalInitComplete, g_IsSyncing, MainGui, g_WindowsOffset
+    global g_IsLocalInitComplete, g_IsSyncing, g_WindowsOffset, MainGui
 
     g_IsSyncing := true
     MainGui.Show("w570 h490")
@@ -265,7 +367,7 @@ InitializeApp() {
 }
 
 ParseAndApplyManifest(JsonContent, IsPatchFile := false) {
-    global g_ClientUpdateData, g_ServersConfigData, g_CloudBulletinData, g_GlobalConfigData, g_DefaultProxyMirrors, g_DefaultGameProcesses
+    global g_ClientUpdateData, g_CloudBulletinData, g_DefaultGameProcesses, g_DefaultProxyMirrors, g_GlobalConfigData, g_ServersConfigData
 
     if (JsonContent == "")
         return false
@@ -299,7 +401,7 @@ ParseAndApplyManifest(JsonContent, IsPatchFile := false) {
 }
 
 LoadLocalManifests() {
-    global g_AppManifestFilename, g_PatchManifestFilename, g_ServersConfigData, g_DefaultServers
+    global g_AppManifestFilename, g_DefaultServers, g_PatchManifestFilename, g_ServersConfigData
 
     if FileExist(g_AppManifestFilename) {
         try ParseAndApplyManifest(FileRead(g_AppManifestFilename, "UTF-8"), false)
@@ -318,7 +420,7 @@ LoadLocalManifests() {
 }
 
 StartCloudSync() {
-    global g_ConfigFile, g_RequestTimeoutSeconds, g_IsLocalInitComplete, g_IsSyncing, g_CleanPreUrl, g_AppManifestFilename, g_PatchManifestFilename, MainStatusBar
+    global g_AppManifestFilename, g_CleanPreUrl, g_ConfigFile, g_IsLocalInitComplete, g_IsSyncing, g_PatchManifestFilename, g_RequestTimeoutSeconds, MainStatusBar
 
     if (!g_IsLocalInitComplete)
         return
@@ -375,7 +477,7 @@ StartCloudSync() {
 }
 
 ExecuteCheckChain() {
-    global g_ClientUpdateData, g_CloudBulletinData, g_CurrentServer
+    global g_ClientUpdateData, g_CloudBulletinData, g_CurrentServer, MainGui
 
     CheckTasks := []
 
@@ -397,9 +499,12 @@ ExecuteCheckChain() {
             CurrentTask := CheckTasks[TaskIndex]
             TaskIndex++
             CurrentTask(NextTask)
+        } else {
+            MainGui.Opt("-Disabled")
         }
+        try
+            WinActivate("ahk_id " MainGui.Hwnd)
     }
-
     NextTask()
 }
 
@@ -419,12 +524,13 @@ InitProxyMirrors(MirrorsArray) {
 }
 
 ReadConfig() {
-    global g_ConfigCache, g_ConfigFile, g_ServersConfigData, g_LastSeenBulletinVersion
+    global g_ConfigCache, g_ConfigFile, g_LastSeenBulletinVersion, g_ServersConfigData
     g_LastSeenBulletinVersion := SafeIniRead(g_ConfigFile, "Settings", "LastSeenBulletinVersion", "1.0.0.0")
 
     g_ConfigCache := {
         Settings: {
-            LastServerID: SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "LastServerID", 102), 102)
+            LastServerID: SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "LastServerID", 102), 102),
+            MinimizeToTray: SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "MinimizeToTray", -1), -1)
         }
     }
 
@@ -480,10 +586,13 @@ ReadConfig() {
 }
 
 SaveAllConfig() {
-    global g_ConfigCache, g_ConfigFile, g_ServersConfigData, g_LastSeenBulletinVersion
+    global g_ConfigCache, g_ConfigFile, g_LastSeenBulletinVersion, g_ServersConfigData
 
-    if (g_ConfigCache.HasOwnProp("Settings") && g_ConfigCache.Settings.HasOwnProp("LastServerID")) {
-        SafeIniWrite(g_ConfigCache.Settings.LastServerID, g_ConfigFile, "Settings", "LastServerID")
+    if (g_ConfigCache.HasOwnProp("Settings")) {
+        if (g_ConfigCache.Settings.HasOwnProp("LastServerID"))
+            SafeIniWrite(g_ConfigCache.Settings.LastServerID, g_ConfigFile, "Settings", "LastServerID")
+        if (g_ConfigCache.Settings.HasOwnProp("MinimizeToTray"))
+            SafeIniWrite(g_ConfigCache.Settings.MinimizeToTray, g_ConfigFile, "Settings", "MinimizeToTray")
     }
     SafeIniWrite(g_LastSeenBulletinVersion, g_ConfigFile, "Settings", "LastSeenBulletinVersion")
 
@@ -597,7 +706,7 @@ GetSavedBranchID() {
 ; ==============================================================================
 
 RefreshServerComboBox() {
-    global g_ServersConfigData, ComboServerList, g_ConfigFile, g_CurrentServer, g_ConfigCache
+    global ComboServerList, g_ConfigCache, g_ConfigFile, g_CurrentServer, g_ServersConfigData
 
     DropDownOptions := []
     SavedLastId := SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "LastServerID", 102), 102)
@@ -634,7 +743,7 @@ RefreshServerComboBox() {
 }
 
 RefreshServerData() {
-    global g_ConfigCache, g_CurrentServer, g_InstallPath, EditInstallPath
+    global EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath
 
     if (!g_CurrentServer.Has("id"))
         return
@@ -670,7 +779,7 @@ RefreshServerData() {
 }
 
 SelectServer() {
-    global g_ConfigCache, g_CurrentServer, g_InstallPath, ComboServerList, g_ServersConfigData
+    global ComboServerList, g_ConfigCache, g_CurrentServer, g_InstallPath, g_ServersConfigData
 
     if (ComboServerList.Value <= 0 || ComboServerList.Value > g_ServersConfigData.Length)
         return
@@ -690,7 +799,7 @@ SelectServer() {
 }
 
 SetInstallPath(NewPath, IsManualReset := 0) {
-    global g_ConfigCache, g_CurrentServer, g_InstallPath, EditInstallPath, BtnChinese
+    global BtnChinese, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath
     Sec := "Server_" . g_CurrentServer["id"]
     NewPathNormalized := (NewPath != "") ? PathUtil.Normalize(NewPath) : ""
 
@@ -728,11 +837,7 @@ OnScanButtonClick() {
 
     ValidGames := GetValidGamePaths()
 
-    if (ValidGames.Length == 1) {
-        SelectedFolder := ValidGames[1].GameInstallPath
-        SetInstallPath(SelectedFolder, 0)
-        SetStatusBarText("AION2 " . g_CurrentServer["name"] . "安装目录设置成功。")
-    } else if (ValidGames.Length > 1) {
+    if (ValidGames.Length >= 1) {
         ShowMultiPathDialog(ValidGames, HandleScanPathSelected)
     } else {
         ShowMessageDialog("未检测到有效的安装目录，通过[浏览…]按钮手动指定。")
@@ -754,7 +859,7 @@ DoResetConfig(*) {
 }
 
 BrowseFolder(*) {
-    global g_CurrentServer, EditInstallPath
+    global EditInstallPath, g_CurrentServer
     SelectedFolder := FileSelect("D", EditInstallPath.Value, "选择 AION2 " . g_CurrentServer["name"] . "安装目录：")
     if (SelectedFolder == "")
         return
@@ -854,7 +959,7 @@ ScanGamesFromUninstallReg(KeywordArray := []) {
             RegistryKeyName: RegName,
             SoftwareDisplayName: DisplayName,
             GameInstallPath: CleanPath,
-            ScanMethod: "uninstall"
+            ScanMethod: "reg_uninstall"
         })
     }
 
@@ -916,7 +1021,7 @@ ScanGamesFromPlayNcReg() {
             RegistryKeyName: RegName,
             SoftwareDisplayName: RegName,
             GameInstallPath: CleanPath,
-            ScanMethod: "plaync"
+            ScanMethod: "reg_plaync"
         })
     }
 
@@ -960,18 +1065,22 @@ ScanGamesFromSteam() {
             return
 
         CleanPathLower := StrLower(CleanPath)
-        for ExistingPath in SteamInstallPaths {
-            if (StrLower(ExistingPath) == CleanPathLower)
+        for ExistingItem in SteamInstallPaths {
+            if (StrLower(ExistingItem.Path) == CleanPathLower)
                 return
         }
-        SteamInstallPaths.Push(CleanPath)
+        SteamInstallPaths.Push({
+            Path: CleanPath,
+            Key: FullKey
+        })
     }
 
     SetRegView 64
     TryAddSteamPath(SystemSteamRoot, SafeRegRead(SystemSteamRoot, "InstallPath"))
 
     SetRegView 32
-    TryAddSteamPath(RegExReplace(SystemSteamRoot, "i)^HKEY_LOCAL_MACHINE\\SOFTWARE\\", "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\"), SafeRegRead(SystemSteamRoot, "InstallPath"))
+    WowKey := RegExReplace(SystemSteamRoot, "i)^HKEY_LOCAL_MACHINE\\SOFTWARE\\", "HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\")
+    TryAddSteamPath(WowKey, SafeRegRead(WowKey, "InstallPath"))
 
     SetRegView "Default"
     TryAddSteamPath(UserSteamRoot, SafeRegRead(UserSteamRoot, "SteamPath"))
@@ -983,7 +1092,7 @@ ScanGamesFromSteam() {
 
     LibraryPaths := []
 
-    TryAddLibraryPath(RawPath) {
+    TryAddLibraryPath(RawPath, SourceKey := "") {
         if (RawPath == "")
             return
 
@@ -999,17 +1108,20 @@ ScanGamesFromSteam() {
             return
 
         CleanPathLower := StrLower(CleanPath)
-        for ExistingPath in LibraryPaths {
-            if (StrLower(ExistingPath) == CleanPathLower)
+        for ExistingItem in LibraryPaths {
+            if (StrLower(ExistingItem.Path) == CleanPathLower)
                 return
         }
-        LibraryPaths.Push(CleanPath)
+        LibraryPaths.Push({
+            Path: CleanPath,
+            Key: SourceKey
+        })
     }
 
-    for SteamPath in SteamInstallPaths {
-        TryAddLibraryPath(SteamPath)
+    for SteamItem in SteamInstallPaths {
+        TryAddLibraryPath(SteamItem.Path, SteamItem.Key)
 
-        LibraryFoldersFile := SteamPath . "\steamapps\libraryfolders.vdf"
+        LibraryFoldersFile := SteamItem.Path . "\steamapps\libraryfolders.vdf"
         if FileExist(LibraryFoldersFile) {
             try {
                 VdfContent := FileRead(LibraryFoldersFile, "UTF-8")
@@ -1018,15 +1130,15 @@ ScanGamesFromSteam() {
 
                 Pos := 1
                 while (Pos := RegExMatch(VdfContent, RegExPattern, &Match, Pos)) {
-                    TryAddLibraryPath(Match[1])
+                    TryAddLibraryPath(Match[1], SteamItem.Key)
                     Pos += Match.Len(0)
                 }
             }
         }
     }
 
-    for LibPath in LibraryPaths {
-        SteamAppsCommon := RTrim(LibPath, "\/") . "\steamapps\common"
+    for LibItem in LibraryPaths {
+        SteamAppsCommon := RTrim(LibItem.Path, "\/") . "\steamapps\common"
         if DirExist(SteamAppsCommon) {
             loop files, SteamAppsCommon . "\*", "D" {
                 FolderName := A_LoopFileName
@@ -1043,11 +1155,11 @@ ScanGamesFromSteam() {
 
                 if (!IsDuplicatePath) {
                     MatchedGameList.Push({
-                        FullRegistryPath: SystemSteamRoot,
+                        FullRegistryPath: LibItem.Key,
                         RegistryKeyName: FolderName,
                         SoftwareDisplayName: FolderName,
                         GameInstallPath: FullGamePath,
-                        ScanMethod: "steam"
+                        ScanMethod: "steam_library"
                     })
                 }
             }
@@ -1287,7 +1399,7 @@ CheckPatchUpdate(ServerMap, OnComplete := "") {
 }
 
 DoChinesePatch(*) {
-    global g_InstallPath, g_CurrentServer, BtnChinese, g_IsPatching
+    global BtnChinese, g_CurrentServer, g_InstallPath, g_IsPatching
 
     if (!g_InstallPath || !DirExist(g_InstallPath)) {
         ShowMessageDialog("先设置 AION2 游戏的安装目录。")
@@ -1389,7 +1501,7 @@ HandleOverlapConfirmation(IsConfirmed, ContextMap) {
 }
 
 ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
-    global g_InstallPath, g_CurrentServer, g_PatchesCacheDir, g_ConfigCache, g_ProjectName, g_IsPatching, MainStatusBar
+    global g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_PatchesCacheDir, g_ProjectName, MainStatusBar
 
     try {
         ServerId := g_CurrentServer.Has("id") ? g_CurrentServer["id"] : "default"
@@ -1568,7 +1680,7 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
 }
 
 DoUpdatePatch(*) {
-    global g_InstallPath, g_IsPatching, g_CurrentServer
+    global g_CurrentServer, g_InstallPath, g_IsPatching
 
     if (!g_InstallPath || !DirExist(g_InstallPath)) {
         ShowMessageDialog("先设置 AION2 游戏的安装目录。")
@@ -1616,7 +1728,7 @@ DoRestorePatch(*) {
 }
 
 DoRestorePatchInternal(IsSilent := false) {
-    global g_InstallPath, g_CurrentServer, g_ConfigCache
+    global g_ConfigCache, g_CurrentServer, g_InstallPath
 
     if (!g_InstallPath || !DirExist(g_InstallPath))
         throw Error("先设置 AION2 游戏的安装目录。")
@@ -1875,8 +1987,77 @@ OnBtnRefreshStatusClick(*) {
 ; 5. 进程控制与程序运行模块
 ; ==============================================================================
 
+LaunchPlatformUrl(UrlKey, PlatformName) {
+    global g_CurrentServer, g_IsPatching, g_IsSyncing
+    static LastClickTime := 0
+
+    if (g_IsSyncing || g_IsPatching)
+        return
+
+    if (A_TickCount - LastClickTime < 2000)
+        return
+
+    if (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has(UrlKey) && g_CurrentServer[UrlKey] != "") {
+        TargetUrl := g_CurrentServer[UrlKey]
+
+        LastClickTime := A_TickCount
+
+        try {
+            if (InStr(TargetUrl, "--game-id") == 1) {
+                PurpleExePath := GetPurpleExePath()
+
+                if (PurpleExePath != "" && FileExist(PurpleExePath)) {
+                    Run('"' . PurpleExePath . '" ' . TargetUrl)
+                } else {
+                    SetStatusBarText("没有 PURPLE 客户端，手动启动或安装 PURPLE。")
+                }
+            } else {
+                Run(TargetUrl)
+            }
+        } catch Error as Err {
+            ShowMessageDialog("启动 " . PlatformName . " 失败：`r`n" . Err.Message)
+        }
+    } else {
+        SetStatusBarText("当前选择的服务器不在 " . PlatformName . " 平台运营。")
+    }
+}
+
+GetPurpleExePath() {
+    SystemPlayNcRoot := "HKEY_LOCAL_MACHINE\SOFTWARE\plaync\Purple"
+    UserPlayNcRoot := "HKEY_CURRENT_USER\SOFTWARE\plaync\Purple"
+
+    TryCheckPurpleExe(RawBaseDir) {
+        if (RawBaseDir == "")
+            return ""
+        CleanPath := PathUtil.Normalize(RawBaseDir)
+        ExePath := CleanPath . "\PurpleLauncher.exe"
+        if FileExist(ExePath)
+            return ExePath
+        return ""
+    }
+
+    SetRegView 64
+    if (ExeFound := TryCheckPurpleExe(SafeRegRead(SystemPlayNcRoot, "BaseDir"))) {
+        SetRegView "Default"
+        return ExeFound
+    }
+
+    SetRegView 32
+    if (ExeFound := TryCheckPurpleExe(SafeRegRead(SystemPlayNcRoot, "BaseDir"))) {
+        SetRegView "Default"
+        return ExeFound
+    }
+
+    SetRegView "Default"
+    if (ExeFound := TryCheckPurpleExe(SafeRegRead(UserPlayNcRoot, "BaseDir"))) {
+        return ExeFound
+    }
+
+    return ""
+}
+
 IsGameProcessRunning() {
-    global g_GlobalConfigData, g_DefaultGameProcesses
+    global g_DefaultGameProcesses, g_GlobalConfigData
 
     ProcessList := g_DefaultGameProcesses
     if (Type(g_GlobalConfigData) == "Map" && g_GlobalConfigData.Has("game_processes")) {
@@ -2094,7 +2275,7 @@ KillProcessByFullPath() {
 ; ==============================================================================
 
 SelectFastestMirrorNode() {
-    global g_CleanPreUrl, g_PatchManifestFilename, g_CleanProxyMirrors, MainStatusBar, g_BestDownloadPrefix, g_BestLatency
+    global g_BestDownloadPrefix, g_BestLatency, g_CleanPreUrl, g_CleanProxyMirrors, g_PatchManifestFilename, MainStatusBar
 
     Candidates := [
         {
@@ -2171,7 +2352,7 @@ SelectFastestMirrorNode() {
 }
 
 DownloadPatchFileAsync(RemoteFileUrl, DestPath, FileAction) {
-    global g_CleanPreUrl, g_BestDownloadPrefix, g_BestLatency, MainStatusBar
+    global g_BestDownloadPrefix, g_BestLatency, g_CleanPreUrl, MainStatusBar
 
     CleanRemotePath := StrReplace(RemoteFileUrl, "\", "/")
     CleanRemotePath := RegExReplace(CleanRemotePath, "i)^https?://", "")
@@ -2302,8 +2483,7 @@ CheckBulletin(BulletinMap, OnComplete := "") {
 ; ==============================================================================
 
 RefreshUi() {
-    global BtnBrowse, BtnChinese, BtnRestore, BtnReset, BtnScan, BtnUpdate, ComboServerList, EditInstallPath
-    global g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, TabCtrl, TextTipInfo, MainGui, BtnRefreshStatus
+    global BtnBrowse, BtnChinese, BtnRefreshStatus, BtnReset, BtnRestore, BtnScan, BtnUpdate, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, g_WindowsOffset, MainGui, PicPurple, PicSteam, TabCtrl, TextTipInfo
 
     if (TabCtrl.Value != 1) {
         TextTipInfo.Opt("+Hidden")
@@ -2312,21 +2492,38 @@ RefreshUi() {
 
     ShowGameRunningTip := (!g_IsSyncing && IsGameProcessRunning())
 
+    HasSteamUrl := (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has("steam_url") && g_CurrentServer["steam_url"] != "")
+    HasPurpleUrl := (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has("purple_url") && g_CurrentServer["purple_url"] != "")
+
+    IsSteamEnabled := (!g_IsSyncing && !g_IsPatching && HasSteamUrl)
+    IsPurpleEnabled := (!g_IsSyncing && !g_IsPatching && HasPurpleUrl)
+
+    SteamImg := IsSteamEnabled ? ".\AutoHotkey\steam.png" : ".\AutoHotkey\steamdis.png"
+    PurpleImg := IsPurpleEnabled ? ".\AutoHotkey\purple.png" : ".\AutoHotkey\purpledis.png"
+
+    SetPicControlBitmap(PicSteam, EnsureResourceExtracted(SteamImg))
+    SetPicControlBitmap(PicPurple, EnsureResourceExtracted(PurpleImg))
     if (ShowGameRunningTip) {
         TextTipInfo.Opt("-Hidden")
         TabCtrl.Move(, , , 470)
-        BtnUpdate.Move(177, 428)
-        BtnChinese.Move(177, 428)
-        BtnRestore.Move(289, 428)
-        BtnRefreshStatus.Move(484, 432)
+        BtnUpdate.Move(20, 428)
+        BtnChinese.Move(20, 428)
+        BtnRestore.Move(132, 428)
+        BtnRefreshStatus.Move(244, 428)
+        PicSteam.Move(475, 431)
+        TextSplit.Move(, 435)
+        PicPurple.Move(520, 430)
         MainGui.Move(, , , 500 + g_WindowsOffset.h)
     } else {
         TextTipInfo.Opt("+Hidden")
         TabCtrl.Move(, , , 460)
-        BtnUpdate.Move(177, 418)
-        BtnChinese.Move(177, 418)
-        BtnRestore.Move(289, 418)
-        BtnRefreshStatus.Move(484, 422)
+        BtnUpdate.Move(20, 418)
+        BtnChinese.Move(20, 418)
+        BtnRestore.Move(132, 418)
+        BtnRefreshStatus.Move(244, 418)
+        PicSteam.Move(475, 421)
+        TextSplit.Move(, 425)
+        PicPurple.Move(520, 420)
         MainGui.Move(, , , 490 + g_WindowsOffset.h)
     }
 
@@ -2404,8 +2601,8 @@ AddToolTip(Control, Text) {
     ToolTips[Control.Hwnd] := Text
 
     WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
-        static PrevHwnd := 0
         global MainStatusBar
+        static PrevHwnd := 0
 
         if (hwnd != PrevHwnd) {
             PrevHwnd := hwnd
@@ -2616,6 +2813,8 @@ NormalizeServerConfig(ServersArray) {
             "id", SafeNumber(SafeGet(Srv, "id", 1), 1),
             "name", SafeString(SafeGet(Srv, "name", "未知服务器"), "未知服务器"),
             "display", SafeString(SafeGet(Srv, "display", "未知服务器"), "未知服务器"),
+            "steam_url", SafeString(SafeGet(Srv, "steam_url", "")),
+            "purple_url", SafeString(SafeGet(Srv, "purple_url", "")),
             "keywords", SafeGet(Srv, "keywords", [
                 "AION"
             ]),
@@ -2681,11 +2880,12 @@ NormalizeServerConfig(ServersArray) {
 ; ==============================================================================
 
 ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpdate := false, OnCloseCallback := "") {
-    global MainGui, g_DialogCallbacks, g_ClientUpdateData
+    global g_ClientUpdateData, g_DialogCallbacks, MainGui
 
     MsgId := 1001
     UpdateGui := Gui("+Owner" . MainGui.Hwnd, "软件更新提示")
     UpdateGui.SetFont(, "Microsoft YaHei UI")
+    MainGui.Opt("+Disabled")
 
     LatestVersion := (Type(g_ClientUpdateData) == "Map" && g_ClientUpdateData.Has("latest_client_version"))
         ? "发现新版本 v" . SafeString(g_ClientUpdateData["latest_client_version"]) . "。"
@@ -2705,13 +2905,10 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
     BtnDownloadMain.OnEvent("Click", (*) => (DownloadUrlMain != "" ? Run(DownloadUrlMain) : false))
     BtnDownloadMinor.OnEvent("Click", (*) => (DownloadUrlMinor != "" ? Run(DownloadUrlMinor) : false))
 
-    CloseDialog(Result := 0) {
-        MainGui.Opt("-Disabled")
+    CloseDialog(*) {
         UpdateGui.Destroy()
         if (IsForceUpdate)
             ExitApp()
-        else
-            RefreshUi()
 
         if (OnCloseCallback)
             OnCloseCallback()
@@ -2722,29 +2919,28 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
     UpdateGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
     UpdateGui.OnEvent("Escape", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
-    MainGui.Opt("+Disabled")
     UpdateGui.Show("w400 h275")
     BtnDownloadMain.Focus()
 }
 
 ShowBulletinDialog(ContentText, BulletinVersion, OnCloseCallback := "") {
-    global MainGui, g_LastSeenBulletinVersion, g_DialogCallbacks
+    global g_DialogCallbacks, g_LastSeenBulletinVersion, MainGui
 
     MsgId := 1002
     BulletinGui := Gui("+Owner" . MainGui.Hwnd, "最新公告")
     BulletinGui.SetFont(, "Microsoft YaHei UI")
+    MainGui.Opt("+Disabled")
 
     BulletinGui.Add("Edit", "x20 y20 w360 h150 ReadOnly -WantReturn", ContentText)
 
-    BtnConfirm := BulletinGui.Add("Button", "x280 y200 w100 h30 Default", "我知道了")
+    BtnConfirm := BulletinGui.Add("Button", "x280 y225 w100 h30 Default", "我知道了")
     BtnConfirm.Focus()
 
+    g_LastSeenBulletinVersion := BulletinVersion
+    SaveAllConfig()
+
     CloseDialog(*) {
-        g_LastSeenBulletinVersion := BulletinVersion
-        SaveAllConfig()
-        MainGui.Opt("-Disabled")
         BulletinGui.Destroy()
-        RefreshUi()
 
         if (OnCloseCallback)
             OnCloseCallback()
@@ -2755,12 +2951,11 @@ ShowBulletinDialog(ContentText, BulletinVersion, OnCloseCallback := "") {
     BtnConfirm.OnEvent("Click", (*) => PostMessage(0x0900, MsgId, 1, , MainGui.Hwnd))
     BulletinGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
-    MainGui.Opt("+Disabled")
-    BulletinGui.Show("w400 h250")
+    BulletinGui.Show("w400 h275")
 }
 
 ShowConfirmDialog(Text, Callback := "") {
-    global MainGui, g_DialogCallbacks
+    global g_DialogCallbacks, MainGui
 
     MsgId := 1003
     ConfirmGui := Gui("+Owner" . MainGui.Hwnd, "提示")
@@ -2775,7 +2970,7 @@ ShowConfirmDialog(Text, Callback := "") {
     CloseDialog(UserChoice) {
         MainGui.Opt("-Disabled")
         ConfirmGui.Destroy()
-        RefreshUi()
+
         if (Callback)
             Callback(UserChoice)
     }
@@ -2786,12 +2981,12 @@ ShowConfirmDialog(Text, Callback := "") {
     BtnCancel.OnEvent("Click", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
     ConfirmGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
-    MainGui.Opt("+Disabled")
     ConfirmGui.Show("w350 h150")
+    MainGui.Opt("+Disabled")
 }
 
 ShowMessageDialog(Text, Callback := "") {
-    global MainGui, g_DialogCallbacks
+    global g_DialogCallbacks, MainGui
 
     MsgId := 1004
     MessageGui := Gui("+Owner" . MainGui.Hwnd, "提示")
@@ -2799,15 +2994,16 @@ ShowMessageDialog(Text, Callback := "") {
 
     MessageGui.Add("Text", "x20 y20 w310 h60", Text)
 
-    BtnConfirm := MessageGui.Add("Button", "x230 y102 w100 h30 Default", "确认")
+    BtnConfirm := MessageGui.Add("Button", "x330 y102 w100 h30 Default", "确认")
     BtnConfirm.Focus()
 
     CloseDialog(*) {
         MainGui.Opt("-Disabled")
         MessageGui.Destroy()
-        RefreshUi()
+
         if (Callback)
             Callback()
+
     }
 
     g_DialogCallbacks[MsgId] := CloseDialog
@@ -2815,8 +3011,8 @@ ShowMessageDialog(Text, Callback := "") {
     BtnConfirm.OnEvent("Click", (*) => PostMessage(0x0900, MsgId, 1, , MainGui.Hwnd))
     MessageGui.OnEvent("Close", (*) => PostMessage(0x0900, MsgId, 0, , MainGui.Hwnd))
 
+    MessageGui.Show("w450 h150")
     MainGui.Opt("+Disabled")
-    MessageGui.Show("w350 h150")
 }
 
 ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
@@ -2825,6 +3021,7 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
     DlgTitle := IsUpdateList ? "选择汉化补丁来源" : "选择汉化补丁来源"
     ChoiceGui := Gui("+Owner" . MainGui.Hwnd, DlgTitle)
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
+    MainGui.Opt("+Disabled")
 
     TipText := IsUpdateList ? "当前汉化补丁有更新。" : ("选择 AION2 " . g_CurrentServer["name"] . " 汉化补丁来源，不同来源游戏内翻译完成度可能不同。")
     ChoiceGui.Add("Text", "x20 y15 w410 h25", TipText).SetFont("bold")
@@ -2925,15 +3122,12 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
             }
         }
 
-        MainGui.Opt("-Disabled")
         ChoiceGui.Destroy()
-        RefreshUi()
 
         if (Callback)
             Callback(SelectedBranch)
     }
 
-    MainGui.Opt("+Disabled")
     ChoiceGui.Show("w450 h250")
 
     if (IsUpdateList && Branches.Length > 0) {
@@ -2956,18 +3150,29 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
 
     LV := ChoiceGui.Add("ListView", "x20 y45 w410 h140 -Multi", [
         "名称",
-        "安装目录"
+        "安装目录",
+        "查找方式"
     ])
     LV_ApplyExplorerTheme(LV)
     LV.Opt("-Redraw")
 
     for Index, Game in ValidGames {
-        RowNumber := LV.Add("", Game.SoftwareDisplayName, Game.GameInstallPath)
+        RawMethod := Game.HasOwnProp("ScanMethod") ? Game.ScanMethod : (Type(Game) == "Map" && Game.Has("ScanMethod") ? Game["ScanMethod"] : "")
+
+        switch RawMethod {
+            case "reg_uninstall": ScanMethodStr := "注册表卸载项"
+            case "reg_plaync": ScanMethodStr := "PlayNC 注册表"
+            case "steam_library": ScanMethodStr := "Steam 库文件"
+            default: ScanMethodStr := RawMethod
+        }
+
+        RowNumber := LV.Add("", Game.SoftwareDisplayName, Game.GameInstallPath, ScanMethodStr)
         LV_SetItemLParam(LV.Hwnd, RowNumber, Index)
     }
 
     LV.ModifyCol(1, "AutoHdr")
     LV.ModifyCol(2, "AutoHdr")
+    LV.ModifyCol(3, "AutoHdr")
     LV.Opt("+Redraw")
 
     BtnCancel := ChoiceGui.Add("Button", "x346 y200 w84 h30", "取消")
@@ -3016,16 +3221,14 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
         }
 
         MainGui.Opt("-Disabled")
-        ChoiceGui.Destroy()
-        RefreshUi()
 
         if (Callback)
             Callback(UserChoicePath)
     }
 
-    MainGui.Opt("+Disabled")
     ChoiceGui.Show("w450 h250")
     LV.Modify(0, "-Select")
+    MainGui.Opt("+Disabled")
 }
 
 LV_SetItemLParam(lv, row, param) {
@@ -3101,40 +3304,9 @@ LV_SetHeaderSortArrow(LV, sort_col, desc := false) {
     }
 }
 
-LoadEmbeddedPictureHandle(RelativePath) {
-    static BitmapCacheMap := Map()
-
-    NormalizedPath := PathUtil.Normalize(A_ScriptDir . "\" . RelativePath)
-    if (BitmapCacheMap.Has(NormalizedPath)) {
-        return BitmapCacheMap[NormalizedPath]
-    }
-
-    try {
-        TempFilePath := PathUtil.Normalize(A_Temp . "\" . A_TickCount . "_" . Random(1000, 9999) . ".tmp")
-        if InStr(NormalizedPath, "GuGuai.png") {
-            FileInstall("AutoHotkey\GuGuai.png", TempFilePath, 1)
-        } else if InStr(NormalizedPath, "AK.png") {
-            FileInstall("AutoHotkey\AK.png", TempFilePath, 1)
-        } else if InStr(NormalizedPath, "XaoYao.png") {
-            FileInstall("AutoHotkey\XaoYao.png", TempFilePath, 1)
-        } else if FileExist(NormalizedPath) {
-            FileCopy(NormalizedPath, TempFilePath, 1)
-        } else {
-            return 0
-        }
-
-        hBitmap := LoadPicture(TempFilePath)
-        try FileDelete(TempFilePath)
-
-        if (hBitmap) {
-            BitmapCacheMap[NormalizedPath] := hBitmap
-            return hBitmap
-        }
-    } catch {
-        return 0
-    }
-    return 0
-}
+; ==============================================================================
+; 资源加载与卡片 UI 渲染组件
+; ==============================================================================
 
 CreateCardControl(GuiObj, OptionsMap) {
     global g_CursorHwndMap
@@ -3149,47 +3321,45 @@ CreateCardControl(GuiObj, OptionsMap) {
     CardHeight := OptionsMap.HasProp("height") ? OptionsMap.height : 75
     ShowBorder := OptionsMap.HasProp("border") ? OptionsMap.border : true
     ClickHandler := (*) => (TargetUrl != "" ? Run(TargetUrl) : false)
+
     if (ShowBorder) {
         GuiObj.Add("GroupBox", Format("x{} y{} w{} h{}", PosX, PosY, CardWidth, CardHeight))
     }
+
     if (StrLen(IconRes) <= 4) {
-        IconCtrl := GuiObj.Add("Text", Format("x{} y{} w48 h48 +0x100 +0x200 Center BackgroundTrans", PosX + 15, PosY +
-            18), IconRes).SetFont("s20", "Segoe UI Emoji")
+        IconCtrl := GuiObj.Add("Text", Format("x{} y{} w48 h48 +0x100 +0x200 Center BackgroundTrans", PosX + 15, PosY + 18), IconRes).SetFont("s20", "Segoe UI Emoji")
     } else {
-        hBitmap := LoadEmbeddedPictureHandle(IconRes)
-        if (hBitmap != 0) {
-            IconCtrl := GuiObj.Add("Picture", Format("x{} y{} w48 h48 +0x100 BackgroundTrans", PosX + 15, PosY + 18),
-                "HBITMAP:*" . hBitmap)
-        } else {
-            IconCtrl := GuiObj.Add("Text", Format("x{} y{} w48 h48 +0x100 +0x200 Center BackgroundTrans", PosX + 15,
-                PosY + 18), "❌").SetFont("s12", "Microsoft YaHei")
-        }
+        IconCtrl := GuiObj.Add("Picture", Format("x{} y{} w48 h48 +0x100 BackgroundTrans", PosX + 15, PosY + 18), IconRes)
     }
 
     IconCtrl.OnEvent("Click", ClickHandler)
     g_CursorHwndMap[IconCtrl.Hwnd] := true
+
     TextX := PosX + 75
     TextW := CardWidth - 85
 
-    GuiObj.Add("Text", Format("x{} y{} w{} c333333 BackgroundTrans", TextX, PosY + 15, TextW), TitleText).SetFont(
-        "s10 bold", "Microsoft YaHei")
-    GuiObj.Add("Text", Format("x{} y{} w{} c666666 BackgroundTrans", TextX, PosY + 38, TextW), DescText).SetFont(
-        "s9 norm", "Microsoft YaHei")
+    GuiObj.Add("Text", Format("x{} y{} w{} c333333 BackgroundTrans", TextX, PosY + 15, TextW), TitleText).SetFont("s10 bold", "Microsoft YaHei")
+    GuiObj.Add("Text", Format("x{} y{} w{} c666666 BackgroundTrans", TextX, PosY + 38, TextW), DescText).SetFont("s9 norm", "Microsoft YaHei")
+
     MaskX := PosX + 2
     MaskY := PosY + 2
     MaskW := CardWidth - 4
     MaskH := CardHeight - 4
 
-    ClickMaskCtrl := GuiObj.Add("Text", Format("x{} y{} w{} h{} +0x100 BackgroundTrans", MaskX, MaskY, MaskW, MaskH),
-        "")
+    ClickMaskCtrl := GuiObj.Add("Text", Format("x{} y{} w{} h{} +0x100 BackgroundTrans", MaskX, MaskY, MaskW, MaskH), "")
     ClickMaskCtrl.OnEvent("Click", ClickHandler)
     g_CursorHwndMap[ClickMaskCtrl.Hwnd] := true
 }
+
+; ==============================================================================
+; 自定义消息与事件监听
+; ==============================================================================
 
 OnMessage(0x0900, HandleDialogEvent)
 OnMessage(0x0020, WM_SETCURSOR)
 
 HandleDialogEvent(wParam, lParam, msg, hwnd) {
+    global g_DialogCallbacks
     if (g_DialogCallbacks.Has(wParam)) {
         CallbackFunc := g_DialogCallbacks[wParam]
         g_DialogCallbacks.Delete(wParam)
@@ -3209,12 +3379,10 @@ WM_SETCURSOR(wParam, lParam, msg, hwnd) {
     }
 }
 
-
 GetWindowFrameOffset(GuiObj) {
 
     rectWindow := Buffer(16, 0)
     rectClient := Buffer(16, 0)
-
 
     DllCall("GetWindowRect", "ptr", GuiObj.Hwnd, "ptr", rectWindow)
 
@@ -3226,7 +3394,6 @@ GetWindowFrameOffset(GuiObj) {
     clientWidth := NumGet(rectClient, 8, "Int") - NumGet(rectClient, 0, "Int")
     clientHeight := NumGet(rectClient, 12, "Int") - NumGet(rectClient, 4, "Int")
 
-
     offsetW := winWidth - clientWidth
     offsetH := winHeight - clientHeight
 
@@ -3234,4 +3401,109 @@ GetWindowFrameOffset(GuiObj) {
         w: offsetW,
         h: offsetH
     }
+}
+
+; ==============================================================================
+; 纯内存资源解析加载核心模块
+; ==============================================================================
+
+SetPicControlBitmap(PicCtrl, ResourcePath) {
+    static STM_SETIMAGE := 0x0172
+    static IMAGE_BITMAP := 0
+
+    if (!A_IsCompiled) {
+        PicCtrl.Value := ResourcePath
+        return
+    }
+
+    hBitmap := GetImageResource(ResourcePath, true)
+
+    if (IsInteger(hBitmap) && hBitmap != 0) {
+        SendMessage(STM_SETIMAGE, IMAGE_BITMAP, hBitmap, PicCtrl.Hwnd)
+    } else {
+        PicCtrl.Value := ResourcePath
+    }
+}
+
+GetImageResource(ResourcePath, AsNumber := false) {
+    if (!A_IsCompiled) {
+        return ResourcePath
+    }
+
+    SplitPath(ResourcePath, &FileName)
+
+    ResourceMap := Map(
+        "steam.png", "STEAM_PNG",
+        "steamdis.png", "STEAM_DIS_PNG",
+        "purple.png", "PURPLE_PNG",
+        "purpledis.png", "PURPLE_DIS_PNG",
+        "XaoYao.png", "XAOYAO_PNG",
+        "GuGuai.png", "GUGUAI_PNG",
+        "AK.png", "AK_PNG"
+    )
+
+    ResName := ResourceMap.Has(FileName) ? ResourceMap[FileName] : FileName
+
+    if (FileName = "icon.ico") {
+        return A_ScriptFullPath
+    }
+
+    hBitmap := LoadResourceBitmapMemory(ResName)
+    if (hBitmap != 0) {
+        if (AsNumber) {
+            return Integer(hBitmap)
+        } else {
+            return "HBITMAP:*" . hBitmap
+        }
+    }
+
+    return ResourcePath
+}
+
+EnsureResourceExtracted(ResourcePath) {
+    return GetImageResource(ResourcePath, false)
+}
+
+LoadResourceBitmapMemory(ResName) {
+    static BitmapCache := Map()
+
+    if BitmapCache.Has(ResName)
+        return BitmapCache[ResName]
+
+    hMod := DllCall("GetModuleHandle", "Ptr", 0, "Ptr")
+    if (!hMod)
+        return 0
+
+    hRes := DllCall("FindResource", "Ptr", hMod, "Str", ResName, "UInt", 10, "Ptr")
+    if (!hRes)
+        return 0
+
+    hData := DllCall("LoadResource", "Ptr", hMod, "Ptr", hRes, "Ptr")
+    if (!hData)
+        return 0
+
+    pData := DllCall("LockResource", "Ptr", hData, "Ptr")
+    nSize := DllCall("SizeofResource", "Ptr", hMod, "Ptr", hRes, "UInt")
+
+    if (pData && nSize > 0) {
+        pStream := DllCall("shlwapi\SHCreateMemStream", "Ptr", pData, "UInt", nSize, "Ptr")
+        if (pStream) {
+            pGDI := Buffer(A_PtrSize, 0)
+            if (DllCall("gdiplus\GdipCreateBitmapFromStream", "Ptr", pStream, "Ptr", pGDI) == 0) {
+                pBitmap := NumGet(pGDI, 0, "Ptr")
+                hBitmap := 0
+                if (pBitmap) {
+                    DllCall("gdiplus\GdipCreateHBITMAPFromBitmap", "Ptr", pBitmap, "Ptr*", &hBitmap, "UInt", 0)
+                    DllCall("gdiplus\GdipDisposeImage", "Ptr", pBitmap)
+                }
+                ObjRelease(pStream)
+                if (hBitmap != 0) {
+                    BitmapCache[ResName] := hBitmap
+                }
+                return hBitmap
+            }
+            ObjRelease(pStream)
+        }
+    }
+    return 0
 }
