@@ -36,16 +36,16 @@
                         },
                         {
                             "type": "replace",
-                            "filename": "qy_pakchunk502000-Windows_0_P.pak",
-                            "remote_filename": "patchs/qy_pakchunk502000-Windows_0_P.pak",
+                            "filename": "uu_pakchunk502000-Windows_0_P.pak",
+                            "remote_filename": "patchs/uu_pakchunk502000-Windows_0_P.pak",
                             "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
                             "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
                             "file_size": 0
                         },
                         {
                             "type": "add",
-                            "filename": "qy_L10NString.dat",
-                            "remote_filename": "patchs/qy_L10NString.dat",
+                            "filename": "uu_L10NString.dat",
+                            "remote_filename": "patchs/uu_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
                             "file_md5": "4ba827b3a5167e7ec4be35460b966434",
                             "file_size": 3473812
