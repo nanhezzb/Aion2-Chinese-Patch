@@ -63,7 +63,6 @@ global g_CurrentAppVersion := "2.0.1.0"
 global g_CurrentAppVersionShort := "2.0.1"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
-
 global g_ConfigFile := "config.ini"
 global g_AppManifestFilename := "app_manifest.json"
 global g_PatchManifestFilename := "patch_manifest.json"
@@ -202,9 +201,6 @@ global PicSteam := MainGui.Add("Picture", "x475 y421 w24 h24 BackgroundTrans", E
 global TextSplit := MainGui.AddText("x507 y425 ccfcfcf", "l")
 global PicPurple := MainGui.Add("Picture", "x520 y420 w24 h24 BackgroundTrans", EnsureResourceExtracted(".\AutoHotkey\purpledis.png"))
 
-PicSteam.OnEvent("Click", (*) => LaunchPlatformUrl("steam_url", "Steam"))
-PicPurple.OnEvent("Click", (*) => LaunchPlatformUrl("purple_url", "PURPLE"))
-
 TabCtrl.UseTab(2)
 
 CreateCardControl(MainGui, {
@@ -281,7 +277,6 @@ global MainStatusBar := MainGui.Add("StatusBar", "")
 
 TabCtrl.OnEvent("Change", (*) => RefreshUi())
 MainGui.OnEvent("Close", OnMainGuiClose)
-
 ComboServerList.OnEvent("Change", (*) => SelectServer())
 BtnScan.OnEvent("Click", (*) => OnScanButtonClick())
 BtnBrowse.OnEvent("Click", BrowseFolder)
@@ -2063,27 +2058,64 @@ LaunchPlatformUrl(UrlKey, PlatformName) {
 
     if (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has(UrlKey) && g_CurrentServer[UrlKey] != "") {
         TargetUrl := g_CurrentServer[UrlKey]
-
         LastClickTime := A_TickCount
 
         try {
-            if (InStr(TargetUrl, "--game-id") == 1) {
-                PurpleExePath := GetPurpleExePath()
+            switch PlatformName {
+                case "Steam":
+                    SteamExePath := GetSteamExePath()
 
-                if (PurpleExePath != "" && FileExist(PurpleExePath)) {
-                    Run('"' . PurpleExePath . '" ' . TargetUrl)
-                } else {
-                    SetStatusBarText("没有 PURPLE 客户端，手动启动或安装 PURPLE。")
-                }
-            } else {
-                Run(TargetUrl)
+                    if (SteamExePath != "" && FileExist(SteamExePath)) {
+                        Run(TargetUrl)
+                    } else {
+                        SetStatusBarText("未找到已安装的 Steam 客户端。")
+                    }
+
+                case "PURPLE":
+                    PurpleExePath := GetPurpleExePath()
+
+                    if (PurpleExePath != "" && FileExist(PurpleExePath)) {
+                        Run('"' . PurpleExePath . '" ' . TargetUrl)
+                    } else {
+                        SetStatusBarText("未找到已安装的 PURPLE 客户端。")
+                    }
             }
         } catch Error as Err {
             ShowMessageDialog("启动 " . PlatformName . " 失败：`r`n" . Err.Message)
         }
     } else {
-        SetStatusBarText("当前选择的服务器不在 " . PlatformName . " 平台运营。")
+        SetStatusBarText("当前选择的服务器不在 " . PlatformName . " 运营。")
     }
+}
+
+GetSteamExePath() {
+    SteamCommandRoot := "HKEY_CLASSES_ROOT\steam\Shell\Open\Command"
+
+    TryExtractExeFromCommand(CmdStr) {
+        if (CmdStr == "")
+            return ""
+
+        NumArgs := 0
+        pArgv := DllCall("shell32\CommandLineToArgvW", "Str", CmdStr, "Int*", &NumArgs, "Ptr")
+        if (!pArgv)
+            return ""
+
+        try {
+            ExePath := StrGet(NumGet(pArgv, 0, "Ptr"), "UTF-16")
+            if (ExePath != "" && FileExist(ExePath))
+                return ExePath
+        } finally {
+            DllCall("kernel32\LocalFree", "Ptr", pArgv)
+        }
+
+        return ""
+    }
+
+    if (ExeFound := TryExtractExeFromCommand(SafeRegRead(SteamCommandRoot))) {
+        return ExeFound
+    }
+
+    return ""
 }
 
 GetPurpleExePath() {
