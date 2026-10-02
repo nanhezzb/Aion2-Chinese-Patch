@@ -8,11 +8,11 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 2.0.2.0
+;@Ahk2Exe-SetVersion 2.0.3.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 
 ;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
-;@Ahk2Exe-AddResource .\AutoHotkey\icon.png, ICON_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\app.png, APP_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\steam.png, STEAM_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\steamdis.png, STEAM_DIS_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\purple.png, PURPLE_PNG
@@ -61,8 +61,8 @@ UniqueInstance.Ensure(Map(
 
 global g_ProjectName := "AION2 Chs Patch"
 global g_ProjectNameSC := "AION2 一键汉化工具"
-global g_CurrentAppVersion := "2.0.2.0"
-global g_CurrentAppVersionShort := "2.0.2"
+global g_CurrentAppVersion := "2.0.3.0"
+global g_CurrentAppVersionShort := "2.0.3"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -137,12 +137,6 @@ Tray.Add("显示主界面", (*) => MainGui.Show())
 Tray.Add("退出", (*) => ExitApp())
 Tray.Default := "显示主界面"
 Tray.ClickCount := 1
-if (A_IsCompiled) {
-    TraySetIcon(EnsureResourceExtracted(".\AutoHotkey\icon.ico"))
-} else {
-    if FileExist(A_ScriptDir . "\AutoHotkey\icon.png")
-        TraySetIcon(A_ScriptDir . "\AutoHotkey\icon.png")
-}
 A_IconHidden := false
 
 OnMessage(0x404, MyTrayClick)
@@ -161,17 +155,6 @@ A_IconTip := g_ProjectNameSC
 
 global MainGui := Gui(, g_ProjectNameSC . " v" . g_CurrentAppVersionShort)
 MainGui.SetFont("s9", "Microsoft YaHei")
-
-if (!A_IsCompiled) {
-    IconPath := A_ScriptDir . "\AutoHotkey\icon.ico"
-    if FileExist(IconPath) {
-        hIcon := DllCall("LoadImage", "Ptr", 0, "Str", IconPath, "UInt", 1, "Int", 32, "Int", 32, "UInt", 0x0010, "Ptr")
-        if (hIcon) {
-            SendMessage(0x0080, 1, hIcon, MainGui.Hwnd)
-            SendMessage(0x0080, 0, hIcon, MainGui.Hwnd)
-        }
-    }
-}
 
 global TabCtrl := MainGui.Add("Tab3", "x-1 y10 w574 h460", [
     "一键汉化",
@@ -199,16 +182,16 @@ global BtnRestore := MainGui.Add("Button", "x132 y418 w100 h30", "撤销汉化")
 global BtnRefreshStatus := MainGui.Add("Button", "x244 y418 w60 h30", "刷新")
 AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
 
-global PicSteam := MainGui.Add("Picture", "x475 y421 w24 h24 BackgroundTrans", EnsureResourceExtracted(".\AutoHotkey\steamdis.png"))
+global PicSteam := MainGui.Add("Picture", "x475 y421 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
 global TextSplit := MainGui.AddText("x507 y425 ccfcfcf", "l")
-global PicPurple := MainGui.Add("Picture", "x520 y420 w24 h24 BackgroundTrans", EnsureResourceExtracted(".\AutoHotkey\purpledis.png"))
+global PicPurple := MainGui.Add("Picture", "x520 y420 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\purpledis.png"))
 
 TabCtrl.UseTab(2)
 
 CreateCardControl(MainGui, {
     x: 17,
     y: 45,
-    icon: EnsureResourceExtracted(".\AutoHotkey\XaoYao.png"),
+    icon: GetImageResourceHandle(".\AutoHotkey\XaoYao.png"),
     title: "逍遥加速器",
     desc: "24 小时免费加速，支持 Steam、PURPLE、EA、Epic、暴雪等游戏平台，使用“平台加速”功能，加速平台内全部游戏（含塔2 国际服）。",
     url: "https://www.xiaoyao.co/index.htm",
@@ -220,7 +203,7 @@ CreateCardControl(MainGui, {
 CreateCardControl(MainGui, {
     x: 17,
     y: 129,
-    icon: EnsureResourceExtracted(".\AutoHotkey\GuGuai.png"),
+    icon: GetImageResourceHandle(".\AutoHotkey\GuGuai.png"),
     title: "古怪加速器",
     desc: "Bilibili 搜索口令获取永久时长， 0 - 16 时免费加速，极速稳定支持全球网游。",
     url: "https://www.ggkuai.com/",
@@ -232,7 +215,7 @@ CreateCardControl(MainGui, {
 CreateCardControl(MainGui, {
     x: 17,
     y: 213,
-    icon: EnsureResourceExtracted(".\AutoHotkey\AK.png"),
+    icon: GetImageResourceHandle(".\AutoHotkey\AK.png"),
     title: "AK加速器",
     desc: "0 - 14 时免费加速，支持全球网游加速。",
     url: "https://www.akspeedy.com/html/invite_new/invite_download.html?inviter=3Xtkus4t",
@@ -243,9 +226,9 @@ CreateCardControl(MainGui, {
 
 TabCtrl.UseTab(3)
 
-WPSIconPath := EnsureResourceExtracted(".\AutoHotkey\WPS.png")
-GitHubIconPath := EnsureResourceExtracted(".\AutoHotkey\GitHub.png")
-QQGroupIconPath := EnsureResourceExtracted(".\AutoHotkey\QQGroup.png")
+WPSIconPath := GetImageResourceHandle(".\AutoHotkey\WPS.png")
+GitHubIconPath := GetImageResourceHandle(".\AutoHotkey\GitHub.png")
+QQGroupIconPath := GetImageResourceHandle(".\AutoHotkey\QQGroup.png")
 CreateCardControl(MainGui, {
     x: 17,
     y: 45,
@@ -943,7 +926,7 @@ UpdateServerNoticeText() {
     RuleText := "1. 选择 AION2 " . ServerName . "的安装目录，" . ((g_CurrentServer["id"] == 102) ? "例如 D:\Games\AION2_TW。" : "例如 D:\Games\AION2。")
     TextExplain.Value := RuleText .
         "`r`n2. 汉化完成后启动或重启 AION2，使汉化文件生效。" .
-        "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE / Steam 修复文件；" .
+        "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE · Steam 修复文件；" .
         "`r`n   PURPLE : AION2 - 游戏设置 - 检查文件；" .
         "`r`n   Steam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性；" .
         "`r`n4. 本工具为第三方扩展，使用即代表您自愿承担所有风险。"
@@ -2612,8 +2595,9 @@ RefreshUi() {
     SteamImg := IsSteamEnabled ? ".\AutoHotkey\steam.png" : ".\AutoHotkey\steamdis.png"
     PurpleImg := IsPurpleEnabled ? ".\AutoHotkey\purple.png" : ".\AutoHotkey\purpledis.png"
 
-    SetPicControlBitmap(PicSteam, EnsureResourceExtracted(SteamImg))
-    SetPicControlBitmap(PicPurple, EnsureResourceExtracted(PurpleImg))
+    SetPicControlBitmap(PicSteam, GetImageResourceHandle(SteamImg))
+    SetPicControlBitmap(PicPurple, GetImageResourceHandle(PurpleImg))
+
     if (ShowGameRunningTip) {
         TextTipInfo.Opt("-Hidden")
         TabCtrl.Move(, , , 470)
@@ -3533,19 +3517,14 @@ GetWindowFrameOffset(GuiObj) {
 }
 
 ; ==============================================================================
-; 纯内存资源解析加载核心模块
+; 图像与资源加载核心函数
 ; ==============================================================================
 
 SetPicControlBitmap(PicCtrl, ResourcePath) {
     static STM_SETIMAGE := 0x0172
     static IMAGE_BITMAP := 0
 
-    if (!A_IsCompiled) {
-        PicCtrl.Value := ResourcePath
-        return
-    }
-
-    hBitmap := GetImageResource(ResourcePath, true)
+    hBitmap := GetImageResourceHandle(ResourcePath, true)
 
     if (IsInteger(hBitmap) && hBitmap != 0) {
         SendMessage(STM_SETIMAGE, IMAGE_BITMAP, hBitmap, PicCtrl.Hwnd)
@@ -3554,49 +3533,35 @@ SetPicControlBitmap(PicCtrl, ResourcePath) {
     }
 }
 
-GetImageResource(ResourcePath, AsNumber := false) {
+GetImageResourceHandle(ResourcePath, ReturnNumericHandle := false) {
     if (!A_IsCompiled) {
         return ResourcePath
     }
 
-    SplitPath(ResourcePath, &FileName)
-
-    ResourceMap := Map(
-        "steam.png", "STEAM_PNG",
-        "steamdis.png", "STEAM_DIS_PNG",
-        "purple.png", "PURPLE_PNG",
-        "purpledis.png", "PURPLE_DIS_PNG",
-        "XaoYao.png", "XAOYAO_PNG",
-        "GuGuai.png", "GUGUAI_PNG",
-        "AK.png", "AK_PNG",
-        "GitHub.png", "GitHub_PNG",
-        "WPS.png", "WPS_PNG",
-        "QQGroup.png", "QQGROUP_PNG"
+    static ResourceMap := Map(
+        ".\AutoHotkey\steam.png", "STEAM_PNG",
+        ".\AutoHotkey\steamdis.png", "STEAM_DIS_PNG",
+        ".\AutoHotkey\purple.png", "PURPLE_PNG",
+        ".\AutoHotkey\purpledis.png", "PURPLE_DIS_PNG",
+        ".\AutoHotkey\XaoYao.png", "XAOYAO_PNG",
+        ".\AutoHotkey\GuGuai.png", "GUGUAI_PNG",
+        ".\AutoHotkey\AK.png", "AK_PNG",
+        ".\AutoHotkey\GitHub.png", "GitHub_PNG",
+        ".\AutoHotkey\WPS.png", "WPS_PNG",
+        ".\AutoHotkey\QQGroup.png", "QQGROUP_PNG"
     )
 
-    ResName := ResourceMap.Has(FileName) ? ResourceMap[FileName] : FileName
+    ResName := ResourceMap.Has(ResourcePath) ? ResourceMap[ResourcePath] : ResourcePath
 
-    if (FileName = "icon.ico") {
-        return A_ScriptFullPath
-    }
-
-    hBitmap := LoadResourceBitmapMemory(ResName)
+    hBitmap := GetResourceHBitmap(ResName)
     if (hBitmap != 0) {
-        if (AsNumber) {
-            return Integer(hBitmap)
-        } else {
-            return "HBITMAP:*" . hBitmap
-        }
+        return ReturnNumericHandle ? Integer(hBitmap) : "HBITMAP:*" . hBitmap
     }
 
     return ResourcePath
 }
 
-EnsureResourceExtracted(ResourcePath) {
-    return GetImageResource(ResourcePath, false)
-}
-
-LoadResourceBitmapMemory(ResName) {
+GetResourceHBitmap(ResName) {
     static BitmapCache := Map()
 
     if BitmapCache.Has(ResName)
