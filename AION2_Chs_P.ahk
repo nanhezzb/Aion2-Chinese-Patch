@@ -138,7 +138,7 @@ Tray.Add("退出", (*) => ExitApp())
 Tray.Default := "显示主界面"
 Tray.ClickCount := 1
 if (A_IsCompiled) {
-    TraySetIcon(EnsureResourceExtracted(".\AutoHotkey\icon.png"))
+    TraySetIcon(EnsureResourceExtracted(".\AutoHotkey\icon.ico"))
 } else {
     if FileExist(A_ScriptDir . "\AutoHotkey\icon.png")
         TraySetIcon(A_ScriptDir . "\AutoHotkey\icon.png")
