@@ -11,6 +11,7 @@
 ;@Ahk2Exe-SetVersion 2.0.1.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 ;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
+;@Ahk2Exe-AddResource .\AutoHotkey\icon.png, ICON.PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\steam.png, STEAM_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\steamdis.png, STEAM_DIS_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\purple.png, PURPLE_PNG
@@ -57,9 +58,11 @@ UniqueInstance.Ensure(Map(
 ; ==============================================================================
 
 global g_ProjectName := "AION2 Chs Patch"
+global g_ProjectNameSC := "AION2 一键汉化工具"
 global g_CurrentAppVersion := "2.0.1.0"
 global g_CurrentAppVersionShort := "2.0.1"
 global g_LastSeenBulletinVersion := "1.0.0.0"
+
 
 global g_ConfigFile := "config.ini"
 global g_AppManifestFilename := "app_manifest.json"
@@ -134,10 +137,10 @@ Tray.Add("退出", (*) => ExitApp())
 Tray.Default := "显示主界面"
 Tray.ClickCount := 1
 if (A_IsCompiled) {
-    TraySetIcon(A_ScriptFullPath, 1)
+    TraySetIcon(EnsureResourceExtracted(".\AutoHotkey\icon.png"))
 } else {
-    if FileExist(A_ScriptDir . "\AutoHotkey\icon.ico")
-        TraySetIcon(A_ScriptDir . "\AutoHotkey\icon.ico")
+    if FileExist(A_ScriptDir . "\AutoHotkey\icon.png")
+        TraySetIcon(A_ScriptDir . "\AutoHotkey\icon.png")
 }
 A_IconHidden := false
 
@@ -149,11 +152,13 @@ MyTrayClick(wParam, lParam, msg, hwnd) {
     }
 }
 
+A_IconTip := g_ProjectNameSC
+
 ; ==============================================================================
 ; 主界面 GUI 构建
 ; ==============================================================================
 
-global MainGui := Gui(, "AION2 一键汉化工具 " . g_CurrentAppVersionShort)
+global MainGui := Gui(, g_ProjectNameSC . " v" . g_CurrentAppVersionShort)
 MainGui.SetFont("s9", "Microsoft YaHei")
 
 if (!A_IsCompiled) {
@@ -177,7 +182,7 @@ TabCtrl.UseTab(1)
 MainGui.Add("GroupBox", "x17 y45 w536 h75", " 选择服务器 * ")
 global ComboServerList := MainGui.Add("DropDownList", "x27 y75 w516 Choose1", [])
 
-MainGui.Add("GroupBox", "x17 y130 w536 h115", " 选择安装目录 * ")
+MainGui.Add("GroupBox", "x17 y130 w536 h115", " 游戏安装目录 * ")
 global EditInstallPath := MainGui.Add("Edit", "x27 y160 w516 r1 ReadOnly", "")
 global BtnScan := MainGui.Add("Button", "x340 y201 w60 h26", "查找")
 global BtnBrowse := MainGui.Add("Button", "x412 y201 w60 h26", "浏览…")
@@ -818,7 +823,7 @@ RefreshServerData() {
             EditInstallPath.Value := ""
             g_ConfigCache.%Sec%.InstallPath := ""
             SaveAllConfig()
-            ShowMessageDialog("无效的目录地址，安装目录已重置。")
+            ShowMessageDialog("无效的安装目录配置，重新选择正确的安装目录。。")
         }
     } else {
         g_InstallPath := ""
@@ -915,7 +920,7 @@ BrowseFolder(*) {
 
     NormalizedSelectedFolder := PathUtil.Normalize(SelectedFolder)
     if (!FileExist(NormalizedSelectedFolder . "\Aion2\Binaries\Win64\Aion2.exe")) {
-        ShowMessageDialog("所选目录中未检测主程序 Aion2.exe，重新选择正确的安装目录。")
+        ShowMessageDialog("所选目录中没有主程序 Aion2.exe，重新选择正确的安装目录。")
         return
     }
     SetInstallPath(NormalizedSelectedFolder, 0)
@@ -3030,7 +3035,7 @@ ShowConfirmDialog(Text, Callback := "") {
     ConfirmGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     ConfirmGui.SetFont(, "Microsoft YaHei UI")
 
-    ConfirmGui.Add("Text", "x20 y20 w310 h60", Text)
+    ConfirmGui.Add("Text", "x20 y20 w410 h60", Text)
 
     BtnCancel := ConfirmGui.Add("Button", "x346 y102 w84 h30", "取消")
     BtnConfirm := ConfirmGui.Add("Button", "x234 y102 w100 h30 Default", "确认")
@@ -3063,7 +3068,7 @@ ShowMessageDialog(Text, Callback := "") {
     MessageGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     MessageGui.SetFont(, "Microsoft YaHei UI")
 
-    MessageGui.Add("Text", "x20 y20 w310 h60", Text)
+    MessageGui.Add("Text", "x20 y20 w410 h60", Text)
 
     BtnConfirm := MessageGui.Add("Button", "x330 y102 w100 h30 Default", "确认")
 
