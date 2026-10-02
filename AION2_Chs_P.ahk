@@ -8,10 +8,11 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 2.0.1.0
+;@Ahk2Exe-SetVersion 2.0.2.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
+
 ;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
-;@Ahk2Exe-AddResource .\AutoHotkey\icon.png, ICON.PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\icon.png, ICON_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\steam.png, STEAM_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\steamdis.png, STEAM_DIS_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\purple.png, PURPLE_PNG
@@ -21,6 +22,7 @@
 ;@Ahk2Exe-AddResource .\AutoHotkey\AK.png, AK_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\GitHub.png, GitHub_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\WPS.png, WPS_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\QQGroup.png, QQGROUP_PNG
 
 ;@format array_style: expand, object_style: expand
 
@@ -59,8 +61,8 @@ UniqueInstance.Ensure(Map(
 
 global g_ProjectName := "AION2 Chs Patch"
 global g_ProjectNameSC := "AION2 一键汉化工具"
-global g_CurrentAppVersion := "2.0.1.0"
-global g_CurrentAppVersionShort := "2.0.1"
+global g_CurrentAppVersion := "2.0.2.0"
+global g_CurrentAppVersionShort := "2.0.2"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -204,7 +206,7 @@ global PicPurple := MainGui.Add("Picture", "x520 y420 w24 h24 BackgroundTrans", 
 TabCtrl.UseTab(2)
 
 CreateCardControl(MainGui, {
-    x: 12,
+    x: 17,
     y: 45,
     icon: EnsureResourceExtracted(".\AutoHotkey\XaoYao.png"),
     title: "逍遥加速器",
@@ -216,7 +218,7 @@ CreateCardControl(MainGui, {
 })
 
 CreateCardControl(MainGui, {
-    x: 12,
+    x: 17,
     y: 129,
     icon: EnsureResourceExtracted(".\AutoHotkey\GuGuai.png"),
     title: "古怪加速器",
@@ -228,7 +230,7 @@ CreateCardControl(MainGui, {
 })
 
 CreateCardControl(MainGui, {
-    x: 12,
+    x: 17,
     y: 213,
     icon: EnsureResourceExtracted(".\AutoHotkey\AK.png"),
     title: "AK加速器",
@@ -243,11 +245,12 @@ TabCtrl.UseTab(3)
 
 WPSIconPath := EnsureResourceExtracted(".\AutoHotkey\WPS.png")
 GitHubIconPath := EnsureResourceExtracted(".\AutoHotkey\GitHub.png")
+QQGroupIconPath := EnsureResourceExtracted(".\AutoHotkey\QQGroup.png")
 CreateCardControl(MainGui, {
-    x: 12,
+    x: 17,
     y: 45,
     icon: WPSIconPath,
-    title: "更新发布页面",
+    title: "工具更新发布页面",
     desc: "获取最新版本汉化工具及版本更新公告页面。",
     url: "https://www.kdocs.cn/l/cf9KkRNTpqhb",
     width: 536,
@@ -256,12 +259,24 @@ CreateCardControl(MainGui, {
 })
 
 CreateCardControl(MainGui, {
-    x: 12,
+    x: 17,
     y: 129,
     icon: GitHubIconPath,
     title: "GitHub 项目页面",
     desc: "访问项目开源仓库，查看源代码、提交 Issue 或参与项目贡献。",
     url: "https://github.com/nanhezzb/Aion2-Chinese-Patch",
+    width: 536,
+    height: 77,
+    border: true
+})
+
+CreateCardControl(MainGui, {
+    x: 17,
+    y: 213,
+    icon: QQGroupIconPath,
+    title: "塔2 QQ 交流群",
+    desc: "与其他玩家交流心得、反馈问题与建议。",
+    url: "https://qm.qq.com/q/M8hfwL2uc0",
     width: 536,
     height: 77,
     border: true
@@ -3555,7 +3570,8 @@ GetImageResource(ResourcePath, AsNumber := false) {
         "GuGuai.png", "GUGUAI_PNG",
         "AK.png", "AK_PNG",
         "GitHub.png", "GitHub_PNG",
-        "WPS.png", "WPS_PNG"
+        "WPS.png", "WPS_PNG",
+        "QQGroup.png", "QQGROUP_PNG"
     )
 
     ResName := ResourceMap.Has(FileName) ? ResourceMap[FileName] : FileName
