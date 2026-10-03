@@ -37,7 +37,7 @@
                         {
                             "type": "replace",
                             "filename": "uu_pakchunk502000-Windows_0_P.pak",
-                            "remote_filename": "patchs/uu_pakchunk502000-Windows_0_P.pak",
+                            "remote_filename": "patches/uu_pakchunk502000-Windows_0_P.pak",
                             "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
                             "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
                             "file_size": 0
@@ -45,7 +45,7 @@
                         {
                             "type": "add",
                             "filename": "uu_L10NString.dat",
-                            "remote_filename": "patchs/uu_L10NString.dat",
+                            "remote_filename": "patches/uu_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
                             "file_md5": "4ba827b3a5167e7ec4be35460b966434",
                             "file_size": 3473812
@@ -54,10 +54,10 @@
                 },
                 {
                     "id": 5,
-                    "source": "测试补丁源",
+                    "source": "ab 补丁源",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
-                    "release_timestamp": 1790869111,
+                    "release_timestamp": 1790857440,
                     "actions": [
                         {
                             "type": "delete",
@@ -73,8 +73,8 @@
                         },
                         {
                             "type": "replace",
-                            "filename": "uu_pakchunk502000-Windows_0_P.pak",
-                            "remote_filename": "patchs/uu_pakchunk502000-Windows_0_P.pak",
+                            "filename": "ab_pakchunk502000-Windows_0_P.pak",
+                            "remote_filename": "patches/ab_pakchunk502000-Windows_0_P.pak",
                             "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
                             "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
                             "file_size": 0
@@ -82,10 +82,100 @@
                         {
                             "type": "add",
                             "filename": "ab_L10NString.dat",
-                            "remote_filename": "patchs/ab_L10NString.dat",
+                            "remote_filename": "patches/ab_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
                             "file_md5": "c5b69e6a078c205f7e6d85bf227fa7f5",
                             "file_size": 3516740
+                        }
+                    ]
+                },
+                {
+                    "id": 1,
+                    "source": "迅游加速器",
+                    "latest_patch_version": "1.0.0.0",
+                    "changelog": "",
+                    "release_timestamp": 1790752560,
+                    "actions": [
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig"
+                        },
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas"
+                        },
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc"
+                        },
+                        {
+                            "type": "replace",
+                            "filename": "xy_pakchunk502000-Windows_0_P.pak",
+                            "remote_filename": "patches/xy_pakchunk502000-Windows_0_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                            "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
+                            "file_size": 0
+                        },
+                        {
+                            "type": "add",
+                            "filename": "xy_L10NString.dat",
+                            "remote_filename": "patches/xy_L10NString.dat",
+                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
+                            "file_md5": "aaa82623e69cdeb3aad42da708eb8f98",
+                            "file_size": 3648692
+                        },
+                        {
+                            "type": "add",
+                            "filename": "xy_NotoSans-Bold.ufont",
+                            "remote_filename": "patches/xy_NotoSans-Bold.ufont",
+                            "target_relative_path": "Aion2\\Content\\UI\\Font\\NotoSans-Bold.ufont",
+                            "file_md5": "3dd7f29fd6f36d1fe71a2daf4a03a59c",
+                            "file_size": 20050760
+                        }
+                    ]
+                },
+                {
+                    "id": 6,
+                    "source": "at 补丁源",
+                    "latest_patch_version": "1.0.0.0",
+                    "changelog": "",
+                    "release_timestamp": 1790869080,
+                    "actions": [
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig"
+                        },
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas"
+                        },
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc"
+                        },
+                        {
+                            "type": "replace",
+                            "filename": "at_pakchunk502000-Windows_0_P.pak",
+                            "remote_filename": "patches/at_pakchunk502000-Windows_0_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                            "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
+                            "file_size": 0
+                        },
+                        {
+                            "type": "add",
+                            "filename": "at_L10NString.dat",
+                            "remote_filename": "patches/at_L10NString.dat",
+                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
+                            "file_md5": "4480c440749210ad7e0b5b4a60ae6fba",
+                            "file_size": 3789428
+                        },
+                        {
+                            "type": "add",
+                            "filename": "at_NotoSans-Bold.ufont",
+                            "remote_filename": "patches/at_NotoSans-Bold.ufont",
+                            "target_relative_path": "Aion2\\Content\\UI\\Font\\NotoSans-Bold.ufont",
+                            "file_md5": "e4e69c90d6f72913a51328f295f96432",
+                            "file_size": 15515760
                         }
                     ]
                 }
@@ -110,7 +200,7 @@
                         {
                             "type": "add",
                             "filename": "bb_pakchunk999999-Windows_0_P.Pak",
-                            "remote_filename": "patchs/bb_pakchunk999999-Windows_0_P.Pak",
+                            "remote_filename": "patches/bb_pakchunk999999-Windows_0_P.Pak",
                             "target_relative_path": "Aion2\\Content\\Paks\\pakchunk999999-Windows_0_P.Pak",
                             "file_md5": "12a93a1ecba45ad9803ae2c20495781d",
                             "file_size": 3721650
@@ -127,7 +217,7 @@
                         {
                             "type": "add",
                             "filename": "xy_pakchunk504000-Windows_9999_P.pak",
-                            "remote_filename": "patchs/xy_pakchunk504000-Windows_9999_P.pak",
+                            "remote_filename": "patches/xy_pakchunk504000-Windows_9999_P.pak",
                             "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\zh-TW\\pakchunk504000-Windows_9999_P.pak",
                             "file_md5": "d8f909cef6c96595e0e3514ed0e744da",
                             "file_size": 3672850
