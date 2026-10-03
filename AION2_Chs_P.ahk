@@ -102,6 +102,7 @@ global g_ConfigCache := {
 global g_DialogCallbacks := Map()
 global g_IsPatching := false
 global g_IsSyncing := false
+global g_IsRefreshing := false
 global g_WindowsOffset := 0
 
 ; 统一响应句柄映射
@@ -168,8 +169,8 @@ global ComboServerList := MainGui.Add("DropDownList", "x27 y75 w516 Choose1", []
 
 MainGui.Add("GroupBox", "x17 y130 w536 h115", " 游戏安装目录 * ")
 global EditInstallPath := MainGui.Add("Edit", "x27 y160 w516 r1 ReadOnly", "")
-global BtnScan := MainGui.Add("Button", "x340 y201 w60 h26", "查找")
-global BtnBrowse := MainGui.Add("Button", "x412 y201 w60 h26", "浏览…")
+global BtnScan := MainGui.Add("Button", "x300 y201 w80 h26", "自动查找")
+global BtnBrowse := MainGui.Add("Button", "x392 y201 w80 h26", "手动设置")
 global BtnReset := MainGui.Add("Button", "x484 y201 w60 h26 +Disabled", "重置")
 
 MainGui.Add("GroupBox", "x17 y255 w536 h145", "使用须知 * ")
@@ -180,6 +181,7 @@ global BtnUpdate := MainGui.Add("Button", "x20 y418 w100 h30 +Hidden", "更新�
 global BtnChinese := MainGui.Add("Button", "x20 y418 w100 h30", "一键汉化")
 global BtnRestore := MainGui.Add("Button", "x132 y418 w100 h30", "撤销汉化")
 global BtnRefreshStatus := MainGui.Add("Button", "x244 y418 w60 h30", "刷新")
+
 AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
 
 global PicSteam := MainGui.Add("Picture", "x475 y421 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
@@ -315,16 +317,16 @@ ShowCloseConfirmDialog() {
 
     CloseGui.Add("Text", "x20 y20 w310 h50", "选择关闭主窗口时的默认操作。")
 
-    BtnMinimize := CloseGui.Add("Button", "x234 y100 w100 h30 Default", "隐藏到托盘")
-    BtnExit := CloseGui.Add("Button", "x346 y100 w84 h30", "退出")
+    BtnMinimize := CloseGui.Add("Button", "x214 y100 w120 h30 Default", "隐藏到通知区域")
+    BtnExit := CloseGui.Add("Button", "x346 y100 w84 h30", "直接退出")
 
     BtnMinimize.OnEvent("Click", MinimizeClick)
 
     MinimizeClick(*) {
         SaveCloseChoice(1)
         MainGui.Opt("-Disabled")
-        try WinActivate("ahk_id " MainGui.Hwnd)
         CloseGui.Destroy()
+        try WinActivate("ahk_id " MainGui.Hwnd)
         MainGui.Hide()
     }
 
@@ -337,8 +339,9 @@ ShowCloseConfirmDialog() {
 
     CloseGuiClick(*) {
         MainGui.Opt("-Disabled")
-        try WinActivate("ahk_id " MainGui.Hwnd)
         CloseGui.Destroy()
+        try WinActivate("ahk_id " MainGui.Hwnd)
+        RefreshUi()
     }
 
     CloseGui.Show("w450 h150")
@@ -413,7 +416,7 @@ InitializeApp() {
     g_IsLocalInitComplete := true
     SetStatusBarText("本地数据就绪。")
 
-    SetTimer(StartCloudSync, -300)
+    SetTimer(StartCloudSync, -100)
 }
 
 ParseAndApplyManifest(JsonContent, IsPatchFile := false) {
@@ -520,14 +523,11 @@ StartCloudSync() {
 
         ExecuteCheckChain()
 
-    } finally {
-        g_IsSyncing := false
-        RefreshUi()
     }
 }
 
 ExecuteCheckChain() {
-    global g_ClientUpdateData, g_CloudBulletinData, g_CurrentServer, MainGui
+    global g_ClientUpdateData, g_CloudBulletinData, g_CurrentServer, MainGui, g_IsSyncing
 
     CheckTasks := []
 
@@ -549,6 +549,9 @@ ExecuteCheckChain() {
             CurrentTask := CheckTasks[TaskIndex]
             TaskIndex++
             CurrentTask(NextTask)
+        } else {
+            g_IsSyncing := false
+            RefreshUi()
         }
     }
 
@@ -611,17 +614,6 @@ ReadConfig() {
         Sec := "Server_" . Server["id"]
         RawSavedPath := SafeIniRead(g_ConfigFile, Sec, "install_path", "")
         SavedInstallPath := (RawSavedPath != "") ? PathUtil.Normalize(RawSavedPath) : ""
-
-        if (SavedInstallPath == "") {
-            for KeyName, ConfigObj in g_ConfigCache.OwnProps() {
-                if (SubStr(KeyName, 1, 8) == "Profile_" && Type(ConfigObj) == "Object" && ConfigObj.HasOwnProp("ServerID") && ConfigObj.ServerID == Server["id"]) {
-                    if (ConfigObj.HasOwnProp("InstallPath") && ConfigObj.InstallPath != "" && DirExist(ConfigObj.InstallPath)) {
-                        SavedInstallPath := ConfigObj.InstallPath
-                        break
-                    }
-                }
-            }
-        }
 
         g_ConfigCache.%Sec% := {
             InstallPath: SavedInstallPath,
@@ -908,8 +900,10 @@ DoResetConfig(*) {
 BrowseFolder(*) {
     global EditInstallPath, g_CurrentServer
     SelectedFolder := FileSelect("D", EditInstallPath.Value, "选择 AION2 " . g_CurrentServer["name"] . "安装目录：")
-    if (SelectedFolder == "")
+    if (SelectedFolder == "") {
+        RefreshUi
         return
+    }
 
     NormalizedSelectedFolder := PathUtil.Normalize(SelectedFolder)
     if (!FileExist(NormalizedSelectedFolder . "\Aion2\Binaries\Win64\Aion2.exe")) {
@@ -1451,16 +1445,17 @@ CheckPatchUpdate(ServerMap, OnComplete := "") {
 DoChinesePatch(*) {
     global BtnChinese, g_CurrentServer, g_InstallPath, g_IsPatching
 
+    g_IsPatching := true
+    RefreshUi()
+
     if (!g_InstallPath || !DirExist(g_InstallPath)) {
         ShowMessageDialog("先设置 AION2 游戏的安装目录。")
-        RefreshUi()
         return
     }
 
     Branches := g_CurrentServer["patch_branches"]
     if (Branches.Length == 0) {
         ShowMessageDialog("未发现有效的汉化补丁数据。")
-        RefreshUi()
         return
     }
 
@@ -1468,22 +1463,14 @@ DoChinesePatch(*) {
 }
 
 HandleChineseBranchSelected(SelectedBranch) {
-    global g_IsPatching
     if (!SelectedBranch) {
-        g_IsPatching := false
-        RefreshUi()
         return
     }
-
-    g_IsPatching := true
-    RefreshUi()
 
     ExecuteChinesePatch(SelectedBranch, false)
 }
 
 ExecuteChinesePatch(PatchBranch, IsUpdate := false) {
-    global g_InstallPath, g_IsPatching
-
     try {
         KillProcessByFullPath()
 
@@ -1494,7 +1481,6 @@ ExecuteChinesePatch(PatchBranch, IsUpdate := false) {
         ActionsArray := PatchBranch["actions"]
         if (ActionsArray.Length == 0) {
             ShowMessageDialog(IsUpdate ? "更新汉化补丁操作执行失败：`r`n`r`n未发现有效的汉化补丁执行方案。" : "未发现有效的汉化补丁执行方案。")
-            g_IsPatching := false
             return
         }
 
@@ -1536,8 +1522,6 @@ ExecuteChinesePatch(PatchBranch, IsUpdate := false) {
     } catch Error as Err {
         ErrMsg := IsUpdate ? ("更新汉化补丁操作执行失败：`r`n`r`n" . Err.Message) : ("汉化发生未知错误：`r`n`r`n" . Err.Message)
         ShowMessageDialog(ErrMsg)
-        g_IsPatching := false
-        RefreshUi()
     }
 }
 
@@ -1545,9 +1529,6 @@ HandleOverlapConfirmation(IsConfirmed, ContextMap) {
     global g_IsPatching
     if (IsConfirmed) {
         ApplyPatchBranch(ContextMap["branch"], ContextMap["actions"], ContextMap["branchId"], ContextMap["isUpdate"])
-    } else {
-        g_IsPatching := false
-        RefreshUi()
     }
 }
 
@@ -1719,57 +1700,47 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
         SetStatusBarText()
         SuccMsg := IsUpdate ? "汉化补丁已更新至最新版本。`r`n`r`n更新完成。" : "汉化补丁文件已成功释放至游戏目录。`r`n`r`n汉化完成。"
 
-        ShowMessageDialog(SuccMsg, (*) => (
-            g_IsPatching := false,
-            RefreshUi()
-        ))
-
+        ShowMessageDialog(SuccMsg)
     } catch Error as Err {
         SetStatusBarText()
         FailMsg := IsUpdate ? ("更新汉化补丁操作执行失败：`r`n`r`n" . Err.Message . "`r`n`r`n建议在 PURPLE 或 Steam 中执行文件完整性校验。")
             : ("汉化操作执行失败：`r`n`r`n" . Err.Message . "`r`n`r`n建议在 PURPLE 或 Steam 中执行文件完整性校验。")
 
-        ShowMessageDialog(FailMsg, (*) => (
-            g_IsPatching := false,
-            RefreshUi()
-        ))
+        ShowMessageDialog(FailMsg)
     }
 }
 
 DoUpdatePatch(*) {
     global g_CurrentServer, g_InstallPath, g_IsPatching
 
+    g_IsPatching := true
+    RefreshUi()
+
     if (!g_InstallPath || !DirExist(g_InstallPath)) {
         ShowMessageDialog("先设置 AION2 游戏的安装目录。")
-        RefreshUi()
         return
     }
 
     UpdateBranches := GetPatchUpdates(g_CurrentServer)
     if (UpdateBranches.Length == 0) {
         ShowMessageDialog("当前无需要更新的汉化补丁。")
-        RefreshUi()
         return
     }
-
-    g_IsPatching := true
-    RefreshUi()
 
     ShowMultiBranchDialog(UpdateBranches, HandleUpdateBranchSelected, true)
 }
 
 HandleUpdateBranchSelected(SelectedBranch) {
-    global g_IsPatching
     if (!SelectedBranch) {
-        g_IsPatching := false
-        RefreshUi()
         return
     }
+
     ExecuteChinesePatch(SelectedBranch, true)
 }
 
 DoRestorePatch(*) {
     global g_IsPatching
+
     g_IsPatching := true
     RefreshUi()
 
@@ -1778,14 +1749,11 @@ DoRestorePatch(*) {
     } catch Error as Err {
         SetStatusBarText()
         ShowMessageDialog(Err.Message)
-    } finally {
-        g_IsPatching := false
-        RefreshUi()
     }
 }
 
 DoRestorePatchInternal(IsSilent := false) {
-    global g_ConfigCache, g_CurrentServer, g_InstallPath
+    global g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching
 
     if (!g_InstallPath || !DirExist(g_InstallPath))
         throw Error("先设置 AION2 游戏的安装目录。")
@@ -2010,33 +1978,50 @@ DoRestorePatchInternal(IsSilent := false) {
 }
 
 OnBtnRefreshStatusClick(*) {
-    Info := GetLocalPatchInfo()
-    launchedCount := 0
+    global g_IsRefreshing
 
-    if (Info["isPatched"] == 1 && Info["profileKey"] != "") {
-        BackupRootDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . Info["profileKey"])
-        ManifestPath := BackupRootDir . "\backup_manifest.json"
-        if FileExist(ManifestPath) {
-            try {
-                Parsed := JSON.parse(FileRead(ManifestPath, "UTF-8"))
-                if (Type(Parsed) == "Map" && Parsed.Has("actions")) {
-                    launchedCount := LaunchRunActions(Parsed["actions"])
+    if (g_IsRefreshing)
+        return
+
+    g_IsRefreshing := true
+    BtnRefreshStatus.Opt("+Disabled")
+
+    try {
+        Info := GetLocalPatchInfo()
+        launchedCount := 0
+
+        if (Info["isPatched"] == 1 && Info["profileKey"] != "") {
+            BackupRootDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup\" . Info["profileKey"])
+            ManifestPath := BackupRootDir . "\backup_manifest.json"
+            if FileExist(ManifestPath) {
+                try {
+                    Parsed := JSON.parse(FileRead(ManifestPath, "UTF-8"))
+                    if (Type(Parsed) == "Map" && Parsed.Has("actions")) {
+                        launchedCount := LaunchRunActions(Parsed["actions"])
+                    }
                 }
             }
         }
+
+        RefreshUi()
+
+        if (Info["isInvalidated"]) {
+            SetStatusBarText("检测到汉化文件失效，已重置按钮状态。")
+        } else if (Info["isPatched"] == 1) {
+            if (launchedCount > 0)
+                SetStatusBarText("汉化补丁状态正常，已自动唤醒 " . launchedCount . " 个依赖程序。")
+            else
+                SetStatusBarText("汉化补丁状态正常。")
+        } else {
+            SetStatusBarText("当前未安装汉化补丁或已重置。")
+        }
+    } finally {
+        SetTimer(EndRefreshLock, -150)
     }
 
-    RefreshUi()
-
-    if (Info["isInvalidated"]) {
-        SetStatusBarText("检测到汉化文件失效，已重置按钮状态。")
-    } else if (Info["isPatched"] == 1) {
-        if (launchedCount > 0)
-            SetStatusBarText("汉化补丁状态正常，已自动唤醒 " . launchedCount . " 个依赖程序。")
-        else
-            SetStatusBarText("汉化补丁状态正常。")
-    } else {
-        SetStatusBarText("当前未安装汉化补丁或已重置。")
+    EndRefreshLock() {
+        g_IsRefreshing := false
+        RefreshUi()
     }
 }
 
@@ -2577,7 +2562,7 @@ CheckBulletin(BulletinMap, OnComplete := "") {
 ; ==============================================================================
 
 RefreshUi() {
-    global BtnBrowse, BtnChinese, BtnRefreshStatus, BtnReset, BtnRestore, BtnScan, BtnUpdate, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, g_WindowsOffset, MainGui, PicPurple, PicSteam, TabCtrl, TextTipInfo
+    global BtnBrowse, BtnChinese, BtnRefreshStatus, BtnReset, BtnRestore, BtnScan, BtnUpdate, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, g_IsRefreshing, g_WindowsOffset, MainGui, PicPurple, PicSteam, TabCtrl, TextTipInfo
 
     if (TabCtrl.Value != 1) {
         TextTipInfo.Opt("+Hidden")
@@ -2638,7 +2623,12 @@ RefreshUi() {
     ComboServerList.Opt("-Disabled")
     BtnScan.Opt("-Disabled")
     BtnBrowse.Opt("-Disabled")
-    BtnRefreshStatus.Opt("-Disabled")
+
+    if (g_IsRefreshing) {
+        BtnRefreshStatus.Opt("+Disabled")
+    } else {
+        BtnRefreshStatus.Opt("-Disabled")
+    }
 
     if (!g_CurrentServer.Has("id"))
         return
@@ -2650,12 +2640,10 @@ RefreshUi() {
     if (UpdateBranches.Length > 0) {
         BtnUpdate.Opt("-Hidden")
         BtnUpdate.Opt("-Disabled")
-        BtnUpdate.Focus()
         BtnChinese.Opt("+Hidden")
     } else {
         BtnUpdate.Opt("+Hidden")
         BtnChinese.Opt("-Hidden")
-        BtnUpdate.Focus()
         BtnChinese.Opt(IsPatched == 1 ? "+Disabled" : "-Disabled")
     }
 
@@ -2663,14 +2651,19 @@ RefreshUi() {
 
     if (EditInstallPath.Value) {
         BtnReset.Opt("-Disabled")
-        if (UpdateBranches.Length > 0)
+        if (UpdateBranches.Length > 0) {
+            BtnUpdate.Opt("+Default")
             BtnUpdate.Focus()
-        else if (IsPatched != 1)
+        } else if (IsPatched != 1) {
+            BtnChinese.Opt("+Default")
             BtnChinese.Focus()
-        else
+        } else {
+            BtnRestore.Opt("+Default")
             BtnRestore.Focus()
+        }
     } else {
         BtnReset.Opt("+Disabled")
+        BtnScan.Opt("+Default")
         BtnScan.Focus()
     }
 }
@@ -2688,35 +2681,86 @@ SetStatusBarText(StatusMessage := "") {
     }
 }
 
-AddToolTip(Control, Text) {
-    static ToolTips := Map()
-    static CurrentShowingHwnd := 0
+AddTooltip(ControlObj, TipText := "", DurationMs := 3000) {
 
-    if (!ToolTips.Count) {
-        OnMessage(0x0200, WM_MOUSEMOVE)
+    static TooltipsMap := Map()
+    static IsTracking := false
+    static CurrentHwnd := 0
+    static SuppressedHwnd := 0
+    static PendingTimerFn := 0
+    static HideTimerFn := 0
+
+    ClearTimers() {
+        if PendingTimerFn {
+            SetTimer PendingTimerFn, 0
+            PendingTimerFn := 0
+        }
+        if HideTimerFn {
+            SetTimer HideTimerFn, 0
+            HideTimerFn := 0
+        }
     }
-    ToolTips[Control.Hwnd] := Text
 
-    WM_MOUSEMOVE(wParam, lParam, msg, hwnd) {
-        global MainStatusBar
-        static PrevHwnd := 0
+    DismissToolTip(TargetHwnd) {
+        ClearTimers()
+        ToolTip()
+        SuppressedHwnd := TargetHwnd
+    }
 
-        if (hwnd != PrevHwnd) {
-            PrevHwnd := hwnd
+    ShowTip(TargetHwnd) {
+        PendingTimerFn := 0
+        MouseGetPos , , &CurrentWin, &HoverHwnd, 2
 
-            if (ToolTips.Has(hwnd)) {
-                CurrentShowingHwnd := hwnd
-                MainStatusBar.SetText("`t" . ToolTips[hwnd])
-            }
-            else if (CurrentShowingHwnd != 0) {
-                CurrentShowingHwnd := 0
-                if (IsSet(MainStatusBar)) {
-                    SetStatusBarText()
-                } else {
-                    ToolTip()
-                }
+        if (HoverHwnd == TargetHwnd && TargetHwnd != SuppressedHwnd) {
+            item := TooltipsMap[TargetHwnd]
+            ToolTip item.text
+
+            HideTimerFn := () => ToolTip()
+            SetTimer HideTimerFn, -item.duration
+        }
+    }
+
+    OnMouseMove(wParam, lParam, msg, hwnd) {
+        MouseGetPos , , &HoverWin, &HoverHwnd, 2
+
+        if (SuppressedHwnd && HoverHwnd != SuppressedHwnd) {
+            SuppressedHwnd := 0
+        }
+
+        if (HoverHwnd != CurrentHwnd) {
+            CurrentHwnd := HoverHwnd
+            ClearTimers()
+
+            if (TooltipsMap.Has(HoverHwnd) && HoverHwnd != SuppressedHwnd) {
+                PendingTimerFn := ShowTip.Bind(HoverHwnd)
+                SetTimer PendingTimerFn, -300
+            } else {
+                ToolTip()
             }
         }
+    }
+
+    if (TipText == "") {
+        if TooltipsMap.Has(ControlObj.Hwnd)
+            TooltipsMap.Delete(ControlObj.Hwnd)
+        return
+    }
+
+    TooltipsMap[ControlObj.Hwnd] := {
+        text: TipText,
+        duration: DurationMs
+    }
+
+    if ControlObj.HasMethod("OnEvent") {
+        try {
+            ControlObj.OnEvent("Click", (*) => DismissToolTip(ControlObj.Hwnd))
+        }
+    }
+
+    if (!IsTracking) {
+        OnMessage(0x0200, OnMouseMove)
+
+        IsTracking := true
     }
 }
 
@@ -2996,16 +3040,15 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
 
     BtnDownloadMinor := UpdateGui.Add("Button", "x330 y225 w100 h30", "GitHub 下载")
     BtnDownloadMain := UpdateGui.Add("Button", "x218 y225 w100 h30 Default", "主线路下载")
-    BtnDownloadMain.Focus()
 
     BtnDownloadMain.OnEvent("Click", (*) => (DownloadUrlMain != "" ? Run(DownloadUrlMain) : false))
     BtnDownloadMinor.OnEvent("Click", (*) => (DownloadUrlMinor != "" ? Run(DownloadUrlMinor) : false))
 
     CloseDialog(Result := 0) {
         MainGui.Opt("-Disabled")
-        try
-            WinActivate("ahk_id " MainGui.Hwnd)
+        try WinActivate("ahk_id " MainGui.Hwnd)
         UpdateGui.Destroy()
+
         if (IsForceUpdate)
             ExitApp()
         else
@@ -3038,8 +3081,7 @@ ShowBulletinDialog(ContentText, BulletinVersion, OnCloseCallback := "") {
 
     CloseDialog(*) {
         MainGui.Opt("-Disabled")
-        try
-            WinActivate("ahk_id " MainGui.Hwnd)
+        try WinActivate("ahk_id " MainGui.Hwnd)
         BulletinGui.Destroy()
         RefreshUi()
 
@@ -3073,8 +3115,7 @@ ShowConfirmDialog(Text, Callback := "") {
 
     CloseDialog(UserChoice) {
         MainGui.Opt("-Disabled")
-        try
-            WinActivate("ahk_id " MainGui.Hwnd)
+        try WinActivate("ahk_id " MainGui.Hwnd)
         ConfirmGui.Destroy()
         RefreshUi()
         if (Callback)
@@ -3093,8 +3134,7 @@ ShowConfirmDialog(Text, Callback := "") {
 }
 
 ShowMessageDialog(Text, Callback := "") {
-    global g_DialogCallbacks, MainGui
-
+    global g_DialogCallbacks, MainGui, g_IsPatching
     MsgId := 1004
     MessageGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     MessageGui.SetFont(, "Microsoft YaHei UI")
@@ -3104,14 +3144,14 @@ ShowMessageDialog(Text, Callback := "") {
     BtnConfirm := MessageGui.Add("Button", "x330 y102 w100 h30 Default", "确认")
 
     CloseDialog(*) {
+        g_IsPatching := false
         MainGui.Opt("-Disabled")
-        try
-            WinActivate("ahk_id " MainGui.Hwnd)
+        try WinActivate("ahk_id " MainGui.Hwnd)
         MessageGui.Destroy()
         RefreshUi()
+
         if (Callback)
             Callback()
-
     }
 
     g_DialogCallbacks[MsgId] := CloseDialog
@@ -3125,7 +3165,7 @@ ShowMessageDialog(Text, Callback := "") {
 }
 
 ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
-    global g_CurrentServer, MainGui
+    global g_CurrentServer, MainGui, g_IsPatching
 
     DlgTitle := IsUpdateList ? "选择补丁来源" : "选择补丁来源"
     ChoiceGui := Gui("+Owner" . MainGui.Hwnd, DlgTitle)
@@ -3186,10 +3226,19 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
     BtnCancel := ChoiceGui.Add("Button", "x346 y225 w84 h30", "取消")
     BtnConfirm := ChoiceGui.Add("Button", "x234 y225 w100 h30 +Disabled", ConfirmBtnText)
 
-    LV.OnEvent("ItemSelect", (Ctrl, Item, Selected) => BtnConfirm.Opt(LV.GetNext(0) > 0 ? "-Disabled" : "+Disabled"))
+    LV.OnEvent("ItemSelect", OnLVItemSelect)
     BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
     BtnCancel.OnEvent("Click", (*) => HandleSubmit(0))
     ChoiceGui.OnEvent("Close", (*) => HandleSubmit(0))
+
+    OnLVItemSelect(GuiCtrl, Item, Selected) {
+        if (GuiCtrl.GetNext(0) > 0) {
+            BtnConfirm.Opt("-Disabled")
+            BtnConfirm.Opt("+Default")
+        } else {
+            BtnConfirm.Opt("+Disabled")
+        }
+    }
 
     sortState := {
         col: 0,
@@ -3227,12 +3276,17 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
                     SelectedBranch := IsUpdateList ? Branches[RealIdx].Branch : Branches[RealIdx]
             }
         }
-
-        MainGui.Opt("-Disabled")
-        try
-            WinActivate("ahk_id " MainGui.Hwnd)
-        ChoiceGui.Destroy()
-        RefreshUi()
+        if (IsConfirmed) {
+            MainGui.Opt("-Disabled")
+            try WinActivate("ahk_id " MainGui.Hwnd)
+            ChoiceGui.Destroy()
+        } else {
+            g_IsPatching := false
+            MainGui.Opt("-Disabled")
+            try WinActivate("ahk_id " MainGui.Hwnd)
+            ChoiceGui.Destroy()
+            RefreshUi()
+        }
 
         if (Callback)
             Callback(SelectedBranch)
@@ -3240,20 +3294,10 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
 
     ChoiceGui.Show("w450 h275")
     MainGui.Opt("+Disabled")
-
-    if (IsUpdateList && Branches.Length > 0) {
-        LV.Modify(1, "Select Focus")
-        SelectedBranch := Branches[1]
-        BtnConfirm.Enabled := true
-    } else {
-        LV.Modify(0, "-Select")
-        SelectedBranch := ""
-        BtnConfirm.Enabled := false
-    }
 }
 
 ShowMultiPathDialog(ValidGames, Callback := "") {
-    global g_CurrentServer, MainGui
+    global g_CurrentServer, MainGui, g_IsPatching
 
     ChoiceGui := Gui("+Owner" . MainGui.Hwnd, "选择游戏目录")
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
@@ -3287,10 +3331,19 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
     BtnCancel := ChoiceGui.Add("Button", "x346 y225 w84 h30", "取消")
     BtnConfirm := ChoiceGui.Add("Button", "x234 y225 w100 h30 +Disabled", "确认")
 
-    LV.OnEvent("ItemSelect", (Ctrl, Item, Selected) => BtnConfirm.Opt(LV.GetNext(0) > 0 ? "-Disabled" : "+Disabled"))
+    LV.OnEvent("ItemSelect", OnLVItemSelect)
     BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
     BtnCancel.OnEvent("Click", (*) => HandleSubmit(0))
     ChoiceGui.OnEvent("Close", (*) => HandleSubmit(0))
+
+    OnLVItemSelect(GuiCtrl, Item, Selected) {
+        if (GuiCtrl.GetNext(0) > 0) {
+            BtnConfirm.Opt("-Disabled")
+            BtnConfirm.Opt("+Default")
+        } else {
+            BtnConfirm.Opt("+Disabled")
+        }
+    }
 
     sortState := {
         col: 0,
@@ -3329,9 +3382,9 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
             }
         }
 
+        g_IsPatching := false
         MainGui.Opt("-Disabled")
-        try
-            WinActivate("ahk_id " MainGui.Hwnd)
+        try WinActivate("ahk_id " MainGui.Hwnd)
         ChoiceGui.Destroy()
         RefreshUi()
 
@@ -3340,7 +3393,6 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
     }
 
     ChoiceGui.Show("w450 h275")
-    LV.Modify(0, "-Select")
     MainGui.Opt("+Disabled")
 }
 
