@@ -18,7 +18,7 @@
                 {
                     "id": 5,
                     "source": "A2Box",
-                    "latest_patch_version": "1.0.0.1",
+                    "latest_patch_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1790857440,
                     "actions": [
@@ -49,6 +49,14 @@
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
                             "file_md5": "c5b69e6a078c205f7e6d85bf227fa7f5",
                             "file_size": 3516740
+                        },
+                        {
+                            "type": "add",
+                            "filename": "ab_NotoSans-Bold.ufont",
+                            "remote_filename": "patches/ab_NotoSans-Bold.ufont",
+                            "target_relative_path": "Aion2\\Content\\UI\\Font\\NotoSans-Bold.ufont",
+                            "file_md5": "3dd7f29fd6f36d1fe71a2daf4a03a59c",
+                            "file_size": 20050760
                         }
                     ]
                 },
