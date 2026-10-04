@@ -8,7 +8,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 2.0.3.0
+;@Ahk2Exe-SetVersion 2.0.4.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 
 ;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
@@ -23,6 +23,8 @@
 ;@Ahk2Exe-AddResource .\AutoHotkey\GitHub.png, GitHub_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\WPS.png, WPS_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\QQGroup.png, QQGROUP_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\Sync.png, SYNC_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\Syncdis.png, SYNC_DIS_PNG
 
 ;@format array_style: expand, object_style: expand
 
@@ -61,8 +63,8 @@ UniqueInstance.Ensure(Map(
 
 global g_ProjectName := "AION2 Chs Patch"
 global g_ProjectNameSC := "AION2 一键汉化工具"
-global g_CurrentAppVersion := "2.0.3.0"
-global g_CurrentAppVersionShort := "2.0.3"
+global g_CurrentAppVersion := "2.0.4.0"
+global g_CurrentAppVersionShort := "2.0.4"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -157,36 +159,39 @@ A_IconTip := g_ProjectNameSC
 global MainGui := Gui(, g_ProjectNameSC . " v" . g_CurrentAppVersionShort)
 MainGui.SetFont("s9", "Microsoft YaHei")
 
-global TabCtrl := MainGui.Add("Tab3", "x-1 y10 w574 h460", [
+global TabCtrl := MainGui.Add("Tab3", "x-1 y10 w574 h480", [
     "一键汉化",
     "免费加速器",
     "关于"
 ])
 
 TabCtrl.UseTab(1)
-MainGui.Add("GroupBox", "x17 y45 w536 h75", " 选择服务器 * ")
-global ComboServerList := MainGui.Add("DropDownList", "x27 y75 w516 Choose1", [])
 
-MainGui.Add("GroupBox", "x17 y130 w536 h115", " 游戏安装目录 * ")
-global EditInstallPath := MainGui.Add("Edit", "x27 y160 w516 r1 ReadOnly", "")
-global BtnScan := MainGui.Add("Button", "x300 y201 w80 h26", "自动查找")
-global BtnBrowse := MainGui.Add("Button", "x392 y201 w80 h26", "手动设置")
-global BtnReset := MainGui.Add("Button", "x484 y201 w60 h26 +Disabled", "重置")
+global PicSync := MainGui.Add("Picture", "x520 y45 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\Sync.png"))
+AddToolTip(PicSync, "重新拉取数据并刷新界面。")
 
-MainGui.Add("GroupBox", "x17 y255 w536 h145", "使用须知 * ")
-global TextExplain := MainGui.AddText("x31 y280 w510 h105", "")
+MainGui.Add("GroupBox", "x17 y70 w536 h75", " 选择服务器 * ")
+global ComboServerList := MainGui.Add("DropDownList", "x27 y100 w516 Choose1", [])
 
-global TextTipInfo := MainGui.Add("Text", "x22 y405 w575 +Hidden cRed", "建议先退出游戏再进行汉化。")
-global BtnUpdate := MainGui.Add("Button", "x20 y418 w100 h30 +Hidden", "更新补丁")
-global BtnChinese := MainGui.Add("Button", "x20 y418 w100 h30", "一键汉化")
-global BtnRestore := MainGui.Add("Button", "x132 y418 w100 h30", "撤销汉化")
-global BtnRefreshStatus := MainGui.Add("Button", "x244 y418 w60 h30", "刷新")
+MainGui.Add("GroupBox", "x17 y155 w536 h115", " 游戏安装目录 * ")
+global EditInstallPath := MainGui.Add("Edit", "x27 y185 w516 r1 ReadOnly", "")
+global BtnScan := MainGui.Add("Button", "x300 y221 w80 h26", "自动查找")
+global BtnBrowse := MainGui.Add("Button", "x392 y221 w80 h26", "手动设置")
+global BtnReset := MainGui.Add("Button", "x484 y221 w60 h26 +Disabled", "重置")
 
+MainGui.Add("GroupBox", "x17 y275 w536 h145", "使用须知 * ")
+global TextExplain := MainGui.AddText("x31 y300 w510 h105", "")
+
+global TextTipInfo := MainGui.Add("Text", "x22 y425 w575 +Hidden cRed", "建议退出游戏再进行汉化。")
+global BtnUpdate := MainGui.Add("Button", "x20 y437 w100 h30 +Hidden", "更新补丁")
+global BtnChinese := MainGui.Add("Button", "x20 y437 w100 h30", "一键汉化")
+global BtnRestore := MainGui.Add("Button", "x132 y437 w100 h30", "撤销汉化")
+global BtnRefreshStatus := MainGui.Add("Button", "x244 y437 w60 h30", "刷新")
 AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
 
-global PicSteam := MainGui.Add("Picture", "x475 y421 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
-global TextSplit := MainGui.AddText("x507 y425 ccfcfcf", "l")
-global PicPurple := MainGui.Add("Picture", "x520 y420 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\purpledis.png"))
+global PicSteam := MainGui.Add("Picture", "x475 y441 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
+global TextSplit := MainGui.AddText("x507 y455 ccfcfcf", "l")
+global PicPurple := MainGui.Add("Picture", "x520 y440 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\purpledis.png"))
 
 TabCtrl.UseTab(2)
 
@@ -260,7 +265,7 @@ CreateCardControl(MainGui, {
     y: 213,
     icon: QQGroupIconPath,
     title: "塔2 QQ 交流群",
-    desc: "与其他玩家交流心得、反馈问题与建议。",
+    desc: "1124021357 与其他玩家交流心得、反馈问题与建议。",
     url: "https://qm.qq.com/q/M8hfwL2uc0",
     width: 536,
     height: 77,
@@ -276,6 +281,7 @@ global MainStatusBar := MainGui.Add("StatusBar", "")
 ; ==============================================================================
 
 TabCtrl.OnEvent("Change", (*) => RefreshUi())
+PicSync.OnEvent("Click", (*) => InitializeApp())
 MainGui.OnEvent("Close", OnMainGuiClose)
 ComboServerList.OnEvent("Change", (*) => SelectServer())
 BtnScan.OnEvent("Click", (*) => OnScanButtonClick())
@@ -312,7 +318,7 @@ OnMainGuiClose(*) {
 ShowCloseConfirmDialog() {
     global MainGui
 
-    CloseGui := Gui("+Owner" . MainGui.Hwnd, "关闭提示")
+    CloseGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     CloseGui.SetFont(, "Microsoft YaHei UI")
 
     CloseGui.Add("Text", "x20 y20 w310 h50", "选择关闭主窗口时的默认操作。")
@@ -403,7 +409,7 @@ InitializeApp() {
     global g_IsLocalInitComplete, g_IsSyncing, g_WindowsOffset, MainGui
 
     g_IsSyncing := true
-    MainGui.Show("w570 h490")
+    MainGui.Show("w570 h510")
 
     g_WindowsOffset := GetWindowFrameOffset(MainGui)
 
@@ -516,7 +522,7 @@ StartCloudSync() {
             SafeIniWrite(g_RequestTimeoutSeconds, g_ConfigFile, "Settings", "RequestTimeoutSeconds")
 
             RefreshServerComboBox()
-            SetStatusBarText("云端配置同步成功，已更新至最新数据。")
+            SetStatusBarText("服务器配置同步成功，已更新至最新数据。")
         } else {
             SetStatusBarText("连接超时或离线，已加载本地配置文件。")
         }
@@ -1449,7 +1455,7 @@ DoChinesePatch(*) {
     RefreshUi()
 
     if (!g_InstallPath || !DirExist(g_InstallPath)) {
-        ShowMessageDialog("先设置 AION2 游戏的安装目录。")
+        ShowMessageDialog("确认 AION2 游戏安装目录。")
         return
     }
 
@@ -1717,7 +1723,7 @@ DoUpdatePatch(*) {
     RefreshUi()
 
     if (!g_InstallPath || !DirExist(g_InstallPath)) {
-        ShowMessageDialog("先设置 AION2 游戏的安装目录。")
+        ShowMessageDialog("确认 AION2 游戏安装目录。")
         return
     }
 
@@ -1756,7 +1762,7 @@ DoRestorePatchInternal(IsSilent := false) {
     global g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching
 
     if (!g_InstallPath || !DirExist(g_InstallPath))
-        throw Error("先设置 AION2 游戏的安装目录。")
+        throw Error("确认 AION2 游戏安装目录。")
 
     KillProcessByFullPath()
 
@@ -2574,37 +2580,40 @@ RefreshUi() {
     HasSteamUrl := (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has("steam_url") && g_CurrentServer["steam_url"] != "")
     HasPurpleUrl := (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has("purple_url") && g_CurrentServer["purple_url"] != "")
 
+    IsSyncEnabled := (!g_IsSyncing && !g_IsPatching)
     IsSteamEnabled := (!g_IsSyncing && !g_IsPatching && HasSteamUrl)
     IsPurpleEnabled := (!g_IsSyncing && !g_IsPatching && HasPurpleUrl)
 
+    SyncImg := IsSyncEnabled ? ".\AutoHotkey\Sync.png" : ".\AutoHotkey\Syncdis.png"
     SteamImg := IsSteamEnabled ? ".\AutoHotkey\steam.png" : ".\AutoHotkey\steamdis.png"
     PurpleImg := IsPurpleEnabled ? ".\AutoHotkey\purple.png" : ".\AutoHotkey\purpledis.png"
 
+    SetPicControlBitmap(PicSync, GetImageResourceHandle(SyncImg))
     SetPicControlBitmap(PicSteam, GetImageResourceHandle(SteamImg))
     SetPicControlBitmap(PicPurple, GetImageResourceHandle(PurpleImg))
 
     if (ShowGameRunningTip) {
         TextTipInfo.Opt("-Hidden")
-        TabCtrl.Move(, , , 470)
-        BtnUpdate.Move(20, 428)
-        BtnChinese.Move(20, 428)
-        BtnRestore.Move(132, 428)
-        BtnRefreshStatus.Move(244, 428)
-        PicSteam.Move(475, 431)
-        TextSplit.Move(, 435)
-        PicPurple.Move(520, 430)
-        MainGui.Move(, , , 500 + g_WindowsOffset.h)
+        TabCtrl.Move(, , , 490)
+        BtnUpdate.Move(, 448)
+        BtnChinese.Move(, 448)
+        BtnRestore.Move(, 448)
+        BtnRefreshStatus.Move(, 448)
+        PicSteam.Move(, 451)
+        TextSplit.Move(, 455)
+        PicPurple.Move(, 450)
+        MainGui.Move(, , , 520 + g_WindowsOffset.h)
     } else {
         TextTipInfo.Opt("+Hidden")
-        TabCtrl.Move(, , , 460)
-        BtnUpdate.Move(20, 418)
-        BtnChinese.Move(20, 418)
-        BtnRestore.Move(132, 418)
-        BtnRefreshStatus.Move(244, 418)
-        PicSteam.Move(475, 421)
-        TextSplit.Move(, 425)
-        PicPurple.Move(520, 420)
-        MainGui.Move(, , , 490 + g_WindowsOffset.h)
+        TabCtrl.Move(, , , 480)
+        BtnUpdate.Move(, 438)
+        BtnChinese.Move(, 438)
+        BtnRestore.Move(, 438)
+        BtnRefreshStatus.Move(, 438)
+        PicSteam.Move(, 441)
+        TextSplit.Move(, 445)
+        PicPurple.Move(, 440)
+        MainGui.Move(, , , 510 + g_WindowsOffset.h)
     }
 
     if (g_IsPatching || g_IsSyncing) {
@@ -3074,7 +3083,7 @@ ShowBulletinDialog(ContentText, BulletinVersion, OnCloseCallback := "") {
     BulletinGui := Gui("+Owner" . MainGui.Hwnd, "最新公告")
     BulletinGui.SetFont(, "Microsoft YaHei UI")
 
-    BulletinGui.Add("Edit", "x20 y20 w410 h150 ReadOnly -WantReturn", ContentText)
+    BulletinGui.Add("Edit", "x20 y20 w410 h175 ReadOnly -WantReturn", ContentText)
     BtnConfirm := BulletinGui.Add("Button", "x330 y225 w100 h30 Default", "我知道了")
 
     g_LastSeenBulletinVersion := BulletinVersion
@@ -3600,7 +3609,9 @@ GetImageResourceHandle(ResourcePath, ReturnNumericHandle := false) {
         ".\AutoHotkey\AK.png", "AK_PNG",
         ".\AutoHotkey\GitHub.png", "GitHub_PNG",
         ".\AutoHotkey\WPS.png", "WPS_PNG",
-        ".\AutoHotkey\QQGroup.png", "QQGROUP_PNG"
+        ".\AutoHotkey\QQGroup.png", "QQGROUP_PNG",
+        ".\AutoHotkey\Sync.png", "SYNC_PNG",
+        ".\AutoHotkey\Syncdis.png", "SYNC_DIS_PNG"
     )
 
     ResName := ResourceMap.Has(ResourcePath) ? ResourceMap[ResourcePath] : ResourcePath
