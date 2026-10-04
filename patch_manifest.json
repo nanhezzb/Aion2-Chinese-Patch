@@ -16,45 +16,8 @@
             "purple_url": "--game-id A2_WW_L_GA_PURPLE",
             "patch_branches": [
                 {
-                    "id": 4,
-                    "source": "UU加速器",
-                    "latest_patch_version": "1.0.0.0",
-                    "changelog": "",
-                    "release_timestamp": 1790778626,
-                    "actions": [
-                        {
-                            "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig"
-                        },
-                        {
-                            "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas"
-                        },
-                        {
-                            "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc"
-                        },
-                        {
-                            "type": "replace",
-                            "filename": "uu_pakchunk502000-Windows_0_P.pak",
-                            "remote_filename": "patches/uu_pakchunk502000-Windows_0_P.pak",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
-                            "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
-                            "file_size": 0
-                        },
-                        {
-                            "type": "add",
-                            "filename": "uu_L10NString.dat",
-                            "remote_filename": "patches/uu_L10NString.dat",
-                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "4ba827b3a5167e7ec4be35460b966434",
-                            "file_size": 3473812
-                        }
-                    ]
-                },
-                {
                     "id": 5,
-                    "source": "ab 补丁源",
+                    "source": "A2Box",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1790857440,
@@ -86,6 +49,43 @@
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
                             "file_md5": "c5b69e6a078c205f7e6d85bf227fa7f5",
                             "file_size": 3516740
+                        }
+                    ]
+                },
+                {
+                    "id": 4,
+                    "source": "UU 加速器",
+                    "latest_patch_version": "1.0.0.0",
+                    "changelog": "",
+                    "release_timestamp": 1790778626,
+                    "actions": [
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig"
+                        },
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas"
+                        },
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc"
+                        },
+                        {
+                            "type": "replace",
+                            "filename": "uu_pakchunk502000-Windows_0_P.pak",
+                            "remote_filename": "patches/uu_pakchunk502000-Windows_0_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                            "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
+                            "file_size": 0
+                        },
+                        {
+                            "type": "add",
+                            "filename": "uu_L10NString.dat",
+                            "remote_filename": "patches/uu_L10NString.dat",
+                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
+                            "file_md5": "4ba827b3a5167e7ec4be35460b966434",
+                            "file_size": 3473812
                         }
                     ]
                 },
@@ -136,7 +136,7 @@
                 },
                 {
                     "id": 6,
-                    "source": "at 补丁源",
+                    "source": "Aion2Translate",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1790869080,
