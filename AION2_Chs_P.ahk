@@ -8,7 +8,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 2.0.4.0
+;@Ahk2Exe-SetVersion 2.0.5.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 
 ;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
@@ -63,8 +63,8 @@ UniqueInstance.Ensure(Map(
 
 global g_ProjectName := "AION2 Chs Patch"
 global g_ProjectNameSC := "AION2 一键汉化工具"
-global g_CurrentAppVersion := "2.0.4.0"
-global g_CurrentAppVersionShort := "2.0.4"
+global g_CurrentAppVersion := "2.0.5.0"
+global g_CurrentAppVersionShort := "2.0.5"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -170,63 +170,63 @@ TabCtrl.UseTab(1)
 global PicSync := MainGui.Add("Picture", "x520 y45 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\Sync.png"))
 AddToolTip(PicSync, "重新拉取数据并刷新界面。")
 
-MainGui.Add("GroupBox", "x17 y70 w536 h75", " 选择服务器 * ")
-global ComboServerList := MainGui.Add("DropDownList", "x27 y100 w516 Choose1", [])
+MainGui.Add("GroupBox", "x15 y70 w540 h65", " 选择服务器 * ")
+global ComboServerList := MainGui.Add("DropDownList", "x30 y94 w510 Choose1", [])
 
-MainGui.Add("GroupBox", "x17 y155 w536 h115", " 游戏安装目录 * ")
-global EditInstallPath := MainGui.Add("Edit", "x27 y185 w516 r1 ReadOnly", "")
-global BtnScan := MainGui.Add("Button", "x300 y221 w80 h26", "自动查找")
-global BtnBrowse := MainGui.Add("Button", "x392 y221 w80 h26", "手动设置")
-global BtnReset := MainGui.Add("Button", "x484 y221 w60 h26 +Disabled", "重置")
+MainGui.Add("GroupBox", "x15 y146 w540 h105", " 游戏安装目录 * ")
+global EditInstallPath := MainGui.Add("Edit", "x30 y170 w510 r1 ReadOnly", "")
+global BtnScan := MainGui.Add("Button", "x297 y209 w80 h26", "自动查找")
+global BtnBrowse := MainGui.Add("Button", "x389 y209 w80 h26", "手动设置")
+global BtnReset := MainGui.Add("Button", "x481 y209 w60 h26 +Disabled", "重置")
 
-MainGui.Add("GroupBox", "x17 y275 w536 h145", "使用须知 * ")
-global TextExplain := MainGui.AddText("x31 y300 w510 h105", "")
+MainGui.Add("GroupBox", "x15 y261 w540 h145", "使用须知 * ")
+global TextExplain := MainGui.AddText("x30 y283 w510 h105", "")
 
-global TextTipInfo := MainGui.Add("Text", "x22 y425 w575 +Hidden cRed", "建议退出游戏再进行汉化。")
-global BtnUpdate := MainGui.Add("Button", "x20 y437 w100 h30 +Hidden", "更新补丁")
-global BtnChinese := MainGui.Add("Button", "x20 y437 w100 h30", "一键汉化")
-global BtnRestore := MainGui.Add("Button", "x132 y437 w100 h30", "撤销汉化")
-global BtnRefreshStatus := MainGui.Add("Button", "x244 y437 w60 h30", "刷新")
+global TextTipInfo := MainGui.Add("Text", "x16 y421 w575 +Hidden cRed", "建议退出游戏再进行汉化。")
+global BtnUpdate := MainGui.Add("Button", "x14 y408 w100 h30 +Hidden", "更新补丁")
+global BtnChinese := MainGui.Add("Button", "x14 y408 w100 h30", "一键汉化")
+global BtnRestore := MainGui.Add("Button", "x126 y408 w100 h30", "撤销汉化")
+global BtnRefreshStatus := MainGui.Add("Button", "x239 y408 w60 h30", "刷新")
 AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
 
-global PicSteam := MainGui.Add("Picture", "x475 y441 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
-global TextSplit := MainGui.AddText("x507 y455 ccfcfcf", "l")
-global PicPurple := MainGui.Add("Picture", "x520 y440 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\purpledis.png"))
+global PicSteam := MainGui.Add("Picture", "x470 y441 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
+global TextSplit := MainGui.AddText("x502 y455 ccfcfcf", "l")
+global PicPurple := MainGui.Add("Picture", "x515 y440 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\purpledis.png"))
 
 TabCtrl.UseTab(2)
 
 CreateCardControl(MainGui, {
-    x: 17,
+    x: 15,
     y: 45,
     icon: GetImageResourceHandle(".\AutoHotkey\XaoYao.png"),
     title: "逍遥加速器",
     desc: "24 小时免费加速，支持 Steam、PURPLE、EA、Epic、暴雪等游戏平台，使用“平台加速”功能，加速平台内全部游戏（含塔2 国际服）。",
     url: "https://www.xiaoyao.co/index.htm",
-    width: 536,
+    width: 541,
     height: 77,
     border: true
 })
 
 CreateCardControl(MainGui, {
-    x: 17,
+    x: 15,
     y: 129,
     icon: GetImageResourceHandle(".\AutoHotkey\GuGuai.png"),
     title: "古怪加速器",
     desc: "Bilibili 搜索口令获取永久时长， 0 - 16 时免费加速，极速稳定支持全球网游。",
     url: "https://www.ggkuai.com/",
-    width: 536,
+    width: 541,
     height: 77,
     border: true
 })
 
 CreateCardControl(MainGui, {
-    x: 17,
+    x: 15,
     y: 213,
     icon: GetImageResourceHandle(".\AutoHotkey\AK.png"),
     title: "AK加速器",
     desc: "0 - 14 时免费加速，支持全球网游加速。",
     url: "https://www.akspeedy.com/html/invite_new/invite_download.html?inviter=3Xtkus4t",
-    width: 536,
+    width: 541,
     height: 77,
     border: true
 })
@@ -237,37 +237,37 @@ WPSIconPath := GetImageResourceHandle(".\AutoHotkey\WPS.png")
 GitHubIconPath := GetImageResourceHandle(".\AutoHotkey\GitHub.png")
 QQGroupIconPath := GetImageResourceHandle(".\AutoHotkey\QQGroup.png")
 CreateCardControl(MainGui, {
-    x: 17,
+    x: 15,
     y: 45,
     icon: WPSIconPath,
     title: "工具更新发布页面",
     desc: "获取最新版本汉化工具及版本更新公告页面。",
     url: "https://www.kdocs.cn/l/cf9KkRNTpqhb",
-    width: 536,
+    width: 541,
     height: 77,
     border: true
 })
 
 CreateCardControl(MainGui, {
-    x: 17,
+    x: 15,
     y: 129,
     icon: GitHubIconPath,
     title: "GitHub 项目页面",
     desc: "访问项目开源仓库，查看源代码、提交 Issue 或参与项目贡献。",
     url: "https://github.com/nanhezzb/Aion2-Chinese-Patch",
-    width: 536,
+    width: 541,
     height: 77,
     border: true
 })
 
 CreateCardControl(MainGui, {
-    x: 17,
+    x: 15,
     y: 213,
     icon: QQGroupIconPath,
     title: "塔2 QQ 交流群",
     desc: "1124021357 与其他玩家交流心得、反馈问题与建议。",
     url: "https://qm.qq.com/q/M8hfwL2uc0",
-    width: 536,
+    width: 541,
     height: 77,
     border: true
 })
@@ -321,10 +321,10 @@ ShowCloseConfirmDialog() {
     CloseGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     CloseGui.SetFont(, "Microsoft YaHei UI")
 
-    CloseGui.Add("Text", "x20 y20 w310 h50", "选择关闭主窗口时的默认操作。")
+    CloseGui.Add("Text", "x15 y20 w310 h50", "选择关闭主窗口时的默认操作。")
 
-    BtnMinimize := CloseGui.Add("Button", "x214 y100 w120 h30 Default", "隐藏到通知区域")
-    BtnExit := CloseGui.Add("Button", "x346 y100 w84 h30", "直接退出")
+    BtnMinimize := CloseGui.Add("Button", "x220 y107 w120 h30 Default", "隐藏到通知区域")
+    BtnExit := CloseGui.Add("Button", "x352 y107 w84 h30", "直接退出")
 
     BtnMinimize.OnEvent("Click", MinimizeClick)
 
@@ -409,7 +409,7 @@ InitializeApp() {
     global g_IsLocalInitComplete, g_IsSyncing, g_WindowsOffset, MainGui
 
     g_IsSyncing := true
-    MainGui.Show("w570 h510")
+    MainGui.Show("w570 h488")
 
     g_WindowsOffset := GetWindowFrameOffset(MainGui)
 
@@ -2594,26 +2594,26 @@ RefreshUi() {
 
     if (ShowGameRunningTip) {
         TextTipInfo.Opt("-Hidden")
-        TabCtrl.Move(, , , 490)
-        BtnUpdate.Move(, 448)
-        BtnChinese.Move(, 448)
-        BtnRestore.Move(, 448)
-        BtnRefreshStatus.Move(, 448)
-        PicSteam.Move(, 451)
-        TextSplit.Move(, 455)
-        PicPurple.Move(, 450)
-        MainGui.Move(, , , 520 + g_WindowsOffset.h)
+        TabCtrl.Move(, , , 478)
+        BtnUpdate.Move(, 443)
+        BtnChinese.Move(, 443)
+        BtnRestore.Move(, 443)
+        BtnRefreshStatus.Move(, 443)
+        PicSteam.Move(, 446)
+        TextSplit.Move(, 450)
+        PicPurple.Move(, 445)
+        MainGui.Move(, , , 508 + g_WindowsOffset.h)
     } else {
         TextTipInfo.Opt("+Hidden")
-        TabCtrl.Move(, , , 480)
-        BtnUpdate.Move(, 438)
-        BtnChinese.Move(, 438)
-        BtnRestore.Move(, 438)
-        BtnRefreshStatus.Move(, 438)
-        PicSteam.Move(, 441)
-        TextSplit.Move(, 445)
-        PicPurple.Move(, 440)
-        MainGui.Move(, , , 510 + g_WindowsOffset.h)
+        TabCtrl.Move(, , , 458)
+        BtnUpdate.Move(, 423)
+        BtnChinese.Move(, 423)
+        BtnRestore.Move(, 423)
+        BtnRefreshStatus.Move(, 423)
+        PicSteam.Move(, 426)
+        TextSplit.Move(, 430)
+        PicPurple.Move(, 425)
+        MainGui.Move(, , , 488 + g_WindowsOffset.h)
     }
 
     if (g_IsPatching || g_IsSyncing) {
@@ -3041,14 +3041,14 @@ ShowAppUpdateDialog(ChangelogText, DownloadUrlMain, DownloadUrlMinor, IsForceUpd
         : "发现新版本。"
 
     if (IsForceUpdate)
-        UpdateGui.Add("Text", "x20 y20 w410", "当前版本过低，必须升级为最新版本才能使用。").SetFont("bold")
+        UpdateGui.Add("Text", "x15 y20 w410", "当前版本过低，必须升级为最新版本才能使用。").SetFont("bold")
     else
-        UpdateGui.Add("Text", "x20 y20 w410", LatestVersion)
+        UpdateGui.Add("Text", "x15 y20 w410", LatestVersion).SetFont("bold")
 
-    UpdateGui.Add("Edit", "x20 y45 w410 h150 ReadOnly", ChangelogText)
+    UpdateGui.Add("Edit", "x15 y45 w420 h174 ReadOnly", ChangelogText)
 
-    BtnDownloadMinor := UpdateGui.Add("Button", "x330 y225 w100 h30", "GitHub 下载")
-    BtnDownloadMain := UpdateGui.Add("Button", "x218 y225 w100 h30 Default", "主线路下载")
+    BtnDownloadMinor := UpdateGui.Add("Button", "x336 y232 w100 h30", "GitHub 下载")
+    BtnDownloadMain := UpdateGui.Add("Button", "x224 y232 w100 h30 Default", "主线路下载")
 
     BtnDownloadMain.OnEvent("Click", (*) => (DownloadUrlMain != "" ? Run(DownloadUrlMain) : false))
     BtnDownloadMinor.OnEvent("Click", (*) => (DownloadUrlMinor != "" ? Run(DownloadUrlMinor) : false))
@@ -3083,8 +3083,8 @@ ShowBulletinDialog(ContentText, BulletinVersion, OnCloseCallback := "") {
     BulletinGui := Gui("+Owner" . MainGui.Hwnd, "最新公告")
     BulletinGui.SetFont(, "Microsoft YaHei UI")
 
-    BulletinGui.Add("Edit", "x20 y20 w410 h175 ReadOnly -WantReturn", ContentText)
-    BtnConfirm := BulletinGui.Add("Button", "x330 y225 w100 h30 Default", "我知道了")
+    BulletinGui.Add("Edit", "x15 y20 w420 h197 ReadOnly -WantReturn", ContentText)
+    BtnConfirm := BulletinGui.Add("Button", "x336 y232 w100 h30 Default", "我知道了")
 
     g_LastSeenBulletinVersion := BulletinVersion
 
@@ -3117,10 +3117,10 @@ ShowConfirmDialog(Text, Callback := "") {
     ConfirmGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     ConfirmGui.SetFont(, "Microsoft YaHei UI")
 
-    ConfirmGui.Add("Text", "x20 y20 w410 h60", Text)
+    ConfirmGui.Add("Text", "x15 y20 w420 h60", Text)
 
-    BtnCancel := ConfirmGui.Add("Button", "x346 y102 w84 h30", "取消")
-    BtnConfirm := ConfirmGui.Add("Button", "x234 y102 w100 h30 Default", "确认")
+    BtnCancel := ConfirmGui.Add("Button", "x352 y107 w84 h30", "取消")
+    BtnConfirm := ConfirmGui.Add("Button", "x240 y107 w100 h30 Default", "确认")
 
     CloseDialog(UserChoice) {
         MainGui.Opt("-Disabled")
@@ -3148,9 +3148,9 @@ ShowMessageDialog(Text, Callback := "") {
     MessageGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     MessageGui.SetFont(, "Microsoft YaHei UI")
 
-    MessageGui.Add("Text", "x20 y20 w410 h60", Text)
+    MessageGui.Add("Text", "x15 y20 w410 h60", Text)
 
-    BtnConfirm := MessageGui.Add("Button", "x330 y102 w100 h30 Default", "确认")
+    BtnConfirm := MessageGui.Add("Button", "x336 y107 w100 h30 Default", "确认")
 
     CloseDialog(*) {
         g_IsPatching := false
@@ -3181,10 +3181,10 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
 
     TipText := IsUpdateList ? "当前汉化补丁有更新。" : ("选择 AION2 " . g_CurrentServer["name"] . " 汉化补丁来源，不同来源游戏内翻译完成度可能不同。")
-    ChoiceGui.Add("Text", "x20 y15 w410 h25", TipText).SetFont("bold")
+    ChoiceGui.Add("Text", "x15 y15 w410 h25", TipText).SetFont("bold")
 
     VerHeaderTitle := IsUpdateList ? "版本信息" : "版本信息"
-    LV := ChoiceGui.Add("ListView", "x20 y45 w410 h140 -Multi", [
+    LV := ChoiceGui.Add("ListView", "x15 y45 w420 h172 -Multi", [
         "来源",
         VerHeaderTitle,
         "补丁大小",
@@ -3232,8 +3232,8 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
     LV.ModifyCol(4, "AutoHdr")
 
     ConfirmBtnText := IsUpdateList ? "确认更新" : "确认"
-    BtnCancel := ChoiceGui.Add("Button", "x346 y225 w84 h30", "取消")
-    BtnConfirm := ChoiceGui.Add("Button", "x234 y225 w100 h30 +Disabled", ConfirmBtnText)
+    BtnCancel := ChoiceGui.Add("Button", "x352 y232 w84 h30", "取消")
+    BtnConfirm := ChoiceGui.Add("Button", "x240 y232 w100 h30 +Disabled", ConfirmBtnText)
 
     LV.OnEvent("ItemSelect", OnLVItemSelect)
     BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
@@ -3310,9 +3310,9 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
 
     ChoiceGui := Gui("+Owner" . MainGui.Hwnd, "选择游戏目录")
     ChoiceGui.SetFont(, "Microsoft YaHei UI")
-    ChoiceGui.Add("Text", "x20 y15 w410 h25", "选择 AION2 " . g_CurrentServer["name"] . "安装目录：")
+    ChoiceGui.Add("Text", "x15 y15 w410 h25", "选择 AION2 " . g_CurrentServer["name"] . "安装目录：")
 
-    LV := ChoiceGui.Add("ListView", "x20 y45 w410 h140 -Multi", [
+    LV := ChoiceGui.Add("ListView", "x15 y45 w420 h172 -Multi", [
         "名称",
         "安装目录",
         "查找方式"
@@ -3337,8 +3337,8 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
     LV.ModifyCol(2, "AutoHdr")
     LV.ModifyCol(3, "AutoHdr")
 
-    BtnCancel := ChoiceGui.Add("Button", "x346 y225 w84 h30", "取消")
-    BtnConfirm := ChoiceGui.Add("Button", "x234 y225 w100 h30 +Disabled", "确认")
+    BtnCancel := ChoiceGui.Add("Button", "x352 y232 w84 h30", "取消")
+    BtnConfirm := ChoiceGui.Add("Button", "x240 y232 w100 h30 +Disabled", "确认")
 
     LV.OnEvent("ItemSelect", OnLVItemSelect)
     BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
