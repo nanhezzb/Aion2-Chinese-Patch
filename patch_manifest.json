@@ -44,11 +44,11 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_kLX8_L10NString.dat",
-                            "remote_filename": "patches/bg_kLX8_L10NString.dat",
+                            "filename": "bg_uHyd_L10NString.dat",
+                            "remote_filename": "bg_uHyd_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "d966ebb0b38f91b6d8fae59e1fe833c6",
-                            "file_size": 3707700
+                            "file_md5": "ea553020fdd5dc244db037ec9aa5a502",
+                            "file_size": 3708996
                         },
                         {
                             "type": "add",
