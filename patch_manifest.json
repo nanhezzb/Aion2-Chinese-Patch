@@ -45,7 +45,7 @@
                         {
                             "type": "add",
                             "filename": "bg_uHyd_L10NString.dat",
-                            "remote_filename": "bg_uHyd_L10NString.dat",
+                            "remote_filename": "patches/bg_uHyd_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
                             "file_md5": "ea553020fdd5dc244db037ec9aa5a502",
                             "file_size": 3708996
