@@ -4,6 +4,7 @@
         "download_timeout_seconds": 30,
         "proxy_mirrors": [
             "https://gh-proxy.com",
+            "https://ghfast.top",
             "https://gh.ddlc.top",
             "https://ghproxy.net",
             "https://github.dpik.top"
