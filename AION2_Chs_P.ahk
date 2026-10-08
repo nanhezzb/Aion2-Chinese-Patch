@@ -1781,8 +1781,8 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
         SaveAllConfig()
 
         SetStatusBarText()
-        SuccMsg := IsUpdate ? "汉化补丁已更新至最新版本。`r`n`r`n更新完成。" : "汉化补丁文件已成功释放至游戏目录。`r`n`r`n汉化完成。"
-
+        TempText := ServerId == 102 ? " ** 繁体中文 ** 。" : " ** English ** 。"
+        SuccMsg := IsUpdate ? "汉化补丁已更新至最新版本。`r`n`r`n更新完成" . "，游戏内语言选择 " . TempText : "汉化补丁文件已成功释放至游戏目录。`r`n`r`n汉化完成" . "，游戏内语言选择 " . TempText
         ShowMessageDialog(SuccMsg)
     } catch Error as Err {
         SetStatusBarText()
@@ -3043,9 +3043,13 @@ HashStringMd5(Text) {
         return "d41d8cd98f00b204e9800998ecf8427e"
 
     try {
-        ReqSize := StrPut(Text, "UTF-8")
-        Buf := Buffer(ReqSize)
-        StrPut(Text, Buf, "UTF-8")
+
+        StrLenBytes := StrPut(Text, "UTF-8") - 1
+        if (StrLenBytes <= 0)
+            return "d41d8cd98f00b204e9800998ecf8427e"
+
+        Buf := Buffer(StrLenBytes)
+        StrPut(Text, Buf, StrLenBytes, "UTF-8")
 
         hProv := 0
         if !DllCall("Advapi32\CryptAcquireContextW", "Ptr*", &hProv, "Ptr", 0, "Ptr", 0, "UInt", 1, "UInt", 0xF0000000)
@@ -3057,7 +3061,7 @@ HashStringMd5(Text) {
             return ""
         }
 
-        DllCall("Advapi32\CryptHashData", "Ptr", hHash, "Ptr", ReqSize - 1, "UInt", 0)
+        DllCall("Advapi32\CryptHashData", "Ptr", hHash, "Ptr", Buf, "UInt", StrLenBytes, "UInt", 0)
 
         HashLen := 16
         HashBuf := Buffer(HashLen)
@@ -3284,8 +3288,7 @@ ShowBulletinDialog(ContentText, BulletinVersion, OnCloseCallback := "") {
 }
 
 ShowConfirmDialog(Text, Callback := "") {
-    global g_DialogCallbacks, MainGui
-
+    global g_DialogCallbacks, g_IsPatching, MainGui
     MsgId := 1003
     ConfirmGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     ConfirmGui.SetFont(, "Microsoft YaHei UI")
@@ -3296,6 +3299,8 @@ ShowConfirmDialog(Text, Callback := "") {
     BtnConfirm := ConfirmGui.Add("Button", "x240 y107 w100 h30 Default", "确认")
 
     CloseDialog(UserChoice) {
+        if (!UserChoice)
+            g_IsPatching := false
         MainGui.Opt("-Disabled")
         try WinActivate("ahk_id " MainGui.Hwnd)
         ConfirmGui.Destroy()
@@ -3582,11 +3587,13 @@ LV_SetItemLParam(lv, row, param) {
     static LVM_SETITEMW := 0x104C
     static LVIF_PARAM := 0x0004
 
-    lvitem := Buffer(A_PtrSize == 8 ? 48 : 36, 0)
+    is64 := (A_PtrSize == 8)
+    bufSize := is64 ? 56 : 40
+    offset_lparam := is64 ? 40 : 28
+
+    lvitem := Buffer(bufSize, 0)
     NumPut("UInt", LVIF_PARAM, lvitem, 0)
     NumPut("Int", row - 1, lvitem, 4)
-
-    offset_lparam := A_PtrSize == 8 ? 40 : 32
     NumPut("Ptr", Integer(param), lvitem, offset_lparam)
 
     return SendMessage(LVM_SETITEMW, 0, lvitem.Ptr, lv)
@@ -3596,13 +3603,15 @@ LV_GetItemLParam(lv, row) {
     static LVM_GETITEMW := 0x104B
     static LVIF_PARAM := 0x0004
 
-    lvitem := Buffer(A_PtrSize == 8 ? 48 : 36, 0)
+    is64 := (A_PtrSize == 8)
+    bufSize := is64 ? 56 : 40
+    offset_lparam := is64 ? 40 : 28
+
+    lvitem := Buffer(bufSize, 0)
     NumPut("UInt", LVIF_PARAM, lvitem, 0)
     NumPut("Int", row - 1, lvitem, 4)
 
     SendMessage(LVM_GETITEMW, 0, lvitem.Ptr, lv)
-
-    offset_lparam := A_PtrSize == 8 ? 40 : 32
     return NumGet(lvitem, offset_lparam, "Ptr")
 }
 
