@@ -171,7 +171,7 @@ global TabCtrl := MainGui.Add("Tab3", "x-1 y10 w574 h480", [
 TabCtrl.UseTab(1)
 
 global PicSync := MainGui.Add("Picture", "x520 y45 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\sync.png"))
-AddToolTip(PicSync, "同步服务器数据。")
+AddToolTip(PicSync, "刷新以同步服务器数据。")
 g_CursorHwndMap[PicSync.Hwnd] := true
 
 MainGui.Add("GroupBox", "x15 y70 w540 h65", " 选择服务器 * ")
@@ -285,9 +285,8 @@ QQGroupCard := CreateCardControl(MainGui, {
 })
 
 global Picdiag := MainGui.Add("Picture", "x515 y425 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\diag.png"))
-AddToolTip(Picdiag, "点击快速生成诊断报告，查找游戏汉化失败原因。")
+AddToolTip(Picdiag, "点击快速生成诊断报告，排查游戏汉化失败原因。")
 g_CursorHwndMap[Picdiag.Hwnd] := true
-
 
 TabCtrl.UseTab(0)
 
@@ -299,7 +298,7 @@ global MainStatusBar := MainGui.Add("StatusBar", "")
 
 TabCtrl.OnEvent("Change", (*) => RefreshUi())
 PicSync.OnEvent("Click", (*) => InitializeApp())
-MainGui.OnEvent("Close", (*) => OnMainGuiClose)
+MainGui.OnEvent("Close", (*) => OnMainGuiClose())
 ComboServerList.OnEvent("Change", (*) => SelectServer())
 BtnScan.OnEvent("Click", (*) => OnScanButtonClick())
 BtnBrowse.OnEvent("Click", (*) => BrowseFolder())
@@ -2109,10 +2108,10 @@ OnBtnRefreshStatusClick(*) {
 }
 
 OnDiagButtonClick(*) {
-    global g_InstallPath, g_CurrentServer, g_IsPatching, g_IsSyncing
+    global g_CurrentServer, g_InstallPath, g_IsPatching, g_IsRefreshing, g_IsSyncing, g_ProjectName
     static LastClickTime := 0
 
-    if (g_IsSyncing || g_IsPatching)
+    if (g_IsSyncing || g_IsPatching || g_IsRefreshing)
         return
 
     if (A_TickCount - LastClickTime < 2000)
@@ -2123,6 +2122,9 @@ OnDiagButtonClick(*) {
         return
     }
 
+    LastClickTime := A_TickCount
+    SetStatusBarText("正在生成诊断报告…")
+
     DiagReportList := GetPatchDiagnosticData()
 
     if (DiagReportList.Length == 0) {
@@ -2130,27 +2132,63 @@ OnDiagButtonClick(*) {
         return
     }
 
-    ServerName := g_CurrentServer.Has("name") ? g_CurrentServer["name"] : "未知服务器"
-    TextReport := Format("==== AION2 一键汉化工具诊断报告 ====`r`n")
+    ServerName := (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has("name")) ? g_CurrentServer["name"] : "未知服务器"
+
+    PatchFiles := []
+    BackupFiles := []
+
+    for Item in DiagReportList {
+        if (SafeGet(Item, "category", "") == "BackupDir") {
+            BackupFiles.Push(Item)
+        } else {
+            PatchFiles.Push(Item)
+        }
+    }
+
+    TextReport := Format("==== {} 诊断报告 ====`r`n", g_ProjectName)
         . Format("当前服务器: {}`r`n", ServerName)
         . Format("游戏安装目录: {}`r`n", g_InstallPath)
-        . Format("检测文件项数: {} 项`r`n", DiagReportList.Length)
-        . "--------------------------------------------------`r`n`r`n"
+        . Format("检测文件总数: {} 项 (安装目录: {} 项, 备份目录: {} 项)`r`n", DiagReportList.Length, PatchFiles.Length, BackupFiles.Length)
+        . "==================================================`r`n`r`n"
 
-    LastClickTime := A_TickCount
+    TextReport .= "一、 游戏安装目录信息`r`n"
+    TextReport .= "--------------------------------------------------`r`n"
+    if (PatchFiles.Length > 0) {
+        for Index, Item in PatchFiles {
+            TextReport .= Format("[{}] 相对路径: {}`r`n", Index, Item["relative_path"])
+                . Format("    绝对路径: {}`r`n", Item["full_path"])
 
-    for Index, Item in DiagReportList {
-        TextReport .= Format("[{}] 相对路径: {}`r`n", Index, Item["relative_path"])
-            . Format("    绝对路径: {}`r`n", Item["full_path"])
-
-        if (Item["file_exists"]) {
-            TextReport .= Format("    文件状态: 存在 | 大小: {} ({} 字节)`r`n", Item["file_size_formatted"], Item["file_size"])
-                . Format("    实际 MD5: {}`r`n", Item["file_md5"])
-        } else {
-            TextReport .= "    文件状态: 不存在`r`n"
+            if (Item["file_exists"]) {
+                TextReport .= Format("    文件状态: 存在 | 大小: {} ({} 字节)`r`n", Item["file_size_formatted"], Item["file_size"])
+                    . Format("    实际 MD5: {}`r`n", Item["file_md5"])
+            } else {
+                TextReport .= "    文件状态: 不存在`r`n"
+            }
+            TextReport .= "--------------------------------------------------`r`n"
         }
+    } else {
+        TextReport .= "未检测到补丁文件。`r`n--------------------------------------------------`r`n"
+    }
 
-        TextReport .= "--------------------------------------------------`r`n"
+    TextReport .= "`r`n"
+
+    TextReport .= "二、 本地备份目录信息`r`n"
+    TextReport .= "--------------------------------------------------`r`n"
+    if (BackupFiles.Length > 0) {
+        for Index, Item in BackupFiles {
+            TextReport .= Format("[{}] 相对路径: {}`r`n", Index, Item["relative_path"])
+                . Format("    绝对路径: {}`r`n", Item["full_path"])
+
+            if (Item["file_exists"]) {
+                TextReport .= Format("    文件状态: 存在 | 大小: {} ({} 字节)`r`n", Item["file_size_formatted"], Item["file_size"])
+                    . Format("    实际 MD5: {}`r`n", Item["file_md5"])
+            } else {
+                TextReport .= "    文件状态: 不存在`r`n"
+            }
+            TextReport .= "--------------------------------------------------`r`n"
+        }
+    } else {
+        TextReport .= "未检测到备份文件。`r`n--------------------------------------------------`r`n"
     }
 
     A_Clipboard := TextReport
@@ -3823,7 +3861,7 @@ GetResourceHBitmap(ResName) {
 }
 
 GetPatchDiagnosticData() {
-    global g_CurrentServer, g_InstallPath
+    global g_CurrentServer, g_InstallPath, g_ProjectName
 
     if (Type(g_CurrentServer) != "Map" || !g_CurrentServer.Has("patch_branches") || g_CurrentServer["patch_branches"].Length == 0) {
         SetStatusBarText("未找到有效的补丁数据。")
@@ -3854,6 +3892,7 @@ GetPatchDiagnosticData() {
             ProcessedPaths[PathKey] := true
 
             FileInfo := Map(
+                "category", "InstallDir",
                 "branch_index", BranchIndex,
                 "action_index", ActionIndex,
                 "relative_path", RelPath,
@@ -3870,6 +3909,39 @@ GetPatchDiagnosticData() {
                 FileInfo["file_size_formatted"] := FormatFileSize(FileInfo["file_size"])
                 FileInfo["file_md5"] := HashFileMd5(TargetPath)
             }
+
+            DiagReportList.Push(FileInfo)
+        }
+    }
+
+    BackupBaseDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup")
+    ExcludeBackupTextFile := StrLower(PathUtil.Normalize(BackupBaseDir . "\" . g_ProjectName . " 备份文件夹.txt"))
+
+    if DirExist(BackupBaseDir) {
+        BackupBaseDirLen := StrLen(BackupBaseDir)
+        loop files, BackupBaseDir . "\*.*", "R" {
+            NormalizedLoopPath := PathUtil.Normalize(A_LoopFileFullPath)
+
+            if (StrLower(NormalizedLoopPath) == ExcludeBackupTextFile)
+                continue
+
+            RelPath := SubStr(NormalizedLoopPath, BackupBaseDirLen + 2)
+            PathKey := StrLower(NormalizedLoopPath)
+
+            if ProcessedPaths.Has(PathKey)
+                continue
+
+            ProcessedPaths[PathKey] := true
+
+            FileInfo := Map(
+                "category", "BackupDir",
+                "relative_path", "rawBackup\" . RelPath,
+                "full_path", NormalizedLoopPath,
+                "file_exists", true,
+                "file_size", A_LoopFileSize,
+                "file_size_formatted", FormatFileSize(A_LoopFileSize),
+                "file_md5", HashFileMd5(NormalizedLoopPath)
+            )
 
             DiagReportList.Push(FileInfo)
         }
