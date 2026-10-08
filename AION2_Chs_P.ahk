@@ -8,7 +8,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 2.0.5.0
+;@Ahk2Exe-SetVersion 2.0.7.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 
 ;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
@@ -23,8 +23,10 @@
 ;@Ahk2Exe-AddResource .\AutoHotkey\GitHub.png, GitHub_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\WPS.png, WPS_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\QQGroup.png, QQGROUP_PNG
-;@Ahk2Exe-AddResource .\AutoHotkey\Sync.png, SYNC_PNG
-;@Ahk2Exe-AddResource .\AutoHotkey\Syncdis.png, SYNC_DIS_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\sync.png, SYNC_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\syncdis.png, SYNC_DIS_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\diag.png, DIAG_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\diagdis.png, DIAGDIS_PNG
 
 ;@format array_style: expand, object_style: expand
 
@@ -63,8 +65,8 @@ UniqueInstance.Ensure(Map(
 
 global g_ProjectName := "AION2 Chs Patch"
 global g_ProjectNameSC := "AION2 一键汉化工具"
-global g_CurrentAppVersion := "2.0.5.0"
-global g_CurrentAppVersionShort := "2.0.5"
+global g_CurrentAppVersion := "2.0.7.0"
+global g_CurrentAppVersionShort := "2.0.7"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -75,6 +77,7 @@ global g_PatchesCacheDir := "patches"
 global g_DefaultPreUrl := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/main"
 global g_DefaultProxyMirrors := [
     "https://gh-proxy.com",
+    "https://ghfast.top",
     "https://gh.ddlc.top",
     "https://ghproxy.net",
     "https://github.dpik.top"
@@ -97,7 +100,7 @@ global g_BestLatency := 99999
 global g_CurrentServer := Map()
 global g_ConfigCache := {
     Settings: {
-        LastServerID: 102,
+        LastServerID: 101,
         MinimizeToTray: -1
     }
 }
@@ -167,8 +170,9 @@ global TabCtrl := MainGui.Add("Tab3", "x-1 y10 w574 h480", [
 
 TabCtrl.UseTab(1)
 
-global PicSync := MainGui.Add("Picture", "x520 y45 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\Sync.png"))
-AddToolTip(PicSync, "重新拉取数据并刷新界面。")
+global PicSync := MainGui.Add("Picture", "x520 y45 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\sync.png"))
+AddToolTip(PicSync, "同步服务器数据。")
+g_CursorHwndMap[PicSync.Hwnd] := true
 
 MainGui.Add("GroupBox", "x15 y70 w540 h65", " 选择服务器 * ")
 global ComboServerList := MainGui.Add("DropDownList", "x30 y94 w510 Choose1", [])
@@ -181,17 +185,28 @@ global BtnReset := MainGui.Add("Button", "x481 y209 w60 h26 +Disabled", "重置"
 
 MainGui.Add("GroupBox", "x15 y261 w540 h145", "使用须知 * ")
 global TextExplain := MainGui.AddText("x30 y283 w510 h105", "")
+RuleText := "1. 选择 AION2 的安装目录，例如 D:\Games\AION2。"
+TextExplain.Value := RuleText .
+    "`r`n2. 汉化后游戏内切换一下语言使汉化文件生效。" .
+    "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE · Steam 修复文件。" .
+    "`r`n   PURPLE : AION2 - 游戏设置 - 检查文件。" .
+    "`r`n   Steam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性。" .
+    "`r`n4. 本工具为第三方扩展，使用即代表您自愿承担所有风险。"
 
-global TextTipInfo := MainGui.Add("Text", "x16 y421 w575 +Hidden cRed", "建议退出游戏再进行汉化。")
-global BtnUpdate := MainGui.Add("Button", "x14 y408 w100 h30 +Hidden", "更新补丁")
-global BtnChinese := MainGui.Add("Button", "x14 y408 w100 h30", "一键汉化")
-global BtnRestore := MainGui.Add("Button", "x126 y408 w100 h30", "撤销汉化")
-global BtnRefreshStatus := MainGui.Add("Button", "x239 y408 w60 h30", "刷新")
+global TextTipInfo := MainGui.Add("Text", "x16 y421 w575 +Hidden cRed", "建议退出游戏再进行汉化或撤销操作。")
+global BtnUpdate := MainGui.Add("Button", "x14 y423 w100 h30 +Hidden", "更新补丁")
+global BtnChinese := MainGui.Add("Button", "x14 y423 w100 h30", "一键汉化")
+global BtnRestore := MainGui.Add("Button", "x126 y423 w100 h30", "撤销汉化")
+global BtnRefreshStatus := MainGui.Add("Button", "x239 y423 w60 h30", "刷新")
 AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
 
-global PicSteam := MainGui.Add("Picture", "x470 y441 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
-global TextSplit := MainGui.AddText("x502 y455 ccfcfcf", "l")
-global PicPurple := MainGui.Add("Picture", "x515 y440 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\purpledis.png"))
+global PicSteam := MainGui.Add("Picture", "x470 y426 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
+global TextSplit := MainGui.AddText("x502 y430 ccfcfcf", "l")
+global PicPurple := MainGui.Add("Picture", "x515 y425 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\purpledis.png"))
+AddToolTip(PicSteam, "点击启动 Steam 永恒之塔2。")
+AddToolTip(PicPurple, "点击启动 PURPLE 永恒之塔2。")
+g_CursorHwndMap[PicSteam.Hwnd] := true
+g_CursorHwndMap[PicPurple.Hwnd] := true
 
 TabCtrl.UseTab(2)
 
@@ -233,13 +248,10 @@ CreateCardControl(MainGui, {
 
 TabCtrl.UseTab(3)
 
-WPSIconPath := GetImageResourceHandle(".\AutoHotkey\WPS.png")
-GitHubIconPath := GetImageResourceHandle(".\AutoHotkey\GitHub.png")
-QQGroupIconPath := GetImageResourceHandle(".\AutoHotkey\QQGroup.png")
-CreateCardControl(MainGui, {
+WpsCard := CreateCardControl(MainGui, {
     x: 15,
     y: 45,
-    icon: WPSIconPath,
+    icon: GetImageResourceHandle(".\AutoHotkey\WPS.png"),
     title: "工具更新发布页面",
     desc: "获取最新版本汉化工具及版本更新公告页面。",
     url: "https://www.kdocs.cn/l/cf9KkRNTpqhb",
@@ -248,10 +260,10 @@ CreateCardControl(MainGui, {
     border: true
 })
 
-CreateCardControl(MainGui, {
+GithubCard := CreateCardControl(MainGui, {
     x: 15,
     y: 129,
-    icon: GitHubIconPath,
+    icon: GetImageResourceHandle(".\AutoHotkey\GitHub.png"),
     title: "GitHub 项目页面",
     desc: "访问项目开源仓库，查看源代码、提交 Issue 或参与项目贡献。",
     url: "https://github.com/nanhezzb/Aion2-Chinese-Patch",
@@ -260,10 +272,10 @@ CreateCardControl(MainGui, {
     border: true
 })
 
-CreateCardControl(MainGui, {
+QQGroupCard := CreateCardControl(MainGui, {
     x: 15,
     y: 213,
-    icon: QQGroupIconPath,
+    icon: GetImageResourceHandle(".\AutoHotkey\QQGroup.png"),
     title: "塔2 QQ 交流群",
     desc: "1124021357 与其他玩家交流心得、反馈问题与建议。",
     url: "https://qm.qq.com/q/M8hfwL2uc0",
@@ -271,6 +283,11 @@ CreateCardControl(MainGui, {
     height: 77,
     border: true
 })
+
+global Picdiag := MainGui.Add("Picture", "x515 y425 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\diag.png"))
+AddToolTip(Picdiag, "点击快速生成诊断报告，查找游戏汉化失败原因。")
+g_CursorHwndMap[Picdiag.Hwnd] := true
+
 
 TabCtrl.UseTab(0)
 
@@ -282,17 +299,18 @@ global MainStatusBar := MainGui.Add("StatusBar", "")
 
 TabCtrl.OnEvent("Change", (*) => RefreshUi())
 PicSync.OnEvent("Click", (*) => InitializeApp())
-MainGui.OnEvent("Close", OnMainGuiClose)
+MainGui.OnEvent("Close", (*) => OnMainGuiClose)
 ComboServerList.OnEvent("Change", (*) => SelectServer())
 BtnScan.OnEvent("Click", (*) => OnScanButtonClick())
-BtnBrowse.OnEvent("Click", BrowseFolder)
-BtnReset.OnEvent("Click", DoResetConfig)
-BtnUpdate.OnEvent("Click", DoUpdatePatch)
-BtnChinese.OnEvent("Click", DoChinesePatch)
-BtnRestore.OnEvent("Click", DoRestorePatch)
-BtnRefreshStatus.OnEvent("Click", OnBtnRefreshStatusClick)
+BtnBrowse.OnEvent("Click", (*) => BrowseFolder())
+BtnReset.OnEvent("Click", (*) => DoResetConfig())
+BtnUpdate.OnEvent("Click", (*) => DoUpdatePatch())
+BtnChinese.OnEvent("Click", (*) => DoChinesePatch())
+BtnRestore.OnEvent("Click", (*) => DoRestorePatch())
+BtnRefreshStatus.OnEvent("Click", (*) => OnBtnRefreshStatusClick())
 PicSteam.OnEvent("Click", (*) => LaunchPlatformUrl("steam_url", "Steam"))
 PicPurple.OnEvent("Click", (*) => LaunchPlatformUrl("purple_url", "PURPLE"))
+Picdiag.OnEvent("Click", (*) => OnDiagButtonClick())
 
 ; ==============================================================================
 ; 主窗口关闭事件逻辑处理
@@ -322,14 +340,16 @@ ShowCloseConfirmDialog() {
     CloseGui.SetFont(, "Microsoft YaHei UI")
 
     CloseGui.Add("Text", "x15 y20 w310 h50", "选择关闭主窗口时的默认操作。")
-
+    ChkRemember := CloseGui.Add("Checkbox", "x15 y111 w120 h22", "记住当前的选择。")
     BtnMinimize := CloseGui.Add("Button", "x220 y107 w120 h30 Default", "隐藏到通知区域")
     BtnExit := CloseGui.Add("Button", "x352 y107 w84 h30", "直接退出")
 
     BtnMinimize.OnEvent("Click", MinimizeClick)
 
     MinimizeClick(*) {
-        SaveCloseChoice(1)
+        if (ChkRemember.Value) {
+            SaveCloseChoice(1)
+        }
         MainGui.Opt("-Disabled")
         CloseGui.Destroy()
         try WinActivate("ahk_id " MainGui.Hwnd)
@@ -337,7 +357,7 @@ ShowCloseConfirmDialog() {
     }
 
     BtnExit.OnEvent("Click", (*) => (
-        SaveCloseChoice(0),
+        ChkRemember.Value ? SaveCloseChoice(0) : 0,
         ExitApp()
     ))
 
@@ -370,28 +390,86 @@ SaveCloseChoice(Value) {
 
 g_DefaultServers := NormalizeServerConfig([
     Map(
-        "id", 102,
-        "name", "台服",
-        "display", "台服 - PURPLE",
-        "steam_url", "steam://rungameid/3393110",
-        "purple_url", "--game-id A2_TW_L_GA_PURPLE",
+        "id", 101,
+        "name", "国际服",
+        "display", "国际服 - Steam · PURPLE",
         "keywords", [
             "AION"
         ],
+        "steam_url", "steam://rungameid/3393110",
+        "purple_url", "--game-id A2_WW_L_GA_PURPLE",
         "patch_branches", [
-            Map("id", 3,
-                "source", "BiuBiu",
-                "latest_patch_version", "1.0.0.0",
+            Map(
+                "id", 0,
+                "source", "自制 - 已支持10月7日版本",
+                "latest_patch_version", "1.0.0.4",
+                "changelog", "",
+                "release_timestamp", 1791364267,
                 "actions", [
                     Map(
+                        "type", "delete",
+                        "target_relative_path", "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig"
+                    ),
+                    Map(
+                        "type", "delete",
+                        "target_relative_path", "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas"
+                    ),
+                    Map(
+                        "type", "delete",
+                        "target_relative_path", "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc"
+                    ),
+                    Map(
+                        "type", "replace",
+                        "filename", "bg_pakchunk502000-Windows_0_P.pak",
+                        "remote_filename", "patches/bg_pakchunk502000-Windows_0_P.pak",
+                        "target_relative_path", "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                        "file_md5", "d41d8cd98f00b204e9800998ecf8427e",
+                        "file_size", 0
+                    ),
+                    Map(
                         "type", "add",
-                        "filename", "bb_pakchunk999999-Windows_0_P.Pak",
-                        "remote_filename", "patchs/bb_pakchunk999999-Windows_0_P.Pak",
-                        "target_relative_path", "Aion2\\Content\\Paks\\bb_pakchunk999999-Windows_0_P.Pak",
-                        "file_md5", "12a93a1ecba45ad9803ae2c20495781d",
-                        "file_size", 3721650
+                        "filename", "bg_uHyd_L10NString.dat",
+                        "remote_filename", "patches/bg_uHyd_L10NString.dat",
+                        "target_relative_path", "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
+                        "file_md5", "ea553020fdd5dc244db037ec9aa5a502",
+                        "file_size", 3708996
+                    ),
+                    Map(
+                        "type", "add",
+                        "filename", "NotoSans-Bold.ufont",
+                        "remote_filename", "patches/NotoSans-Bold.ufont",
+                        "target_relative_path", "Aion2\\Content\\UI\\Font\\NotoSans-Bold.ufont",
+                        "file_md5", "3dd7f29fd6f36d1fe71a2daf4a03a59c",
+                        "file_size", 20050760
                     )
                 ]
+            )
+        ]
+    ),
+    Map(
+        "id", 102,
+        "name", "台服",
+        "display", "台服 - PURPLE",
+        "keywords", [
+            "AION"
+        ],
+        "purple_url", "--game-id A2_TW_L_GA_PURPLE",
+        "patch_branches", [
+            Map(
+                "id", 0,
+                "source", "自制 - 同步10月5日版本",
+                "latest_patch_version", "1.0.0.0",
+                "changelog", "",
+                "release_timestamp", 1791216231,
+                "actions",
+                Map(
+                    "type", "add",
+                    "filename", "bg_pakchunk999999-Windows_0_P.pak",
+                    "remote_filename", "patches/bg_pakchunk999999-Windows_0_P.pak",
+                    "target_relative_path", "Aion2\\Content\\Paks\\pakchunk999999-Windows_0_P.pak",
+                    "file_md5", "c13da4af416c1ff7e29b4177dde437e8",
+                    "file_size", 3762189
+                )
             )
         ]
     )
@@ -479,7 +557,7 @@ LoadLocalManifests() {
 }
 
 StartCloudSync() {
-    global g_AppManifestFilename, g_CleanPreUrl, g_ConfigFile, g_IsLocalInitComplete, g_IsSyncing, g_PatchManifestFilename, g_RequestTimeoutSeconds, MainStatusBar
+    global g_AppManifestFilename, g_ClientUpdateData, g_CleanPreUrl, g_ConfigFile, g_IsLocalInitComplete, g_IsSyncing, g_PatchManifestFilename, g_RequestTimeoutSeconds, MainStatusBar
 
     if (!g_IsLocalInitComplete)
         return
@@ -518,17 +596,17 @@ StartCloudSync() {
         }
 
         if (IsAppSuccess && IsPatchSuccess) {
+            if (Type(g_ClientUpdateData) == "Map" && g_ClientUpdateData.Has("client_download_url_main") && g_ClientUpdateData["client_download_url_main"]) {
+                WpsCard.SetUrl(g_ClientUpdateData["client_download_url_main"])
+            }
             SafeIniWrite(DateDiff(A_NowUTC, "19700101000000", "Seconds"), g_ConfigFile, "Settings", "LastCheckTime")
             SafeIniWrite(g_RequestTimeoutSeconds, g_ConfigFile, "Settings", "RequestTimeoutSeconds")
-
             RefreshServerComboBox()
             SetStatusBarText("服务器配置同步成功，已更新至最新数据。")
         } else {
             SetStatusBarText("连接超时或离线，已加载本地配置文件。")
         }
-
         ExecuteCheckChain()
-
     }
 }
 
@@ -585,7 +663,7 @@ ReadConfig() {
 
     g_ConfigCache := {
         Settings: {
-            LastServerID: SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "LastServerID", 102), 102),
+            LastServerID: SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "LastServerID", 101), 101),
             MinimizeToTray: SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "MinimizeToTray", -1), -1)
         }
     }
@@ -754,7 +832,7 @@ RefreshServerComboBox() {
     global ComboServerList, g_ConfigCache, g_ConfigFile, g_CurrentServer, g_ServersConfigData
 
     DropDownOptions := []
-    SavedLastId := SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "LastServerID", 102), 102)
+    SavedLastId := SafeNumber(SafeIniRead(g_ConfigFile, "Settings", "LastServerID", 101), 101)
     TargetIndex := 1
 
     if (g_ServersConfigData.Length == 0) {
@@ -925,10 +1003,10 @@ UpdateServerNoticeText() {
     ServerName := g_CurrentServer["name"]
     RuleText := "1. 选择 AION2 " . ServerName . "的安装目录，" . ((g_CurrentServer["id"] == 102) ? "例如 D:\Games\AION2_TW。" : "例如 D:\Games\AION2。")
     TextExplain.Value := RuleText .
-        "`r`n2. 汉化完成后启动或重启 AION2，使汉化文件生效。" .
-        "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE · Steam 修复文件；" .
-        "`r`n   PURPLE : AION2 - 游戏设置 - 检查文件；" .
-        "`r`n   Steam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性；" .
+        "`r`n2. 汉化后游戏内切换一下语言，选择" . ((g_CurrentServer["id"] == 102) ? "“繁体中文”" : "“English”") . "使汉化文件生效。" .
+        "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE · Steam 修复文件。" .
+        "`r`n   PURPLE : AION2 - 游戏设置 - 检查文件。" .
+        "`r`n   Steam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性。" .
         "`r`n4. 本工具为第三方扩展，使用即代表您自愿承担所有风险。"
 }
 
@@ -1336,14 +1414,12 @@ GetLocalPatchInfo() {
                         IsInvalidated := true
                         break
                     }
-                }
-                else if (ActType == "add") {
+                } else if (ActType == "add") {
                     if (!FileExist(TargetPath)) {
                         IsInvalidated := true
                         break
                     }
-                }
-                else if (ActType == "replace") {
+                } else if (ActType == "replace") {
                     if (!FileExist(TargetPath)) {
                         IsInvalidated := true
                         break
@@ -1354,8 +1430,7 @@ GetLocalPatchInfo() {
                             break
                         }
                     }
-                }
-                else if (ActType == "delete") {
+                } else if (ActType == "delete") {
                     if (FileExist(TargetPath)) {
                         IsInvalidated := true
                         break
@@ -1621,8 +1696,11 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
         if !DirExist(BackupRootDir)
             DirCreate(BackupRootDir)
 
+        TipText := "AION2 Chs Patch 备份文件夹，删除之前先撤销汉化。`r`n`r`n如果语言文件丢失导致错乱，在 PURPLE · Steam 修复文件。" .
+            "`r`nPURPLE : AION2 - 游戏设置 - 检查文件；" .
+            "`r`nSteam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性；"
         if !FileExist(BackupTextFile)
-            FileAppend("", BackupTextFile, "UTF-8-RAW")
+            FileAppend(TipText, BackupTextFile, "UTF-8-RAW")
 
         ManifestMap := Map(
             "server_id", ServerId,
@@ -1933,8 +2011,7 @@ DoRestorePatchInternal(IsSilent := false) {
                     FailedFiles.Push(RelPath)
                 }
             }
-        }
-        else if (ActType == "replace" || ActType == "delete") {
+        } else if (ActType == "replace" || ActType == "delete") {
             if (!FileExist(BackupPath)) {
                 continue
             }
@@ -1950,7 +2027,7 @@ DoRestorePatchInternal(IsSilent := false) {
 
             try {
                 FileCopy(BackupPath, FinalPath, 1)
-                try FileDelete(BackupPath)
+                FileDelete(BackupPath)
             } catch {
                 FailedFiles.Push(RelPath)
             }
@@ -2031,6 +2108,55 @@ OnBtnRefreshStatusClick(*) {
     }
 }
 
+OnDiagButtonClick(*) {
+    global g_InstallPath, g_CurrentServer, g_IsPatching, g_IsSyncing
+    static LastClickTime := 0
+
+    if (g_IsSyncing || g_IsPatching)
+        return
+
+    if (A_TickCount - LastClickTime < 2000)
+        return
+
+    if (!g_InstallPath || !DirExist(g_InstallPath)) {
+        SetStatusBarText("确认 AION2 游戏安装目录。")
+        return
+    }
+
+    DiagReportList := GetPatchDiagnosticData()
+
+    if (DiagReportList.Length == 0) {
+        SetStatusBarText("未找到有效的诊断数据。")
+        return
+    }
+
+    ServerName := g_CurrentServer.Has("name") ? g_CurrentServer["name"] : "未知服务器"
+    TextReport := Format("==== AION2 一键汉化工具诊断报告 ====`r`n")
+        . Format("当前服务器: {}`r`n", ServerName)
+        . Format("游戏安装目录: {}`r`n", g_InstallPath)
+        . Format("检测文件项数: {} 项`r`n", DiagReportList.Length)
+        . "--------------------------------------------------`r`n`r`n"
+
+    LastClickTime := A_TickCount
+
+    for Index, Item in DiagReportList {
+        TextReport .= Format("[{}] 相对路径: {}`r`n", Index, Item["relative_path"])
+            . Format("    绝对路径: {}`r`n", Item["full_path"])
+
+        if (Item["file_exists"]) {
+            TextReport .= Format("    文件状态: 存在 | 大小: {} ({} 字节)`r`n", Item["file_size_formatted"], Item["file_size"])
+                . Format("    实际 MD5: {}`r`n", Item["file_md5"])
+        } else {
+            TextReport .= "    文件状态: 不存在`r`n"
+        }
+
+        TextReport .= "--------------------------------------------------`r`n"
+    }
+
+    A_Clipboard := TextReport
+    SetStatusBarText("诊断报告已成功复制到剪贴板。")
+}
+
 ; ==============================================================================
 ; 5. 进程控制与程序运行模块
 ; ==============================================================================
@@ -2073,7 +2199,7 @@ LaunchPlatformUrl(UrlKey, PlatformName) {
             ShowMessageDialog("启动 " . PlatformName . " 失败：`r`n" . Err.Message)
         }
     } else {
-        SetStatusBarText("当前选择的服务器不在 " . PlatformName . " 运营。")
+        SetStatusBarText("当前服务器不在 " . PlatformName . " 运营。")
     }
 }
 
@@ -2449,7 +2575,7 @@ DownloadPatchFileAsync(RemoteFileUrl, DestPath, FileAction) {
 
     SplitPath(DestPath, , &ParentDir)
     if (ParentDir != "" && !DirExist(ParentDir))
-        DirCreate(ParentDir)
+        try DirCreate(ParentDir)
     if FileExist(DestPath) {
         try FileDelete(DestPath)
         catch {
@@ -2568,12 +2694,7 @@ CheckBulletin(BulletinMap, OnComplete := "") {
 ; ==============================================================================
 
 RefreshUi() {
-    global BtnBrowse, BtnChinese, BtnRefreshStatus, BtnReset, BtnRestore, BtnScan, BtnUpdate, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, g_IsRefreshing, g_WindowsOffset, MainGui, PicPurple, PicSteam, TabCtrl, TextTipInfo
-
-    if (TabCtrl.Value != 1) {
-        TextTipInfo.Opt("+Hidden")
-        return
-    }
+    global BtnBrowse, BtnChinese, BtnRefreshStatus, BtnReset, BtnRestore, BtnScan, BtnUpdate, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, g_IsRefreshing, g_WindowsOffset, MainGui, PicPurple, PicSteam, Picdiag, TabCtrl, TextTipInfo
 
     ShowGameRunningTip := (!g_IsSyncing && IsGameProcessRunning())
 
@@ -2583,37 +2704,51 @@ RefreshUi() {
     IsSyncEnabled := (!g_IsSyncing && !g_IsPatching)
     IsSteamEnabled := (!g_IsSyncing && !g_IsPatching && HasSteamUrl)
     IsPurpleEnabled := (!g_IsSyncing && !g_IsPatching && HasPurpleUrl)
+    IsSDiagEnabled := (!g_IsSyncing && !g_IsPatching)
 
-    SyncImg := IsSyncEnabled ? ".\AutoHotkey\Sync.png" : ".\AutoHotkey\Syncdis.png"
+    SyncImg := IsSyncEnabled ? ".\AutoHotkey\sync.png" : ".\AutoHotkey\syncdis.png"
     SteamImg := IsSteamEnabled ? ".\AutoHotkey\steam.png" : ".\AutoHotkey\steamdis.png"
     PurpleImg := IsPurpleEnabled ? ".\AutoHotkey\purple.png" : ".\AutoHotkey\purpledis.png"
+    DiagImg := IsSDiagEnabled ? ".\AutoHotkey\diag.png" : ".\AutoHotkey\diagdis.png"
 
     SetPicControlBitmap(PicSync, GetImageResourceHandle(SyncImg))
     SetPicControlBitmap(PicSteam, GetImageResourceHandle(SteamImg))
     SetPicControlBitmap(PicPurple, GetImageResourceHandle(PurpleImg))
+    SetPicControlBitmap(Picdiag, GetImageResourceHandle(DiagImg))
 
-    if (ShowGameRunningTip) {
-        TextTipInfo.Opt("-Hidden")
-        TabCtrl.Move(, , , 478)
-        BtnUpdate.Move(, 443)
-        BtnChinese.Move(, 443)
-        BtnRestore.Move(, 443)
-        BtnRefreshStatus.Move(, 443)
-        PicSteam.Move(, 446)
-        TextSplit.Move(, 450)
-        PicPurple.Move(, 445)
-        MainGui.Move(, , , 508 + g_WindowsOffset.h)
-    } else {
+    if (TabCtrl.Value != 1) {
         TextTipInfo.Opt("+Hidden")
-        TabCtrl.Move(, , , 458)
-        BtnUpdate.Move(, 423)
-        BtnChinese.Move(, 423)
-        BtnRestore.Move(, 423)
-        BtnRefreshStatus.Move(, 423)
-        PicSteam.Move(, 426)
-        TextSplit.Move(, 430)
-        PicPurple.Move(, 425)
-        MainGui.Move(, , , 488 + g_WindowsOffset.h)
+        return
+    }
+
+    try {
+        if (ShowGameRunningTip) {
+            TextTipInfo.Opt("-Hidden")
+            TabCtrl.Move(, , , 478)
+            BtnUpdate.Move(, 443)
+            BtnChinese.Move(, 443)
+            BtnRestore.Move(, 443)
+            BtnRefreshStatus.Move(, 443)
+            PicSteam.Move(, 446)
+            TextSplit.Move(, 450)
+            PicPurple.Move(, 445)
+            Picdiag.Move(, 445)
+            MainGui.Move(, , , 508 + g_WindowsOffset.h)
+        } else {
+            TextTipInfo.Opt("+Hidden")
+            TabCtrl.Move(, , , 458)
+            BtnUpdate.Move(, 423)
+            BtnChinese.Move(, 423)
+            BtnRestore.Move(, 423)
+            BtnRefreshStatus.Move(, 423)
+            PicSteam.Move(, 426)
+            TextSplit.Move(, 430)
+            PicPurple.Move(, 425)
+            Picdiag.Move(, 425)
+            MainGui.Move(, , , 488 + g_WindowsOffset.h)
+        }
+    } finally {
+        WinRedraw("ahk_id " MainGui.Hwnd)
     }
 
     if (g_IsPatching || g_IsSyncing) {
@@ -3481,7 +3616,6 @@ LV_SetHeaderSortArrow(LV, sort_col, desc := false) {
 ; ==============================================================================
 ; 资源加载与卡片 UI 渲染组件
 ; ==============================================================================
-
 CreateCardControl(GuiObj, OptionsMap) {
     global g_CursorHwndMap
 
@@ -3494,6 +3628,7 @@ CreateCardControl(GuiObj, OptionsMap) {
     CardWidth := OptionsMap.HasProp("width") ? OptionsMap.width : 536
     CardHeight := OptionsMap.HasProp("height") ? OptionsMap.height : 75
     ShowBorder := OptionsMap.HasProp("border") ? OptionsMap.border : true
+
     ClickHandler := (*) => (TargetUrl != "" ? Run(TargetUrl) : false)
 
     if (ShowBorder) {
@@ -3523,6 +3658,23 @@ CreateCardControl(GuiObj, OptionsMap) {
     ClickMaskCtrl := GuiObj.Add("Text", Format("x{} y{} w{} h{} +0x100 BackgroundTrans", MaskX, MaskY, MaskW, MaskH), "")
     ClickMaskCtrl.OnEvent("Click", ClickHandler)
     g_CursorHwndMap[ClickMaskCtrl.Hwnd] := true
+
+    Card := {
+        IconCtrl: IconCtrl,
+        MaskCtrl: ClickMaskCtrl,
+        Url: TargetUrl
+    }
+
+    Card.DefineProp("SetUrl", {
+        Call: (this, newUrl) => (
+            this.Url := newUrl,
+            newHandler := (*) => (this.Url != "" ? Run(this.Url) : false),
+            this.IconCtrl.OnEvent("Click", newHandler, 1),
+            this.MaskCtrl.OnEvent("Click", newHandler, 1)
+        )
+    })
+
+    return Card
 }
 
 ; ==============================================================================
@@ -3610,8 +3762,10 @@ GetImageResourceHandle(ResourcePath, ReturnNumericHandle := false) {
         ".\AutoHotkey\GitHub.png", "GitHub_PNG",
         ".\AutoHotkey\WPS.png", "WPS_PNG",
         ".\AutoHotkey\QQGroup.png", "QQGROUP_PNG",
-        ".\AutoHotkey\Sync.png", "SYNC_PNG",
-        ".\AutoHotkey\Syncdis.png", "SYNC_DIS_PNG"
+        ".\AutoHotkey\sync.png", "SYNC_PNG",
+        ".\AutoHotkey\syncdis.png", "SYNC_DIS_PNG",
+        ".\AutoHotkey\diag.png", "DIAG_PNG",
+        ".\AutoHotkey\diagdis.png", "DIAGDIS_PNG"
     )
 
     ResName := ResourceMap.Has(ResourcePath) ? ResourceMap[ResourcePath] : ResourcePath
@@ -3666,4 +3820,60 @@ GetResourceHBitmap(ResName) {
         }
     }
     return 0
+}
+
+GetPatchDiagnosticData() {
+    global g_CurrentServer, g_InstallPath
+
+    if (Type(g_CurrentServer) != "Map" || !g_CurrentServer.Has("patch_branches") || g_CurrentServer["patch_branches"].Length == 0) {
+        SetStatusBarText("未找到有效的补丁数据。")
+        return []
+    }
+
+    DiagReportList := []
+    ProcessedPaths := Map()
+
+    for BranchIndex, Branch in g_CurrentServer["patch_branches"] {
+        if (!Branch.Has("actions") || Type(Branch["actions"]) != "Array")
+            continue
+
+        ActionsArray := Branch["actions"]
+
+        for ActionIndex, Act in ActionsArray {
+            RelPath := SafeGet(Act, "target_relative_path", "")
+
+            if (RelPath == "" || InStr(RelPath, ".."))
+                continue
+
+            TargetPath := ResolveTargetPath(RelPath)
+            PathKey := StrLower(TargetPath)
+
+            if ProcessedPaths.Has(PathKey)
+                continue
+
+            ProcessedPaths[PathKey] := true
+
+            FileInfo := Map(
+                "branch_index", BranchIndex,
+                "action_index", ActionIndex,
+                "relative_path", RelPath,
+                "full_path", TargetPath,
+                "file_exists", false,
+                "file_size", -1,
+                "file_size_formatted", "0 B",
+                "file_md5", ""
+            )
+
+            if FileExist(TargetPath) {
+                FileInfo["file_exists"] := true
+                FileInfo["file_size"] := FileGetSize(TargetPath)
+                FileInfo["file_size_formatted"] := FormatFileSize(FileInfo["file_size"])
+                FileInfo["file_md5"] := HashFileMd5(TargetPath)
+            }
+
+            DiagReportList.Push(FileInfo)
+        }
+    }
+
+    return DiagReportList
 }
