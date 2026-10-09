@@ -17,7 +17,7 @@
             "patch_branches": [
                 {
                     "id": 0,
-                    "source": "自制(不含字体) - 已支持10月7日版本",
+                    "source": "自制：仅汉化 - 已支持10月7日版本",
                     "latest_patch_version": "1.0.0.4",
                     "changelog": "",
                     "release_timestamp": 1791364267,
@@ -54,7 +54,7 @@
                 },
                 {
                     "id": 0,
-                    "source": "自制(含字体美化) - 已支持10月7日版本",
+                    "source": "自制：汉化+字体 - 已支持10月7日版本",
                     "latest_patch_version": "1.0.0.4",
                     "changelog": "",
                     "release_timestamp": 1791364267,
