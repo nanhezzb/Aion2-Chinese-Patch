@@ -1,7 +1,7 @@
 {
     "cloud_bulletin": {
         "latest_bulletin_version": "1.2.4.0",
-        "changelog": "1. 国际服增加了简体中文和繁體中文汉化补丁，均已支持 ** 10月9日 ** 版本。
+        "changelog": "1. 国际服增加了简体中文和繁體中文汉化补丁，均已支持 ** 10月9日 ** 版本。",
         "release_timestamp": 1789981021
     },
     "servers_config": [
