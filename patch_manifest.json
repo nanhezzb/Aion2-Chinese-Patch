@@ -364,7 +364,7 @@
             "patch_branches": [
                 {
                     "id": 0,
-                    "source": "自制 - 同步10月5日版本",
+                    "source": "简体中文 - 支持10月5日版本",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
                     "release_timestamp": 1791216231,
