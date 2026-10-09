@@ -1,7 +1,7 @@
 {
     "cloud_bulletin": {
-        "latest_bulletin_version": "1.2.3.0",
-        "changelog": "1. 国际服增加了 ** 自制补丁源 **，已支持 ** 10月7日 ** 版本的中文汉化。\r\n\r\n2. 国际服增加了其他2个补丁源。文件体积较大的包含一个字体文件，对游戏内字体显示效果更好。",
+        "latest_bulletin_version": "1.2.4.0",
+        "changelog": "1. 国际服增加了简体中文和繁體中文汉化补丁，均已支持 ** 10月9日 ** 版本。
         "release_timestamp": 1789981021
     },
     "servers_config": [
