@@ -3663,6 +3663,7 @@ LV_SetHeaderSortArrow(LV, sort_col, desc := false) {
 ; ==============================================================================
 ; 资源加载与卡片 UI 渲染组件
 ; ==============================================================================
+
 CreateCardControl(GuiObj, OptionsMap) {
     global g_CursorHwndMap
 
@@ -3676,7 +3677,11 @@ CreateCardControl(GuiObj, OptionsMap) {
     CardHeight := OptionsMap.HasProp("height") ? OptionsMap.height : 75
     ShowBorder := OptionsMap.HasProp("border") ? OptionsMap.border : true
 
-    ClickHandler := (*) => (TargetUrl != "" ? Run(TargetUrl) : false)
+    Card := {
+        Url: TargetUrl
+    }
+
+    ClickHandler := (*) => (Card.Url != "" ? Run(Card.Url) : false)
 
     if (ShowBorder) {
         GuiObj.Add("GroupBox", Format("x{} y{} w{} h{}", PosX, PosY, CardWidth, CardHeight))
@@ -3706,19 +3711,11 @@ CreateCardControl(GuiObj, OptionsMap) {
     ClickMaskCtrl.OnEvent("Click", ClickHandler)
     g_CursorHwndMap[ClickMaskCtrl.Hwnd] := true
 
-    Card := {
-        IconCtrl: IconCtrl,
-        MaskCtrl: ClickMaskCtrl,
-        Url: TargetUrl
-    }
+    Card.IconCtrl := IconCtrl
+    Card.MaskCtrl := ClickMaskCtrl
 
     Card.DefineProp("SetUrl", {
-        Call: (this, newUrl) => (
-            this.Url := newUrl,
-            newHandler := (*) => (this.Url != "" ? Run(this.Url) : false),
-            this.IconCtrl.OnEvent("Click", newHandler, 1),
-            this.MaskCtrl.OnEvent("Click", newHandler, 1)
-        )
+        Call: (this, newUrl) => (this.Url := newUrl)
     })
 
     return Card
