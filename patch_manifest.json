@@ -17,7 +17,7 @@
             "patch_branches": [
                 {
                     "id": 0,
-                    "source": "自制：仅汉化 - 已支持10月7日版本",
+                    "source": "简体中文 - 已支持10月7日版本",
                     "latest_patch_version": "1.0.0.4",
                     "changelog": "",
                     "release_timestamp": 1791364267,
@@ -54,7 +54,44 @@
                 },
                 {
                     "id": 0,
-                    "source": "自制：汉化+字体 - 已支持10月7日版本",
+                    "source": "繁體中文 - 已支持10月7日版本",
+                    "latest_patch_version": "1.0.0.4",
+                    "changelog": "",
+                    "release_timestamp": 1791543390,
+                    "actions": [
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig"
+                        },
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas"
+                        },
+                        {
+                            "type": "delete",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc"
+                        },
+                        {
+                            "type": "replace",
+                            "filename": "bg_pakchunk502000-Windows_0_P.pak",
+                            "remote_filename": "patches/bg_pakchunk502000-Windows_0_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                            "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
+                            "file_size": 0
+                        },
+                        {
+                            "type": "add",
+                            "filename": "bg_3vW6_L10NString.dat",
+                            "remote_filename": "patches/bg_3vW6_L10NString.dat",
+                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
+                            "file_md5": "ceac6b4d30da5b745ad1e27c7c5c1ae5",
+                            "file_size": 3710980
+                        }
+                    ]
+                },
+                {
+                    "id": 0,
+                    "source": "简体中文 + 字体 - 已支持10月7日版本",
                     "latest_patch_version": "1.0.0.4",
                     "changelog": "",
                     "release_timestamp": 1791364267,
