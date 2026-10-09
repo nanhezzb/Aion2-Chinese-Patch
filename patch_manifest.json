@@ -17,10 +17,10 @@
             "patch_branches": [
                 {
                     "id": 0,
-                    "source": "简体中文 - 已支持10月7日版本",
+                    "source": "简体中文 - 支持10月9日版本",
                     "latest_patch_version": "1.0.0.4",
                     "changelog": "",
-                    "release_timestamp": 1791364267,
+                    "release_timestamp": 1791543390,
                     "actions": [
                         {
                             "type": "delete",
@@ -54,7 +54,7 @@
                 },
                 {
                     "id": 0,
-                    "source": "繁體中文 - 已支持10月7日版本",
+                    "source": "繁體中文 - 支持10月9日版本",
                     "latest_patch_version": "1.0.0.4",
                     "changelog": "",
                     "release_timestamp": 1791543390,
@@ -91,10 +91,10 @@
                 },
                 {
                     "id": 0,
-                    "source": "简体中文 + 字体 - 已支持10月7日版本",
+                    "source": "简体中文 + 字体 - 支持10月9日版本",
                     "latest_patch_version": "1.0.0.4",
                     "changelog": "",
-                    "release_timestamp": 1791364267,
+                    "release_timestamp": 1791543390,
                     "actions": [
                         {
                             "type": "delete",
@@ -136,7 +136,7 @@
                 },
                 {
                     "id": 0,
-                    "source": "繁體中文 + 字體 - 已支持10月7日版本",
+                    "source": "繁體中文 + 字體 - 支持10月9日版本",
                     "latest_patch_version": "1.0.0.4",
                     "changelog": "",
                     "release_timestamp": 1791543390,
