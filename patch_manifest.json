@@ -1,8 +1,8 @@
 {
     "cloud_bulletin": {
-        "latest_bulletin_version": "1.2.6.0",
-        "changelog": "1. 国际服增加了简体中文和繁體中文汉化补丁，均已支持 ** 10月14日 ** 版本，14日晚8点更新。",
-        "release_timestamp": 1791980020
+        "latest_bulletin_version": "1.2.7.0",
+        "changelog": "1. 修复了上一版翻译的一些问题，均已支持 ** 10月14日 ** 版本，14日晚21:37点更新。",
+        "release_timestamp": 1791985027
     },
     "servers_config": [
         {
@@ -18,9 +18,9 @@
                 {
                     "id": 0,
                     "source": "简体中文 - 支持10月14日版本",
-                    "latest_patch_version": "1.0.0.6",
+                    "latest_patch_version": "1.0.0.7",
                     "changelog": "",
-                    "release_timestamp": 1791980020,
+                    "release_timestamp": 1791985027,
                     "actions": [
                         {
                             "type": "delete",
@@ -44,20 +44,20 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_VfvZ_L10NString.dat",
-                            "remote_filename": "patches/bg_VfvZ_L10NString.dat",
+                            "filename": "bg_PWMg_L10NString.dat",
+                            "remote_filename": "patches/bg_PWMg_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "da02a0744c81fa5af6b68039e3d816c3",
-                            "file_size": 3715844
+                            "file_md5": "1f44dba56ad3783416246c00babb582c.dat",
+                            "file_size": 3715700
                         }
                     ]
                 },
                 {
                     "id": 0,
                     "source": "繁體中文 - 支持10月14日版本",
-                    "latest_patch_version": "1.0.0.6",
+                    "latest_patch_version": "1.0.0.7",
                     "changelog": "",
-                    "release_timestamp": 1791980020,
+                    "release_timestamp": 1791985027,
                     "actions": [
                         {
                             "type": "delete",
@@ -81,20 +81,20 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_8JDS_L10NString.dat",
-                            "remote_filename": "patches/bg_8JDS_L10NString.dat",
+                            "filename": "bg_Z9n3_L10NString.dat",
+                            "remote_filename": "patches/bg_Z9n3_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "e4e8a14292db174b75bb0a72f18a5aee",
-                            "file_size": 3717892
+                            "file_md5": "3f7c9db77cced592c359e055d8b6efc1",
+                            "file_size": 3717748
                         }
                     ]
                 },
                 {
                     "id": 0,
                     "source": "简体中文 + 字体 - 支持10月14日版本",
-                    "latest_patch_version": "1.0.0.6",
+                    "latest_patch_version": "1.0.0.7",
                     "changelog": "",
-                    "release_timestamp": 1791980020,
+                    "release_timestamp": 1791985027,
                     "actions": [
                         {
                             "type": "delete",
@@ -118,11 +118,11 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_VfvZ_L10NString.dat",
-                            "remote_filename": "patches/bg_VfvZ_L10NString.dat",
+                            "filename": "bg_PWMg_L10NString.dat",
+                            "remote_filename": "patches/bg_PWMg_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "da02a0744c81fa5af6b68039e3d816c3",
-                            "file_size": 3715844
+                            "file_md5": "1f44dba56ad3783416246c00babb582c.dat",
+                            "file_size": 3715700
                         },
                         {
                             "type": "add",
@@ -137,9 +137,9 @@
                 {
                     "id": 0,
                     "source": "繁體中文 + 字體 - 支持10月14日版本",
-                    "latest_patch_version": "1.0.0.6",
+                    "latest_patch_version": "1.0.0.7",
                     "changelog": "",
-                    "release_timestamp": 1791980020,
+                    "release_timestamp": 1791985027,
                     "actions": [
                         {
                             "type": "delete",
@@ -163,11 +163,11 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_8JDS_L10NString.dat",
-                            "remote_filename": "patches/bg_8JDS_L10NString.dat",
+                            "filename": "bg_Z9n3_L10NString.dat",
+                            "remote_filename": "patches/bg_Z9n3_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "e4e8a14292db174b75bb0a72f18a5aee",
-                            "file_size": 3717892
+                            "file_md5": "3f7c9db77cced592c359e055d8b6efc1",
+                            "file_size": 3717748
                         },
                         {
                             "type": "add",
