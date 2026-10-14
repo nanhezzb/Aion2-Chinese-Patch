@@ -1,7 +1,7 @@
 {
     "cloud_bulletin": {
         "latest_bulletin_version": "1.2.6.0",
-        "changelog": "1. 国际服增加了简体中文和繁體中文汉化补丁，均已支持 ** 10月14日 ** 版本。",
+        "changelog": "1. 国际服增加了简体中文和繁體中文汉化补丁，均已支持 ** 10月14日 ** 版本，14日晚8点更新。",
         "release_timestamp": 1791980020
     },
     "servers_config": [
@@ -55,7 +55,7 @@
                 {
                     "id": 0,
                     "source": "繁體中文 - 支持10月14日版本",
-                    "latest_patch_version": "1.0.0.5",
+                    "latest_patch_version": "1.0.0.6",
                     "changelog": "",
                     "release_timestamp": 1791980020,
                     "actions": [
@@ -92,7 +92,7 @@
                 {
                     "id": 0,
                     "source": "简体中文 + 字体 - 支持10月14日版本",
-                    "latest_patch_version": "1.0.0.5",
+                    "latest_patch_version": "1.0.0.6",
                     "changelog": "",
                     "release_timestamp": 1791980020,
                     "actions": [
@@ -137,7 +137,7 @@
                 {
                     "id": 0,
                     "source": "繁體中文 + 字體 - 支持10月14日版本",
-                    "latest_patch_version": "1.0.0.5",
+                    "latest_patch_version": "1.0.0.6",
                     "changelog": "",
                     "release_timestamp": 1791980020,
                     "actions": [
