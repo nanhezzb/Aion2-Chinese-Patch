@@ -1,7 +1,7 @@
 {
     "cloud_bulletin": {
         "latest_bulletin_version": "1.2.7.0",
-        "changelog": "1. 修复了上一版翻译的一些问题，均已支持 ** 10月14日 ** 版本，14日晚21:37点更新。",
+        "changelog": "1. 修复了上一版翻译的一些问题，均已支持 ** 10月14日 ** 版本，14日21:37点更新。",
         "release_timestamp": 1791985027
     },
     "servers_config": [
