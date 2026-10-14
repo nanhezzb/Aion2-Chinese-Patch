@@ -1,8 +1,8 @@
 {
     "cloud_bulletin": {
-        "latest_bulletin_version": "1.2.5.0",
+        "latest_bulletin_version": "1.2.6.0",
         "changelog": "1. 国际服增加了简体中文和繁體中文汉化补丁，均已支持 ** 10月14日 ** 版本。",
-        "release_timestamp": 1791963191
+        "release_timestamp": 1791980020
     },
     "servers_config": [
         {
@@ -18,9 +18,9 @@
                 {
                     "id": 0,
                     "source": "简体中文 - 支持10月14日版本",
-                    "latest_patch_version": "1.0.0.5",
+                    "latest_patch_version": "1.0.0.6",
                     "changelog": "",
-                    "release_timestamp": 1791963191,
+                    "release_timestamp": 1791980020,
                     "actions": [
                         {
                             "type": "delete",
@@ -44,11 +44,11 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_o3QJ_L10NString.dat",
-                            "remote_filename": "patches/bg_o3QJ_L10NString.dat",
+                            "filename": "bg_VfvZ_L10NString.dat",
+                            "remote_filename": "patches/bg_VfvZ_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "9dda41872b4dc4ffa719b0581f868374",
-                            "file_size": 3708964
+                            "file_md5": "da02a0744c81fa5af6b68039e3d816c3",
+                            "file_size": 3715844
                         }
                     ]
                 },
@@ -57,7 +57,7 @@
                     "source": "繁體中文 - 支持10月14日版本",
                     "latest_patch_version": "1.0.0.5",
                     "changelog": "",
-                    "release_timestamp": 1791963191,
+                    "release_timestamp": 1791980020,
                     "actions": [
                         {
                             "type": "delete",
@@ -81,11 +81,11 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_boVU_L10NString.dat",
-                            "remote_filename": "patches/bg_boVU_L10NString.dat",
+                            "filename": "bg_8JDS_L10NString.dat",
+                            "remote_filename": "patches/bg_8JDS_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "a6d355541ba2ccd1bae409836572bbdd",
-                            "file_size": 3710980
+                            "file_md5": "e4e8a14292db174b75bb0a72f18a5aee",
+                            "file_size": 3717892
                         }
                     ]
                 },
@@ -94,7 +94,7 @@
                     "source": "简体中文 + 字体 - 支持10月14日版本",
                     "latest_patch_version": "1.0.0.5",
                     "changelog": "",
-                    "release_timestamp": 1791963191,
+                    "release_timestamp": 1791980020,
                     "actions": [
                         {
                             "type": "delete",
@@ -118,12 +118,12 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_o3QJ_L10NString.dat",
-                            "remote_filename": "patches/bg_o3QJ_L10NString.dat",
+                            "filename": "bg_VfvZ_L10NString.dat",
+                            "remote_filename": "patches/bg_VfvZ_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "9dda41872b4dc4ffa719b0581f868374",
-                            "file_size": 3708964
-                        }
+                            "file_md5": "da02a0744c81fa5af6b68039e3d816c3",
+                            "file_size": 3715844
+                        },
                         {
                             "type": "add",
                             "filename": "NotoSans-Bold.ufont",
@@ -139,7 +139,7 @@
                     "source": "繁體中文 + 字體 - 支持10月14日版本",
                     "latest_patch_version": "1.0.0.5",
                     "changelog": "",
-                    "release_timestamp": 1791963191,
+                    "release_timestamp": 1791980020,
                     "actions": [
                         {
                             "type": "delete",
@@ -163,12 +163,12 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_boVU_L10NString.dat",
-                            "remote_filename": "patches/bg_boVU_L10NString.dat",
+                            "filename": "bg_8JDS_L10NString.dat",
+                            "remote_filename": "patches/bg_8JDS_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "a6d355541ba2ccd1bae409836572bbdd",
-                            "file_size": 3710980
-                        }
+                            "file_md5": "e4e8a14292db174b75bb0a72f18a5aee",
+                            "file_size": 3717892
+                        },
                         {
                             "type": "add",
                             "filename": "NotoSans-Bold.ufont",
