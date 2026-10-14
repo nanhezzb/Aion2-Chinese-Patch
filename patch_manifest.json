@@ -47,7 +47,7 @@
                             "filename": "bg_PWMg_L10NString.dat",
                             "remote_filename": "patches/bg_PWMg_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "1f44dba56ad3783416246c00babb582c.dat",
+                            "file_md5": "1f44dba56ad3783416246c00babb582c",
                             "file_size": 3715700
                         }
                     ]
@@ -121,7 +121,7 @@
                             "filename": "bg_PWMg_L10NString.dat",
                             "remote_filename": "patches/bg_PWMg_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "1f44dba56ad3783416246c00babb582c.dat",
+                            "file_md5": "1f44dba56ad3783416246c00babb582c",
                             "file_size": 3715700
                         },
                         {
