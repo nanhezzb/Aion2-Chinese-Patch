@@ -364,10 +364,10 @@
             "patch_branches": [
                 {
                     "id": 0,
-                    "source": "简体中文 - 支持10月5日版本",
-                    "latest_patch_version": "1.0.0.0",
+                    "source": "简体中文 - 支持10月14日版本",
+                    "latest_patch_version": "1.0.0.1",
                     "changelog": "",
-                    "release_timestamp": 1791216231,
+                    "release_timestamp": 1791961598,
                     "actions": [
                         {
                             "type": "add",
