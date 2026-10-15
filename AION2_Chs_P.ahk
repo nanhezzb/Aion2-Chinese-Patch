@@ -252,8 +252,8 @@ WpsCard := CreateCardControl(MainGui, {
     x: 15,
     y: 45,
     icon: GetImageResourceHandle(".\AutoHotkey\WPS.png"),
-    title: "工具更新发布页面",
-    desc: "获取最新版本汉化工具及版本更新公告页面。",
+    title: "工具更新页面",
+    desc: "获取最新版本汉化工具、下载离线补丁包等。",
     url: "https://www.kdocs.cn/l/cf9KkRNTpqhb",
     width: 541,
     height: 77,
@@ -2136,10 +2136,14 @@ OnDiagButtonClick(*) {
 
     PatchFiles := []
     BackupFiles := []
+    OtherFiles := []
 
     for Item in DiagReportList {
-        if (SafeGet(Item, "category", "") == "BackupDir") {
+        Category := SafeGet(Item, "category", "")
+        if (Category == "BackupDir") {
             BackupFiles.Push(Item)
+        } else if (Category == "OtherFiles") {
+            OtherFiles.Push(Item)
         } else {
             PatchFiles.Push(Item)
         }
@@ -2148,7 +2152,7 @@ OnDiagButtonClick(*) {
     TextReport := Format("==== {} 诊断报告 ====`r`n", g_ProjectName)
         . Format("当前服务器: {}`r`n", ServerName)
         . Format("游戏安装目录: {}`r`n", g_InstallPath)
-        . Format("检测文件总数: {} 项 (安装目录: {} 项, 备份目录: {} 项)`r`n", DiagReportList.Length, PatchFiles.Length, BackupFiles.Length)
+        . Format("检测文件总数: {} 项 (安装目录: {} 项, 备份目录: {} 项, 其他文件: {} 项)`r`n", DiagReportList.Length, PatchFiles.Length, BackupFiles.Length, OtherFiles.Length)
         . "==================================================`r`n`r`n"
 
     TextReport .= "一、 游戏安装目录信息`r`n"
@@ -2189,6 +2193,26 @@ OnDiagButtonClick(*) {
         }
     } else {
         TextReport .= "未检测到备份文件。`r`n--------------------------------------------------`r`n"
+    }
+
+    TextReport .= "`r`n"
+
+    TextReport .= "三、 其他关键文件信息`r`n"
+    TextReport .= "--------------------------------------------------`r`n"
+    if (OtherFiles.Length > 0) {
+        for Index, Item in OtherFiles {
+            TextReport .= Format("[{}] 绝对路径: {}`r`n", Index, Item["full_path"])
+
+            if (Item["file_exists"]) {
+                TextReport .= Format("    文件状态: 存在 | 大小: {} ({} 字节)`r`n", Item["file_size_formatted"], Item["file_size"])
+                    . Format("    实际 MD5: {}`r`n", Item["file_md5"])
+            } else {
+                TextReport .= "    文件状态: 不存在`r`n"
+            }
+            TextReport .= "--------------------------------------------------`r`n"
+        }
+    } else {
+        TextReport .= "未检测到其他指定文件。`r`n--------------------------------------------------`r`n"
     }
 
     A_Clipboard := TextReport
@@ -3869,54 +3893,51 @@ GetResourceHBitmap(ResName) {
 GetPatchDiagnosticData() {
     global g_CurrentServer, g_InstallPath, g_ProjectName
 
-    if (Type(g_CurrentServer) != "Map" || !g_CurrentServer.Has("patch_branches") || g_CurrentServer["patch_branches"].Length == 0) {
-        SetStatusBarText("未找到有效的补丁数据。")
-        return []
-    }
-
     DiagReportList := []
     ProcessedPaths := Map()
 
-    for BranchIndex, Branch in g_CurrentServer["patch_branches"] {
-        if (!Branch.Has("actions") || Type(Branch["actions"]) != "Array")
-            continue
-
-        ActionsArray := Branch["actions"]
-
-        for ActionIndex, Act in ActionsArray {
-            RelPath := SafeGet(Act, "target_relative_path", "")
-
-            if (RelPath == "" || InStr(RelPath, ".."))
+    if (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has("patch_branches") && g_CurrentServer["patch_branches"].Length > 0) {
+        for BranchIndex, Branch in g_CurrentServer["patch_branches"] {
+            if (!Branch.Has("actions") || Type(Branch["actions"]) != "Array")
                 continue
 
-            TargetPath := ResolveTargetPath(RelPath)
-            PathKey := StrLower(TargetPath)
+            ActionsArray := Branch["actions"]
 
-            if ProcessedPaths.Has(PathKey)
-                continue
+            for ActionIndex, Act in ActionsArray {
+                RelPath := SafeGet(Act, "target_relative_path", "")
 
-            ProcessedPaths[PathKey] := true
+                if (RelPath == "" || InStr(RelPath, ".."))
+                    continue
 
-            FileInfo := Map(
-                "category", "InstallDir",
-                "branch_index", BranchIndex,
-                "action_index", ActionIndex,
-                "relative_path", RelPath,
-                "full_path", TargetPath,
-                "file_exists", false,
-                "file_size", -1,
-                "file_size_formatted", "0 B",
-                "file_md5", ""
-            )
+                TargetPath := ResolveTargetPath(RelPath)
+                PathKey := StrLower(TargetPath)
 
-            if FileExist(TargetPath) {
-                FileInfo["file_exists"] := true
-                FileInfo["file_size"] := FileGetSize(TargetPath)
-                FileInfo["file_size_formatted"] := FormatFileSize(FileInfo["file_size"])
-                FileInfo["file_md5"] := HashFileMd5(TargetPath)
+                if ProcessedPaths.Has(PathKey)
+                    continue
+
+                ProcessedPaths[PathKey] := true
+
+                FileInfo := Map(
+                    "category", "InstallDir",
+                    "branch_index", BranchIndex,
+                    "action_index", ActionIndex,
+                    "relative_path", RelPath,
+                    "full_path", TargetPath,
+                    "file_exists", false,
+                    "file_size", -1,
+                    "file_size_formatted", "0 B",
+                    "file_md5", ""
+                )
+
+                if FileExist(TargetPath) {
+                    FileInfo["file_exists"] := true
+                    FileInfo["file_size"] := FileGetSize(TargetPath)
+                    FileInfo["file_size_formatted"] := FormatFileSize(FileInfo["file_size"])
+                    FileInfo["file_md5"] := HashFileMd5(TargetPath)
+                }
+
+                DiagReportList.Push(FileInfo)
             }
-
-            DiagReportList.Push(FileInfo)
         }
     }
 
@@ -3951,6 +3972,41 @@ GetPatchDiagnosticData() {
 
             DiagReportList.Push(FileInfo)
         }
+    }
+
+    OtherPatchFiles := [
+        g_InstallPath . "\Aion2\Binaries\Win64\dxgi.dll"
+    ]
+
+    for FullPath in OtherPatchFiles {
+        if (FullPath == "")
+            continue
+
+        NormalizedPath := PathUtil.Normalize(FullPath)
+        PathKey := StrLower(NormalizedPath)
+
+        if ProcessedPaths.Has(PathKey)
+            continue
+
+        ProcessedPaths[PathKey] := true
+
+        FileInfo := Map(
+            "category", "OtherFiles",
+            "full_path", NormalizedPath,
+            "file_exists", false,
+            "file_size", -1,
+            "file_size_formatted", "0 B",
+            "file_md5", ""
+        )
+
+        if FileExist(NormalizedPath) {
+            FileInfo["file_exists"] := true
+            FileInfo["file_size"] := FileGetSize(NormalizedPath)
+            FileInfo["file_size_formatted"] := FormatFileSize(FileInfo["file_size"])
+            FileInfo["file_md5"] := HashFileMd5(NormalizedPath)
+        }
+
+        DiagReportList.Push(FileInfo)
     }
 
     return DiagReportList
