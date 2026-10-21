@@ -1,7 +1,7 @@
 {
     "cloud_bulletin": {
         "latest_bulletin_version": "1.2.8.0",
-        "changelog": "1. 已支持 ** 10月21日 ** 版本，21日18:58点更新。",
+        "changelog": "1. 国际服、台服汉化补丁均已支持 ** 10月21日 ** 版本，21日18:58点更新。",
         "release_timestamp": 1792580211
     },
     "servers_config": [
@@ -274,18 +274,18 @@
             "patch_branches": [
                 {
                     "id": 0,
-                    "source": "简体中文 - 支持10月14日版本",
-                    "latest_patch_version": "1.0.0.1",
+                    "source": "简体中文 - 支持10月21日版本",
+                    "latest_patch_version": "1.0.0.2",
                     "changelog": "",
-                    "release_timestamp": 1791961598,
+                    "release_timestamp": 1792582496,
                     "actions": [
                         {
                             "type": "add",
-                            "filename": "bg_e4bM_pakchunk999999-Windows_0_P.pak",
-                            "remote_filename": "patches/bg_e4bM_pakchunk999999-Windows_0_P.pak",
+                            "filename": "bg_gMV2_pakchunk999999-Windows_0_P.pak",
+                            "remote_filename": "patches/bg_gMV2_pakchunk999999-Windows_0_P.pak",
                             "target_relative_path": "Aion2\\Content\\Paks\\pakchunk999999-Windows_0_P.pak",
-                            "file_md5": "d43977c939624a162d6c438bef8cfeed",
-                            "file_size": 3781645
+                            "file_md5": "a222cfc13d1296c464b024529d526d1b",
+                            "file_size": 3782717
                         }
                     ]
                 },
