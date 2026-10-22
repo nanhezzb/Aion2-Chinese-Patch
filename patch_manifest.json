@@ -1,8 +1,8 @@
 {
     "cloud_bulletin": {
-        "latest_bulletin_version": "1.2.8.0",
-        "changelog": "1. 国际服、台服汉化补丁均已支持 ** 10月21日 ** 版本，21日18:58点更新。",
-        "release_timestamp": 1792580211
+        "latest_bulletin_version": "1.2.9.0",
+        "changelog": "1. 国际服、台服汉化补丁均已支持 ** 10月21日 ** 版本，22日15:28点更新。",
+        "release_timestamp": 1792653995
     },
     "servers_config": [
         {
@@ -18,9 +18,9 @@
                 {
                     "id": 0,
                     "source": "简体中文 - 支持10月21日版本",
-                    "latest_patch_version": "1.0.0.9",
+                    "latest_patch_version": "1.0.0.10",
                     "changelog": "",
-                    "release_timestamp": 1792580211,
+                    "release_timestamp": 1792653995,
                     "actions": [
                         {
                             "type": "delete",
@@ -44,20 +44,20 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_6ggj_L10NString.dat",
-                            "remote_filename": "patches/bg_6ggj_L10NString.dat",
+                            "filename": "bg_O7Qd_L10NString.dat",
+                            "remote_filename": "patches/bg_O7Qd_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "b71d4146fd72e49169c8f2ddb096a41d",
-                            "file_size": 3721764
+                            "file_md5": "143c90c1e7c634cdb2b11b197f33f5e1",
+                            "file_size": 3719508
                         }
                     ]
                 },
                 {
                     "id": 0,
                     "source": "繁體中文 - 支持10月21日版本",
-                    "latest_patch_version": "1.0.0.9",
+                    "latest_patch_version": "1.0.0.10",
                     "changelog": "",
-                    "release_timestamp": 1792580211,
+                    "release_timestamp": 1792653995,
                     "actions": [
                         {
                             "type": "delete",
@@ -81,11 +81,11 @@
                         },
                         {
                             "type": "add",
-                            "filename": "bg_n6dm_L10NString.dat",
-                            "remote_filename": "patches/bg_n6dm_L10NString.dat",
+                            "filename": "bg_LQb3_L10NString.dat",
+                            "remote_filename": "patches/bg_LQb3_L10NString.dat",
                             "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "f140170bf2e501b8c25caa7395ef2f36",
-                            "file_size": 3723796
+                            "file_md5": "c583de462255e2f0e8bb9ba0832297c5",
+                            "file_size": 3721540
                         }
                     ]
                 },
