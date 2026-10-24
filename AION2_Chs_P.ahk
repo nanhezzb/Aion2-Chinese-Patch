@@ -77,6 +77,7 @@ global g_PatchesCacheDir := "patches"
 global g_DefaultPreUrl := "https://raw.githubusercontent.com/nanhezzb/Aion2-Chinese-Patch/main"
 global g_DefaultProxyMirrors := [
     "https://gh-proxy.com",
+    "https://ghproxy.vip",
     "https://ghfast.top",
     "https://gh.ddlc.top",
     "https://ghproxy.net",
@@ -4097,6 +4098,7 @@ GetPatchDiagnosticData() {
 ; ==============================================================================
 ; 一键修复本地语言环境
 ; ==============================================================================
+
 ExecuteRepairConfig(ServerMap) {
     global g_IsPatching, g_ConfigCache, g_CurrentServer, g_InstallPath, g_ProjectName, MainStatusBar
 
@@ -4242,23 +4244,36 @@ ExecuteRepairConfig(ServerMap) {
             throw Error("部分文件修复替换失败，可能被其他进程占用。建议关闭游戏后重试。")
         }
 
-        ServerId := g_CurrentServer.Has("id") ? g_CurrentServer["id"] : "default"
         NormalizedInstallPath := PathUtil.Normalize(g_InstallPath)
-        SavedBranchID := GetSavedBranchID()
-        ProfileKey := GetProfileKey(ServerId, NormalizedInstallPath, SavedBranchID)
-        BackupRootDir := GetBackupRootDir(ServerId, NormalizedInstallPath, SavedBranchID)
 
-        if (ProfileKey != "") {
-            if (!g_ConfigCache.HasOwnProp(ProfileKey))
-                g_ConfigCache.%ProfileKey% := {}
-            g_ConfigCache.%ProfileKey%.IsPatched := 0
-            g_ConfigCache.%ProfileKey%.LocalPatchVersion := ""
-            g_ConfigCache.%ProfileKey%.LocalPatchBranchID := 0
-            SaveAllConfig()
+        for KeyName, ConfigObj in g_ConfigCache.OwnProps() {
+            if (SubStr(KeyName, 1, 8) == "Profile_" && Type(ConfigObj) == "Object") {
+                if (ConfigObj.HasOwnProp("InstallPath") && ConfigObj.InstallPath != "") {
+                    if (StrLower(PathUtil.Normalize(ConfigObj.InstallPath)) == StrLower(NormalizedInstallPath)) {
+                        ConfigObj.IsPatched := 0
+                        ConfigObj.LocalPatchVersion := ""
+                        ConfigObj.LocalPatchBranchID := 0
+                    }
+                }
+            }
         }
+        SaveAllConfig()
 
-        if (DirExist(BackupRootDir)) {
-            try DirDelete(BackupRootDir, 1)
+        BackupBaseDir := PathUtil.Normalize(A_ScriptDir . "\rawBackup")
+        if DirExist(BackupBaseDir) {
+            loop files, BackupBaseDir . "\*", "D" {
+                TestManifest := A_LoopFileFullPath . "\backup_manifest.json"
+                if FileExist(TestManifest) {
+                    try {
+                        Parsed := JSON.parse(FileRead(TestManifest, "UTF-8"))
+                        if (Type(Parsed) == "Map" && Parsed.Has("install_path")) {
+                            if (StrLower(PathUtil.Normalize(Parsed["install_path"])) == StrLower(NormalizedInstallPath)) {
+                                try DirDelete(A_LoopFileFullPath, 1)
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         SetStatusBarText()
