@@ -8,7 +8,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 2.0.7.0
+;@Ahk2Exe-SetVersion 2.0.8.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 
 ;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
@@ -65,8 +65,8 @@ UniqueInstance.Ensure(Map(
 
 global g_ProjectName := "AION2 Chs Patch"
 global g_ProjectNameSC := "AION2 一键汉化工具"
-global g_CurrentAppVersion := "2.0.7.0"
-global g_CurrentAppVersionShort := "2.0.7"
+global g_CurrentAppVersion := "2.0.8.0"
+global g_CurrentAppVersionShort := "2.0.8"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -159,7 +159,7 @@ A_IconTip := g_ProjectNameSC
 ; 主界面 GUI 构建
 ; ==============================================================================
 
-global MainGui := Gui(, g_ProjectNameSC . " v" . g_CurrentAppVersionShort)
+global MainGui := Gui(, g_ProjectNameSC . " v" . g_CurrentAppVersionShort . " - 非 dll 侵入式 更安全")
 MainGui.SetFont("s9", "Microsoft YaHei")
 
 global TabCtrl := MainGui.Add("Tab3", "x-1 y10 w574 h480", [
@@ -191,7 +191,7 @@ TextExplain.Value := RuleText .
     "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE · Steam 修复文件。" .
     "`r`n   PURPLE : AION2 - 游戏设置 - 检查文件。" .
     "`r`n   Steam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性。" .
-    "`r`n4. 本工具为第三方扩展，使用即代表您自愿承担所有风险。"
+    "`r`n4. 本工具为非 dll 侵入式的第三方扩展，使用即代表您自愿承担所有风险。"
 
 global TextTipInfo := MainGui.Add("Text", "x16 y421 w575 +Hidden cRed", "建议退出游戏再进行汉化或撤销操作。")
 global BtnUpdate := MainGui.Add("Button", "x14 y423 w100 h30 +Hidden", "更新补丁")
@@ -1006,7 +1006,7 @@ UpdateServerNoticeText() {
         "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE · Steam 修复文件。" .
         "`r`n   PURPLE : AION2 - 游戏设置 - 检查文件。" .
         "`r`n   Steam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性。" .
-        "`r`n4. 本工具为第三方扩展，使用即代表您自愿承担所有风险。"
+        "`r`n4. 本工具为非 dll 侵入式的第三方扩展，使用即代表您自愿承担所有风险。"
 }
 
 GetValidGamePaths() {
