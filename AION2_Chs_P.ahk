@@ -8,7 +8,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 2.0.8.0
+;@Ahk2Exe-SetVersion 2.1.0.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 
 ;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
@@ -65,8 +65,8 @@ UniqueInstance.Ensure(Map(
 
 global g_ProjectName := "AION2 Chs Patch"
 global g_ProjectNameSC := "AION2 一键汉化工具"
-global g_CurrentAppVersion := "2.0.8.0"
-global g_CurrentAppVersionShort := "2.0.8"
+global g_CurrentAppVersion := "2.1.0.0"
+global g_CurrentAppVersionShort := "2.1.0"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -193,11 +193,13 @@ TextExplain.Value := RuleText .
     "`r`n   Steam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性。" .
     "`r`n4. 本工具为非 dll 侵入式的第三方扩展，使用即代表您自愿承担所有风险。"
 
-global TextTipInfo := MainGui.Add("Text", "x16 y421 w575 +Hidden cRed", "建议退出游戏再进行汉化或撤销操作。")
+global TextTipInfo := MainGui.Add("Text", "x16 y421 w575 +Hidden cRed", "强烈建议退出游戏再进行一键汉化、撤销汉化和修复环境操作。")
 global BtnUpdate := MainGui.Add("Button", "x14 y423 w100 h30 +Hidden", "更新补丁")
 global BtnChinese := MainGui.Add("Button", "x14 y423 w100 h30", "一键汉化")
-global BtnRestore := MainGui.Add("Button", "x126 y423 w100 h30", "撤销汉化")
-global BtnRefreshStatus := MainGui.Add("Button", "x239 y423 w60 h30", "刷新")
+global BtnRestore := MainGui.Add("Button", "x126 y423 w90 h30", "撤销汉化")
+global BtnRepair := MainGui.Add("Button", "x229 y423 w75 h30", "修复环境")
+AddToolTip(BtnRepair, "清理已知汉化文件，恢复游戏默认语言。")
+global BtnRefreshStatus := MainGui.Add("Button", "x317 y423 w50 h30", "刷新")
 AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
 
 global PicSteam := MainGui.Add("Picture", "x470 y426 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
@@ -310,6 +312,7 @@ BtnRefreshStatus.OnEvent("Click", (*) => OnBtnRefreshStatusClick())
 PicSteam.OnEvent("Click", (*) => LaunchPlatformUrl("steam_url", "Steam"))
 PicPurple.OnEvent("Click", (*) => LaunchPlatformUrl("purple_url", "PURPLE"))
 Picdiag.OnEvent("Click", (*) => OnDiagButtonClick())
+BtnRepair.OnEvent("Click", (*) => OnBtnRepairClick())
 
 ; ==============================================================================
 ; 主窗口关闭事件逻辑处理
@@ -2219,6 +2222,28 @@ OnDiagButtonClick(*) {
     SetStatusBarText("诊断报告已成功复制到剪贴板。")
 }
 
+OnBtnRepairClick(*) {
+    global g_CurrentServer, g_InstallPath, g_IsPatching
+
+    if (!g_InstallPath || !DirExist(g_InstallPath)) {
+        ShowMessageDialog("请先确认 AION2 游戏安装目录。")
+        return
+    }
+
+    if (!g_CurrentServer.Has("repair_config")) {
+        ShowMessageDialog("当前服务器暂未配置修复选项。")
+        return
+    }
+
+    ShowConfirmDialog("是否确认执行本地语言环境修复？`r`n`r`n将清理已知汉化文件，并恢复至游戏默认语言。", HandleConfirmResult)
+
+    HandleConfirmResult(IsConfirmed) {
+        if (IsConfirmed) {
+            ExecuteRepairConfig(g_CurrentServer)
+        }
+    }
+}
+
 ; ==============================================================================
 ; 5. 进程控制与程序运行模块
 ; ==============================================================================
@@ -2664,13 +2689,13 @@ DownloadPatchFileAsync(RemoteFileUrl, DestPath, FileAction) {
         CurrentSizeStr := FormatFileSize(downloaded)
         TotalStr := (TotalBytes > 0) ? FormatFileSize(TotalBytes) : "未知大小"
 
-        StatusText := Format("`t正在下载：{} [{} / {}] (节点: {}ms)", FileAction["filename"], CurrentSizeStr, TotalStr, g_BestLatency)
+        StatusText := Format("`t正在下载补丁文件：{} [{} / {}] (节点: {}ms)", FileAction["filename"], CurrentSizeStr, TotalStr, g_BestLatency)
         SetStatusBarText()
         MainStatusBar.SetText(StatusText)
     }
 
     SetStatusBarText()
-    MainStatusBar.SetText(Format("`t开始下载：{} (节点: {}ms)", FileAction["filename"], g_BestLatency))
+    MainStatusBar.SetText(Format("`t开始下载补丁文件：{} (节点: {}ms)", FileAction["filename"], g_BestLatency))
 
     try {
         req := DownloadAsync(TargetUrl, DestPath, OnFinishedCallback, OnProgressCallback)
@@ -2756,7 +2781,7 @@ CheckBulletin(BulletinMap, OnComplete := "") {
 ; ==============================================================================
 
 RefreshUi() {
-    global BtnBrowse, BtnChinese, BtnRefreshStatus, BtnReset, BtnRestore, BtnScan, BtnUpdate, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, g_IsRefreshing, g_WindowsOffset, MainGui, PicPurple, PicSteam, Picdiag, TabCtrl, TextTipInfo
+    global BtnBrowse, BtnChinese, BtnRefreshStatus, BtnReset, BtnRestore, BtnRepair, BtnScan, BtnUpdate, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, g_IsRefreshing, g_WindowsOffset, MainGui, PicPurple, PicSteam, Picdiag, TabCtrl, TextTipInfo
 
     ShowGameRunningTip := (!g_IsSyncing && IsGameProcessRunning())
 
@@ -2790,6 +2815,7 @@ RefreshUi() {
             BtnUpdate.Move(, 443)
             BtnChinese.Move(, 443)
             BtnRestore.Move(, 443)
+            BtnRepair.Move(, 443)
             BtnRefreshStatus.Move(, 443)
             PicSteam.Move(, 446)
             TextSplit.Move(, 450)
@@ -2802,6 +2828,7 @@ RefreshUi() {
             BtnUpdate.Move(, 423)
             BtnChinese.Move(, 423)
             BtnRestore.Move(, 423)
+            BtnRepair.Move(, 423)
             BtnRefreshStatus.Move(, 423)
             PicSteam.Move(, 426)
             TextSplit.Move(, 430)
@@ -2817,6 +2844,7 @@ RefreshUi() {
         BtnUpdate.Opt("+Disabled")
         BtnChinese.Opt("+Disabled")
         BtnRestore.Opt("+Disabled")
+        BtnRepair.Opt("+Disabled")
         BtnScan.Opt("+Disabled")
         BtnBrowse.Opt("+Disabled")
         BtnReset.Opt("+Disabled")
@@ -2829,6 +2857,12 @@ RefreshUi() {
     ComboServerList.Opt("-Disabled")
     BtnScan.Opt("-Disabled")
     BtnBrowse.Opt("-Disabled")
+
+    if (Type(g_CurrentServer) == "Map" && g_CurrentServer.Has("repair_config")) {
+        BtnRepair.Opt("-Disabled")
+    } else {
+        BtnRepair.Opt("+Disabled")
+    }
 
     if (g_IsRefreshing) {
         BtnRefreshStatus.Opt("+Disabled")
@@ -3160,6 +3194,7 @@ NormalizeServerConfig(ServersArray) {
     for Srv in ServersArray {
         if (Type(Srv) != "Map")
             continue
+
         SafeSrv := Map(
             "id", SafeNumber(SafeGet(Srv, "id", 1), 1),
             "name", SafeString(SafeGet(Srv, "name", "未知服务器"), "未知服务器"),
@@ -3169,8 +3204,10 @@ NormalizeServerConfig(ServersArray) {
             "keywords", SafeGet(Srv, "keywords", [
                 "AION"
             ]),
-            "patch_branches", []
+            "patch_branches", [],
+            "repair_config", []
         )
+
         Branches := SafeGet(Srv, "patch_branches", [])
         if (Type(Branches) == "Array") {
             for Br in Branches {
@@ -3191,7 +3228,6 @@ NormalizeServerConfig(ServersArray) {
                             continue
 
                         RemoteFile := SafeString(SafeGet(Act, "remote_filename", ""))
-
                         SplitPath(RemoteFile, &ExtractedName)
                         FileNameVal := SafeString(SafeGet(Act, "filename", ""))
                         if (FileNameVal == "")
@@ -3221,6 +3257,52 @@ NormalizeServerConfig(ServersArray) {
                 SafeSrv["patch_branches"].Push(SafeBr)
             }
         }
+
+        RepairCfgs := SafeGet(Srv, "repair_config", [])
+        if (Type(RepairCfgs) == "Array") {
+            for RC in RepairCfgs {
+                if (Type(RC) != "Map")
+                    continue
+                SafeRC := Map("actions", [])
+                RCActions := SafeGet(RC, "actions", [])
+                if (Type(RCActions) == "Array") {
+                    for Act in RCActions {
+                        if (Type(Act) != "Map")
+                            continue
+
+                        RemoteFile := SafeString(SafeGet(Act, "remote_filename", ""))
+                        SplitPath(RemoteFile, &ExtractedName)
+                        FileNameVal := SafeString(SafeGet(Act, "filename", ""))
+                        if (FileNameVal == "")
+                            FileNameVal := ExtractedName
+
+                        CleanRemoteUrl := StrReplace(RemoteFile, "\", "/")
+                        if (!(InStr(CleanRemoteUrl, "http://") || InStr(CleanRemoteUrl, "https://"))) {
+                            CleanRemoteUrl := RegExReplace(CleanRemoteUrl, "i)^https?://", "")
+                            CleanRemoteUrl := LTrim(CleanRemoteUrl, "/")
+                        }
+
+                        CleanTargetPath := StrReplace(SafeString(SafeGet(Act, "target_relative_path", "")), "/", "\")
+                        CleanTargetPath := LTrim(CleanTargetPath, "\")
+                        if InStr(CleanTargetPath, "..")
+                            continue
+
+                        SafeAct := Map(
+                            "type", SafeString(SafeGet(Act, "type", "add"), "add"),
+                            "filename", FileNameVal,
+                            "remote_filename", RemoteFile,
+                            "target_relative_path", CleanTargetPath,
+                            "file_md5", SafeString(SafeGet(Act, "file_md5", "")),
+                            "file_size", SafeNumber(SafeGet(Act, "file_size", 0), 0),
+                            "hide", SafeGet(Act, "hide", false)
+                        )
+                        SafeRC["actions"].Push(SafeAct)
+                    }
+                }
+                SafeSrv["repair_config"].Push(SafeRC)
+            }
+        }
+
         SafeList.Push(SafeSrv)
     }
     return SafeList
@@ -4010,4 +4092,222 @@ GetPatchDiagnosticData() {
     }
 
     return DiagReportList
+}
+
+; ==============================================================================
+; 一键修复本地语言环境
+; ==============================================================================
+ExecuteRepairConfig(ServerMap) {
+    global g_IsPatching, g_ConfigCache, g_CurrentServer, g_InstallPath, g_ProjectName, MainStatusBar
+
+    if (!g_InstallPath || !DirExist(g_InstallPath)) {
+        ShowMessageDialog("请先确认 AION2 游戏安装目录。")
+        return
+    }
+
+    if (Type(ServerMap) != "Map" || !ServerMap.Has("repair_config")) {
+        ShowMessageDialog("当前服务器未配置修复选项。")
+        return
+    }
+
+    RepairConfigs := ServerMap["repair_config"]
+    if (Type(RepairConfigs) != "Array" || RepairConfigs.Length == 0) {
+        ShowMessageDialog("未发现有效的修复配置。")
+        return
+    }
+
+    g_IsPatching := true
+    RefreshUi()
+
+    try {
+
+        KillProcessByFullPath()
+
+        FirstConfig := RepairConfigs[1]
+        if (!FirstConfig.Has("actions") || Type(FirstConfig["actions"]) != "Array") {
+            throw Error("修复配置格式错误：缺少 actions 动作数组。")
+        }
+
+        ActionsArray := FirstConfig["actions"]
+        if (ActionsArray.Length == 0) {
+            throw Error("修复配置中未包含任何执行动作。")
+        }
+
+        LocalCacheRootDir := PathUtil.Normalize(A_ScriptDir . "\patches")
+        if !DirExist(LocalCacheRootDir)
+            DirCreate(LocalCacheRootDir)
+
+        RepairCacheDir := PathUtil.Normalize(LocalCacheRootDir . "\repair")
+        if !DirExist(RepairCacheDir)
+            DirCreate(RepairCacheDir)
+
+        SetStatusBarText()
+        MainStatusBar.SetText("`t正在检查修复文件的本地缓存与 MD5…")
+
+        loop ActionsArray.Length {
+            Act := ActionsArray[A_Index]
+            ActType := SafeGet(Act, "type", "add")
+
+            if ((ActType != "replace" && ActType != "add") || !Act.Has("remote_filename") || !Act["remote_filename"])
+                continue
+            if (Act["file_md5"] == "d41d8cd98f00b204e9800998ecf8427e")
+                continue
+
+            LocalCacheFile := PathUtil.Normalize(RepairCacheDir . "\" . Act["filename"])
+            ExpectedMd5 := StrLower(SafeString(SafeGet(Act, "file_md5", "")))
+            RemoteFileUrl := Act["remote_filename"]
+
+            NeedsDownload := false
+            if (!FileExist(LocalCacheFile)) {
+                NeedsDownload := true
+            } else if (ExpectedMd5 != "" && HashFileMd5(LocalCacheFile) != ExpectedMd5) {
+                NeedsDownload := true
+            }
+
+            if (NeedsDownload) {
+                SetStatusBarText("`t正在下载修复文件：" . Act["filename"])
+
+                SplitPath(LocalCacheFile, &SafeFilename)
+                RandomSuffix := A_TickCount . "_" . Random(1000, 9999)
+                TmpFile := PathUtil.Normalize(A_Temp . "\" . SafeFilename . "_" . RandomSuffix . ".tmp")
+                if FileExist(TmpFile)
+                    FileDelete(TmpFile)
+
+                DownloadSuccess := DownloadDirectFileAsync(RemoteFileUrl, TmpFile, Act)
+
+                if (!DownloadSuccess) {
+                    if FileExist(TmpFile)
+                        FileDelete(TmpFile)
+                    throw Error("修复文件 [" . Act["filename"] . "] 下载失败。")
+                }
+
+                if (ExpectedMd5 != "" && HashFileMd5(TmpFile) != ExpectedMd5) {
+                    if FileExist(TmpFile)
+                        FileDelete(TmpFile)
+                    throw Error("文件 [" . Act["filename"] . "] MD5 校验不匹配，修复中止。")
+                }
+
+                if FileExist(LocalCacheFile)
+                    FileDelete(LocalCacheFile)
+                FileMove(TmpFile, LocalCacheFile, 1)
+            }
+        }
+
+        FailedFiles := []
+        loop ActionsArray.Length {
+            Act := ActionsArray[A_Index]
+            RelPath := SafeGet(Act, "target_relative_path", "")
+
+            if (RelPath == "" || InStr(RelPath, ".."))
+                throw Error("非法配置：路径包含非法相对级别跳转 [" . RelPath . "]")
+
+            ActType := SafeString(SafeGet(Act, "type", "add"))
+            FinalPath := ResolveTargetPath(RelPath)
+            SplitPath(FinalPath, , &FDir)
+
+            try {
+                switch ActType {
+                    case "remove", "delete":
+                        if FileExist(FinalPath) {
+                            FileDelete(FinalPath)
+                        }
+                    case "add", "replace":
+                        if (Act["file_md5"] == "d41d8cd98f00b204e9800998ecf8427e") {
+                            if (FDir != "" && !DirExist(FDir))
+                                DirCreate(FDir)
+                            WriteFileAtomic(FinalPath, "")
+                        } else {
+                            LocalCacheFile := PathUtil.Normalize(RepairCacheDir . "\" . Act["filename"])
+                            if FileExist(LocalCacheFile) {
+                                if (FDir != "" && !DirExist(FDir))
+                                    DirCreate(FDir)
+
+                                FileCopy(LocalCacheFile, FinalPath, 1)
+                            } else {
+                                throw Error("未找到本地缓存文件: " . Act["filename"])
+                            }
+                        }
+                    case "run":
+                        if FileExist(FinalPath) {
+                            IsHide := Act.Has("hide") ? Act["hide"] : false
+                            RunTargetProgram(FinalPath, IsHide)
+                        }
+                }
+            } catch {
+                FailedFiles.Push(RelPath)
+            }
+        }
+
+        if (FailedFiles.Length > 0) {
+            throw Error("部分文件修复替换失败，可能被其他进程占用。建议关闭游戏后重试。")
+        }
+
+        ServerId := g_CurrentServer.Has("id") ? g_CurrentServer["id"] : "default"
+        NormalizedInstallPath := PathUtil.Normalize(g_InstallPath)
+        SavedBranchID := GetSavedBranchID()
+        ProfileKey := GetProfileKey(ServerId, NormalizedInstallPath, SavedBranchID)
+        BackupRootDir := GetBackupRootDir(ServerId, NormalizedInstallPath, SavedBranchID)
+
+        if (ProfileKey != "") {
+            if (!g_ConfigCache.HasOwnProp(ProfileKey))
+                g_ConfigCache.%ProfileKey% := {}
+            g_ConfigCache.%ProfileKey%.IsPatched := 0
+            g_ConfigCache.%ProfileKey%.LocalPatchVersion := ""
+            g_ConfigCache.%ProfileKey%.LocalPatchBranchID := 0
+            SaveAllConfig()
+        }
+
+        if (DirExist(BackupRootDir)) {
+            try DirDelete(BackupRootDir, 1)
+        }
+
+        SetStatusBarText()
+        ShowMessageDialog("本地语言环境修复成功！`r`n`r`n已恢复至游戏默认语言。")
+    } catch Error as Err {
+        SetStatusBarText()
+        ShowMessageDialog("修复本地语言环境失败：`r`n`r`n" . Err.Message)
+    }
+}
+
+DownloadDirectFileAsync(DirectUrl, DestPath, FileAction) {
+    global MainStatusBar
+    TotalBytes := SafeNumber(FileAction["file_size"], 0)
+    SplitPath(DestPath, , &ParentDir)
+    if (ParentDir != "" && !DirExist(ParentDir))
+        try DirCreate(ParentDir)
+    if FileExist(DestPath) {
+        try FileDelete(DestPath)
+        catch {
+            return false
+        }
+    }
+    isDone := false
+    hasError := false
+    OnFinishedCallback(result) {
+        if (result is OSError || result is Error)
+            hasError := true
+        isDone := true
+    }
+    OnProgressCallback(downloaded, total) {
+        if (total > 0 && TotalBytes <= 0)
+            TotalBytes := total
+        CurrentSizeStr := FormatFileSize(downloaded)
+        TotalStr := (TotalBytes > 0) ? FormatFileSize(TotalBytes) : "未知大小"
+        StatusText := Format("`t正在下载修复文件：{} [{} / {}]", FileAction["filename"], CurrentSizeStr, TotalStr)
+        SetStatusBarText()
+        MainStatusBar.SetText(StatusText)
+    }
+    SetStatusBarText()
+    MainStatusBar.SetText(Format("`t开始下载修复文件：{}", FileAction["filename"]))
+    try {
+        req := DownloadAsync(DirectUrl, DestPath, OnFinishedCallback, OnProgressCallback)
+    } catch {
+        return false
+    }
+    while (!isDone) {
+        Sleep(50)
+    }
+    if (hasError || !FileExist(DestPath) || FileGetSize(DestPath) == 0)
+        return false
+    return true
 }
