@@ -133,7 +133,7 @@
                             "type": "replace",
                             "filename": "pakchunk502000-Windows_0_P.pak",
                             "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/31/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.pak.zip.31",
-                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
                             "file_md5": "5a613b3c36ad5da170e12460d362e1f1",
                             "file_size": 3749083
                         },
@@ -141,7 +141,7 @@
                             "type": "replace",
                             "filename": "pakchunk502000-Windows_0_P.sig",
                             "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/31/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.sig.zip.31",
-                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig",
                             "file_md5": "8c56f4e0f4e4012cf6fee40f7ecc22f5",
                             "file_size": 760
                         },
@@ -149,7 +149,7 @@
                             "type": "replace",
                             "filename": "pakchunk502000-Windows_0_P.ucas",
                             "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/1/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.ucas.zip.1",
-                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas",
                             "file_md5": "5f43fed0ad5ca3d9cd27fa45a0fcbd82",
                             "file_size": 48
                         },
@@ -157,7 +157,7 @@
                             "type": "replace",
                             "filename": "pakchunk502000-Windows_0_P.utoc",
                             "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/9/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.utoc.zip.9",
-                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc",
                             "file_md5": "7dc402d00e158ea0a23bb6f6aa0f27a3",
                             "file_size": 1297
                         }
