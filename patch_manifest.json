@@ -136,17 +136,17 @@
                         {
                             "type": "replace",
                             "filename": "pakchunk502000-Windows_0_P.pak",
-                            "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/31/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.pak.zip.31",
+                            "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/32/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.pak.zip.32",
                             "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
-                            "file_md5": "5a613b3c36ad5da170e12460d362e1f1",
-                            "file_size": 3749083
+                            "file_md5": "cf7c76a115a705e394d3df1f27fc3fb3",
+                            "file_size": 3750515
                         },
                         {
                             "type": "replace",
                             "filename": "pakchunk502000-Windows_0_P.sig",
-                            "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/31/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.sig.zip.31",
+                            "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/32/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.sig.zip.32",
                             "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig",
-                            "file_md5": "8c56f4e0f4e4012cf6fee40f7ecc22f5",
+                            "file_md5": "952178b9bf306045a824d0df58919b2a",
                             "file_size": 760
                         },
                         {
