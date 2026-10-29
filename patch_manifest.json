@@ -2,7 +2,7 @@
     "cloud_bulletin": {
         "latest_bulletin_version": "1.2.14.0",
         "changelog": "** 紧急公告 ** 28日更新后现有的汉化方法应该失效了，直接运行游戏或者“修复环境”即可。\r\n\r\n1. 国际服汉化补丁均已支持 ** 10月28日 ** 版本，28日15:35点更新。\r\n2. 台服汉化补丁均已支持 ** 10月28日 ** 版本，28日10:51点更新。\r\n3. 国际服“恢复环境”已支持 ** 10月28日 ** 版本，28日10:51点更新。\r\n4. 现在“一键汉化”时默认会清理其他汉化工具释放的残留文件。\r\n\r\n** 不要使用任何 dll 注入方式的汉化、、隐藏背包、翻译工具和非抓包方式的水表，优先选择明确注明了“非侵入式”的工具。",
-        "release_timestamp": 1793172838
+        "release_timestamp": 1793240897
     },
     "servers_config": [
         {
@@ -20,7 +20,7 @@
                     "source": "简体中文 - 支持10月28日版本",
                     "latest_patch_version": "1.0.0.11",
                     "changelog": "",
-                    "release_timestamp": 1793172838,
+                    "release_timestamp": 1793240897,
                     "actions": [
                         {
                             "type": "remove",
@@ -28,7 +28,7 @@
                         },
                         {
                             "type": "remove",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk999999-Windows_999_P.pak"
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk999999-Windows_999_P.pak"
                         },
                         {
                             "type": "remove",
@@ -36,31 +36,31 @@
                         },
                         {
                             "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig"
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.sig"
                         },
                         {
                             "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas"
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.ucas"
                         },
                         {
                             "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc"
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.utoc"
                         },
                         {
                             "type": "replace",
-                            "filename": "bg_pakchunk502000-Windows_0_P.pak",
-                            "remote_filename": "patches/bg_pakchunk502000-Windows_0_P.pak",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                            "filename": "bg_pakchunk503000-Windows_0_P.pak",
+                            "remote_filename": "patches/bg_pakchunk503000-Windows_0_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.pak",
                             "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
                             "file_size": 0
                         },
                         {
                             "type": "add",
-                            "filename": "bg_JRTr_L10NString.dat",
-                            "remote_filename": "patches/bg_JRTr_L10NString.dat",
-                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "03812537532a999069ff820e3ee52b2f",
-                            "file_size": 3720964
+                            "filename": "foohi_5oR4_L10NString.dat",
+                            "remote_filename": "patches/foohi_5oR4_L10NString.dat",
+                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\ja-JP\\L10NString.dat",
+                            "file_md5": "37f527f11e70cb7424af7faca220d781",
+                            "file_size": 5667188
                         }
                     ]
                 },
@@ -69,7 +69,7 @@
                     "source": "繁體中文 - 支持10月28日版本",
                     "latest_patch_version": "1.0.0.11",
                     "changelog": "",
-                    "release_timestamp": 1793172838,
+                    "release_timestamp": 1793240897,
                     "actions": [
                         {
                             "type": "remove",
@@ -77,7 +77,7 @@
                         },
                         {
                             "type": "remove",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk999999-Windows_999_P.pak"
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk999999-Windows_999_P.pak"
                         },
                         {
                             "type": "remove",
@@ -85,31 +85,31 @@
                         },
                         {
                             "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig"
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.sig"
                         },
                         {
                             "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas"
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.ucas"
                         },
                         {
                             "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc"
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.utoc"
                         },
                         {
                             "type": "replace",
-                            "filename": "bg_pakchunk502000-Windows_0_P.pak",
-                            "remote_filename": "patches/bg_pakchunk502000-Windows_0_P.pak",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
+                            "filename": "bg_pakchunk503000-Windows_0_P.pak",
+                            "remote_filename": "patches/bg_pakchunk503000-Windows_0_P.pak",
+                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.pak",
                             "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
                             "file_size": 0
                         },
                         {
                             "type": "add",
-                            "filename": "bg_72k5_L10NString.dat",
-                            "remote_filename": "patches/bg_72k5_L10NString.dat",
-                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                            "file_md5": "223a6f7cd7b885e1d9517208695f3a8f",
-                            "file_size": 3723012
+                            "filename": "foohi_F8SH_L10NString.dat",
+                            "remote_filename": "patches/foohi_F8SH_L10NString.dat",
+                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\ja-JP\\L10NString.dat",
+                            "file_md5": "6152cf24fff2a498077235ff2dd44d75",
+                            "file_size": 5668740
                         }
                     ]
                 }
