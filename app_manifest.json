@@ -16,8 +16,8 @@
         ]
     },
     "client_update": {
-        "latest_client_version": "2.1.0.0",
-        "min_required_version": "2.0.7.0",
+        "latest_client_version": "2.1.1.0",
+        "min_required_version": "2.1.1.0",
         "client_download_url_minor": "https://github.com/nanhezzb/Aion2-Chinese-Patch/releases/latest",
         "client_download_url_main": "https://www.kdocs.cn/l/cf9KkRNTpqhb",
         "changelog": "* 2.1.0.0 更新日志 *\r\n新增功能：使用“修复环境”功能，清理任何汉化残留文件，恢复游戏默认语言。\r\n\r\n* 2.0.7.0 更新日志 *\r\n其他调整：增加了一键诊断功能，快速定位汉化失败原因。",
