@@ -1,7 +1,7 @@
 {
     "cloud_bulletin": {
-        "latest_bulletin_version": "1.2.14.0",
-        "changelog": "** 紧急公告 ** 28日更新后现有的汉化方法应该失效了，直接运行游戏或者“修复环境”即可。\r\n\r\n1. 国际服汉化补丁均已支持 ** 10月28日 ** 版本，28日15:35点更新。\r\n2. 台服汉化补丁均已支持 ** 10月28日 ** 版本，28日10:51点更新。\r\n3. 国际服“恢复环境”已支持 ** 10月28日 ** 版本，28日10:51点更新。\r\n4. 现在“一键汉化”时默认会清理其他汉化工具释放的残留文件。\r\n\r\n** 不要使用任何 dll 注入方式的汉化、、隐藏背包、翻译工具和非抓包方式的水表，优先选择明确注明了“非侵入式”的工具。",
+        "latest_bulletin_version": "1.2.15.0",
+        "changelog": "** 紧急公告 ** 汉化补丁数据来源切换为 https://github.com/Foohi666/Aion2-CN-Foohi。游戏内语言选择“** 日语 **”。\r\n\r\n2. 现在“一键汉化”时默认会清理其他汉化工具释放的残留文件。\r\n\r\n3. 不要使用任何 dll 注入方式的汉化、、隐藏背包、翻译工具和非抓包方式的水表，优先选择明确注明了“非侵入式”的工具。",
         "release_timestamp": 1793240897
     },
     "servers_config": [
@@ -17,8 +17,8 @@
             "patch_branches": [
                 {
                     "id": 0,
-                    "source": "简体中文 - 支持10月28日版本",
-                    "latest_patch_version": "1.0.0.11",
+                    "source": "Foohi 简体中文 - 支持10月28日版本",
+                    "latest_patch_version": "1.0.0.12",
                     "changelog": "",
                     "release_timestamp": 1793240897,
                     "actions": [
@@ -66,8 +66,8 @@
                 },
                 {
                     "id": 0,
-                    "source": "繁體中文 - 支持10月28日版本",
-                    "latest_patch_version": "1.0.0.11",
+                    "source": "Foohi 繁體中文 - 支持10月28日版本",
+                    "latest_patch_version": "1.0.0.12",
                     "changelog": "",
                     "release_timestamp": 1793240897,
                     "actions": [
