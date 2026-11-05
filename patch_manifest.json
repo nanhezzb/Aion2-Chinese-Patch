@@ -1,8 +1,8 @@
 {
     "cloud_bulletin": {
-        "latest_bulletin_version": "1.2.15.0",
-        "changelog": "** 紧急公告 ** 汉化补丁数据来源切换为 https://github.com/Foohi666/Aion2-CN-Foohi。游戏内语言选择“** 日语 **”。\r\n\r\n2. 现在“一键汉化”时默认会清理其他汉化工具释放的残留文件。\r\n\r\n3. 不要使用任何 dll 注入方式的汉化、、隐藏背包、翻译工具和非抓包方式的水表，优先选择明确注明了“非侵入式”的工具。",
-        "release_timestamp": 1793240897
+        "latest_bulletin_version": "1.2.16.0",
+        "changelog": "** 紧急公告 ** 2026.11.05 鉴于永恒之塔2国际服 NC 反汉化已经到了魔怔的地步，本项目即刻停止维护，并且不再引用外部补丁源发布更新。2群 1080184873 1群 1124021357 转为 AION2 游戏相关内容交流群。",
+        "release_timestamp": 1793837598
     },
     "servers_config": [
         {
@@ -14,106 +14,7 @@
             ],
             "steam_url": "steam://rungameid/3393110",
             "purple_url": "--game-id A2_WW_L_GA_PURPLE",
-            "patch_branches": [
-                {
-                    "id": 0,
-                    "source": "Foohi 简体中文 - 支持10月28日版本",
-                    "latest_patch_version": "1.0.0.12",
-                    "changelog": "",
-                    "release_timestamp": 1793240897,
-                    "actions": [
-                        {
-                            "type": "remove",
-                            "target_relative_path": "Aion2\\Content\\Paks\\pakchunk999999-Windows_999_P.pak"
-                        },
-                        {
-                            "type": "remove",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk999999-Windows_999_P.pak"
-                        },
-                        {
-                            "type": "remove",
-                            "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll"
-                        },
-                        {
-                            "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.sig"
-                        },
-                        {
-                            "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.ucas"
-                        },
-                        {
-                            "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.utoc"
-                        },
-                        {
-                            "type": "replace",
-                            "filename": "bg_pakchunk503000-Windows_0_P.pak",
-                            "remote_filename": "patches/bg_pakchunk503000-Windows_0_P.pak",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.pak",
-                            "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
-                            "file_size": 0
-                        },
-                        {
-                            "type": "add",
-                            "filename": "foohi_5oR4_L10NString.dat",
-                            "remote_filename": "patches/foohi_5oR4_L10NString.dat",
-                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\ja-JP\\L10NString.dat",
-                            "file_md5": "37f527f11e70cb7424af7faca220d781",
-                            "file_size": 5667188
-                        }
-                    ]
-                },
-                {
-                    "id": 0,
-                    "source": "Foohi 繁體中文 - 支持10月28日版本",
-                    "latest_patch_version": "1.0.0.12",
-                    "changelog": "",
-                    "release_timestamp": 1793240897,
-                    "actions": [
-                        {
-                            "type": "remove",
-                            "target_relative_path": "Aion2\\Content\\Paks\\pakchunk999999-Windows_999_P.pak"
-                        },
-                        {
-                            "type": "remove",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk999999-Windows_999_P.pak"
-                        },
-                        {
-                            "type": "remove",
-                            "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll"
-                        },
-                        {
-                            "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.sig"
-                        },
-                        {
-                            "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.ucas"
-                        },
-                        {
-                            "type": "delete",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.utoc"
-                        },
-                        {
-                            "type": "replace",
-                            "filename": "bg_pakchunk503000-Windows_0_P.pak",
-                            "remote_filename": "patches/bg_pakchunk503000-Windows_0_P.pak",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\ja-JP\\pakchunk503000-Windows_0_P.pak",
-                            "file_md5": "d41d8cd98f00b204e9800998ecf8427e",
-                            "file_size": 0
-                        },
-                        {
-                            "type": "add",
-                            "filename": "foohi_F8SH_L10NString.dat",
-                            "remote_filename": "patches/foohi_F8SH_L10NString.dat",
-                            "target_relative_path": "Aion2\\Content\\L10N\\Text\\ja-JP\\L10NString.dat",
-                            "file_md5": "6152cf24fff2a498077235ff2dd44d75",
-                            "file_size": 5668740
-                        }
-                    ]
-                }
-            ],
+            "patch_branches": [],
             "repair_config": [
                 {
                     "actions": [
