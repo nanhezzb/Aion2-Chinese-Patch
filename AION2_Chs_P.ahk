@@ -8,7 +8,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 2.1.0.0
+;@Ahk2Exe-SetVersion 2.1.2.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 
 ;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
@@ -65,8 +65,8 @@ UniqueInstance.Ensure(Map(
 
 global g_ProjectName := "AION2 Chs Patch"
 global g_ProjectNameSC := "AION2 一键汉化工具"
-global g_CurrentAppVersion := "2.1.0.0"
-global g_CurrentAppVersionShort := "2.1.0"
+global g_CurrentAppVersion := "2.1.2.0"
+global g_CurrentAppVersionString := "2.1.2"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -160,7 +160,7 @@ A_IconTip := g_ProjectNameSC
 ; 主界面 GUI 构建
 ; ==============================================================================
 
-global MainGui := Gui(, g_ProjectNameSC . " v" . g_CurrentAppVersionShort . " - 非 dll 侵入式 更安全")
+global MainGui := Gui(, g_ProjectNameSC . " v" . g_CurrentAppVersionString . " - 非 dll 侵入式 更安全")
 MainGui.SetFont("s9", "Microsoft YaHei")
 
 global TabCtrl := MainGui.Add("Tab3", "x-1 y10 w574 h480", [
@@ -180,8 +180,8 @@ global ComboServerList := MainGui.Add("DropDownList", "x30 y94 w510 Choose1", []
 
 MainGui.Add("GroupBox", "x15 y146 w540 h105", " 游戏安装目录 * ")
 global EditInstallPath := MainGui.Add("Edit", "x30 y170 w510 r1 ReadOnly", "")
-global BtnScan := MainGui.Add("Button", "x297 y209 w80 h26", "自动查找")
-global BtnBrowse := MainGui.Add("Button", "x389 y209 w80 h26", "手动设置")
+global BtnScan := MainGui.Add("Button", "x295 y209 w80 h26", "自动查找")
+global BtnBrowse := MainGui.Add("Button", "x388 y209 w80 h26", "手动设置")
 global BtnReset := MainGui.Add("Button", "x481 y209 w60 h26 +Disabled", "重置")
 
 MainGui.Add("GroupBox", "x15 y261 w540 h145", "使用须知 * ")
@@ -191,16 +191,16 @@ TextExplain.Value := RuleText .
     "`r`n2. 汉化后游戏内切换一下语言使汉化文件生效。" .
     "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE · Steam 修复文件。" .
     "`r`n   PURPLE : AION2 - 游戏设置 - 检查文件。" .
-    "`r`n   Steam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性。" .
+    "`r`n   Steam : AION2 右键点击 - 属性 - 已安装的文件 - 验证游戏文件的完整性。" .
     "`r`n4. 本工具为非 dll 侵入式的第三方扩展，使用即代表您自愿承担所有风险。"
 
 global TextTipInfo := MainGui.Add("Text", "x16 y421 w575 +Hidden cRed", "强烈建议退出游戏再进行一键汉化、撤销汉化和修复环境操作。")
 global BtnUpdate := MainGui.Add("Button", "x14 y423 w100 h30 +Hidden", "更新补丁")
 global BtnChinese := MainGui.Add("Button", "x14 y423 w100 h30", "一键汉化")
-global BtnRestore := MainGui.Add("Button", "x126 y423 w90 h30", "撤销汉化")
-global BtnRepair := MainGui.Add("Button", "x229 y423 w75 h30", "修复环境")
+global BtnRestore := MainGui.Add("Button", "x127 y423 w90 h30", "撤销汉化")
+global BtnRepair := MainGui.Add("Button", "x230 y423 w75 h30", "修复环境")
 AddToolTip(BtnRepair, "清理已知汉化文件，恢复游戏默认语言。")
-global BtnRefreshStatus := MainGui.Add("Button", "x317 y423 w50 h30", "刷新")
+global BtnRefreshStatus := MainGui.Add("Button", "x318 y423 w50 h30", "刷新")
 AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
 
 global PicSteam := MainGui.Add("Picture", "x470 y426 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
@@ -344,7 +344,7 @@ ShowCloseConfirmDialog() {
 
     CloseGui.Add("Text", "x15 y20 w310 h50", "选择关闭主窗口时的默认操作。")
     ChkRemember := CloseGui.Add("Checkbox", "x15 y111 w120 h22", "记住当前的选择。")
-    BtnMinimize := CloseGui.Add("Button", "x220 y107 w120 h30 Default", "隐藏到通知区域")
+    BtnMinimize := CloseGui.Add("Button", "x219 y107 w120 h30 Default", "隐藏到通知区域")
     BtnExit := CloseGui.Add("Button", "x352 y107 w84 h30", "直接退出")
 
     BtnMinimize.OnEvent("Click", MinimizeClick)
@@ -393,63 +393,6 @@ SaveCloseChoice(Value) {
 
 g_DefaultServers := NormalizeServerConfig([
     Map(
-        "id", 101,
-        "name", "国际服",
-        "display", "国际服 - Steam · PURPLE",
-        "keywords", [
-            "AION"
-        ],
-        "steam_url", "steam://rungameid/3393110",
-        "purple_url", "--game-id A2_WW_L_GA_PURPLE",
-        "patch_branches", [
-            Map(
-                "id", 0,
-                "source", "自制 - 已支持10月7日版本",
-                "latest_patch_version", "1.0.0.4",
-                "changelog", "",
-                "release_timestamp", 1791364267,
-                "actions", [
-                    Map(
-                        "type", "delete",
-                        "target_relative_path", "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig"
-                    ),
-                    Map(
-                        "type", "delete",
-                        "target_relative_path", "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas"
-                    ),
-                    Map(
-                        "type", "delete",
-                        "target_relative_path", "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc"
-                    ),
-                    Map(
-                        "type", "replace",
-                        "filename", "bg_pakchunk502000-Windows_0_P.pak",
-                        "remote_filename", "patches/bg_pakchunk502000-Windows_0_P.pak",
-                        "target_relative_path", "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
-                        "file_md5", "d41d8cd98f00b204e9800998ecf8427e",
-                        "file_size", 0
-                    ),
-                    Map(
-                        "type", "add",
-                        "filename", "bg_uHyd_L10NString.dat",
-                        "remote_filename", "patches/bg_uHyd_L10NString.dat",
-                        "target_relative_path", "Aion2\\Content\\L10N\\Text\\en-US\\L10NString.dat",
-                        "file_md5", "ea553020fdd5dc244db037ec9aa5a502",
-                        "file_size", 3708996
-                    ),
-                    Map(
-                        "type", "add",
-                        "filename", "NotoSans-Bold.ufont",
-                        "remote_filename", "patches/NotoSans-Bold.ufont",
-                        "target_relative_path", "Aion2\\Content\\UI\\Font\\NotoSans-Bold.ufont",
-                        "file_md5", "3dd7f29fd6f36d1fe71a2daf4a03a59c",
-                        "file_size", 20050760
-                    )
-                ]
-            )
-        ]
-    ),
-    Map(
         "id", 102,
         "name", "台服",
         "display", "台服 - PURPLE",
@@ -460,6 +403,7 @@ g_DefaultServers := NormalizeServerConfig([
         "patch_branches", [
             Map(
                 "id", 0,
+                "target_language", "zh-TW",
                 "source", "自制 - 同步10月5日版本",
                 "latest_patch_version", "1.0.0.0",
                 "changelog", "",
@@ -1007,7 +951,7 @@ UpdateServerNoticeText() {
     ServerName := g_CurrentServer["name"]
     RuleText := "1. 选择 AION2 " . ServerName . "的安装目录，" . ((g_CurrentServer["id"] == 102) ? "例如 D:\Games\AION2_TW。" : "例如 D:\Games\AION2。")
     TextExplain.Value := RuleText .
-        "`r`n2. 汉化后游戏内切换一下语言，选择" . ((g_CurrentServer["id"] == 102) ? "“繁体中文”" : "“English”") . "使汉化文件生效。" .
+        "`r`n2. 汉化后游戏内切换一下语言，选择" . ((g_CurrentServer["id"] == 102) ? "“繁体中文”" : "对应的语言") . "使汉化文件生效。" .
         "`r`n3. 如发生异常问题，使用“撤销汉化”功能，或在 PURPLE · Steam 修复文件。" .
         "`r`n   PURPLE : AION2 - 游戏设置 - 检查文件。" .
         "`r`n   Steam : AION2 - 属性 - 已安装的文件 - 验证游戏文件的完整性。" .
@@ -1617,6 +1561,16 @@ HandleOverlapConfirmation(IsConfirmed, ContextMap) {
     }
 }
 
+; 新增映射函数
+GetLanguageDisplayName(Code) {
+    switch Code {
+        case "en-US": return "English"
+        case "ja-JP": return "日本语"
+        case "zh-TW": return "繁體中文"
+        default: return ""
+    }
+}
+
 ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
     global g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_PatchesCacheDir, g_ProjectName, MainStatusBar
 
@@ -1786,7 +1740,10 @@ ApplyPatchBranch(PatchBranch, ActionsArray, BranchId, IsUpdate := false) {
         SaveAllConfig()
 
         SetStatusBarText()
-        TempText := ServerId == 102 ? " ** 繁体中文 ** 。" : " ** English ** 。"
+        LangName := GetLanguageDisplayName(PatchBranch.Has("target_language") ? PatchBranch["target_language"] : "")
+        if (LangName == "")
+            LangName := ServerId == 102 ? "繁體中文" : "日本语"
+        TempText := " ** " . LangName . " ** 。"
         SuccMsg := IsUpdate ? "汉化补丁已更新至最新版本。`r`n`r`n更新完成" . "，游戏内语言选择 " . TempText : "汉化补丁文件已成功释放至游戏目录。`r`n`r`n汉化完成" . "，游戏内语言选择 " . TempText
         ShowMessageDialog(SuccMsg)
     } catch Error as Err {
@@ -2597,6 +2554,7 @@ SelectFastestMirrorNode() {
     for Candidate in Candidates {
         try {
             whr := WinHttpRequest()
+            whr.whr.SetProxy(1)
             whr.Open("HEAD", Candidate.TestUrl, true)
             whr.SetRequestHeader("User-Agent", "Mozilla/5.0")
             ReqList.Push({
@@ -2718,6 +2676,7 @@ DownloadPatchFileAsync(RemoteFileUrl, DestPath, FileAction) {
 HttpGetText(ApiUrl, TimeoutSeconds := 5) {
     try {
         Whr := WinHttpRequest()
+        whr.whr.SetProxy(1)
         Whr.Open("GET", ApiUrl, true)
         Whr.SetRequestHeader("User-Agent", "Mozilla/5.0")
         Whr.Send()
@@ -3217,6 +3176,7 @@ NormalizeServerConfig(ServersArray) {
                     continue
                 SafeBr := Map(
                     "id", SafeNumber(SafeGet(Br, "id", 1), 1),
+                    "target_language", SafeString(SafeGet(Br, "target_language", "")),
                     "source", SafeString(SafeGet(Br, "source", "default"), "default"),
                     "latest_patch_version", SafeString(SafeGet(Br, "latest_patch_version", "1.0.0.0"), "1.0.0.0"),
                     "changelog", SafeString(SafeGet(Br, "changelog", "")),
@@ -3404,7 +3364,7 @@ ShowConfirmDialog(Text, Callback := "") {
     ConfirmGui.Add("Text", "x15 y20 w420 h60", Text)
 
     BtnCancel := ConfirmGui.Add("Button", "x352 y107 w84 h30", "取消")
-    BtnConfirm := ConfirmGui.Add("Button", "x240 y107 w100 h30 Default", "确认")
+    BtnConfirm := ConfirmGui.Add("Button", "x239 y107 w100 h30 Default", "确认")
 
     CloseDialog(UserChoice) {
         if (!UserChoice)
@@ -3434,7 +3394,7 @@ ShowMessageDialog(Text, Callback := "") {
     MessageGui := Gui("+Owner" . MainGui.Hwnd, "提示")
     MessageGui.SetFont(, "Microsoft YaHei UI")
 
-    MessageGui.Add("Text", "x15 y20 w410 h60", Text)
+    MessageGui.Add("Text", "x15 y20 w410 h70", Text)
 
     BtnConfirm := MessageGui.Add("Button", "x336 y107 w100 h30 Default", "确认")
 
@@ -3498,12 +3458,19 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
         Src := BranchObj.Has("source") ? SafeString(BranchObj["source"]) : "default"
 
         TotalSize := 0
+        SeenFileMd5 := Map()
         if (BranchObj.Has("actions") && Type(BranchObj["actions"]) == "Array") {
             for Act in BranchObj["actions"] {
                 ActType := Act.Has("type") ? Act["type"] : "add"
-                if (ActType == "add" || ActType == "replace" || ActType == "run") {
-                    TotalSize += SafeNumber(SafeGet(Act, "file_size", 0), 0)
+                if (ActType != "add" && ActType != "replace" && ActType != "run")
+                    continue
+                ActMd5 := StrLower(SafeString(SafeGet(Act, "file_md5", "")))
+                if (ActMd5 != "") {                          ; 有 MD5 的按 MD5 去重
+                    if (SeenFileMd5.Has(ActMd5))
+                        continue
+                    SeenFileMd5[ActMd5] := true
                 }
+                TotalSize += SafeNumber(SafeGet(Act, "file_size", 0), 0)   ; 无 MD5（run 等）照常计入
             }
         }
         PatchSizeStr := FormatFileSize(TotalSize)
@@ -3519,7 +3486,7 @@ ShowMultiBranchDialog(Branches, Callback := "", IsUpdateList := false) {
 
     ConfirmBtnText := IsUpdateList ? "确认更新" : "确认"
     BtnCancel := ChoiceGui.Add("Button", "x352 y232 w84 h30", "取消")
-    BtnConfirm := ChoiceGui.Add("Button", "x240 y232 w100 h30 +Disabled", ConfirmBtnText)
+    BtnConfirm := ChoiceGui.Add("Button", "x239 y232 w100 h30 +Disabled", ConfirmBtnText)
 
     LV.OnEvent("ItemSelect", OnLVItemSelect)
     BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
@@ -3624,7 +3591,7 @@ ShowMultiPathDialog(ValidGames, Callback := "") {
     LV.ModifyCol(3, "AutoHdr")
 
     BtnCancel := ChoiceGui.Add("Button", "x352 y232 w84 h30", "取消")
-    BtnConfirm := ChoiceGui.Add("Button", "x240 y232 w100 h30 +Disabled", "确认")
+    BtnConfirm := ChoiceGui.Add("Button", "x239 y232 w100 h30 +Disabled", "确认")
 
     LV.OnEvent("ItemSelect", OnLVItemSelect)
     BtnConfirm.OnEvent("Click", (*) => HandleSubmit(1))
