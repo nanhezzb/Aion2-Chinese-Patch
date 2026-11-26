@@ -16,7 +16,7 @@
             "purple_url": "--game-id A2_WW_L_GA_PURPLE",
             "patch_branches": [
                 {
-                    "id": 10,
+                    "id": 100,
                     "target_language": "en-US",
                     "source": "英文 -> 简体中文 - 支持11月25日版本 @吃素的佩奇",
                     "latest_patch_version": "1.0.0.0",
@@ -58,7 +58,7 @@
                     ]
                 },
                 {
-                    "id": 10,
+                    "id": 101,
                     "target_language": "en-US",
                     "source": "英文 -> 繁體中文 - 支持11月25日版本 @吃素的佩奇",
                     "latest_patch_version": "1.0.0.0",
@@ -100,7 +100,7 @@
                     ]
                 },
                 {
-                    "id": 10,
+                    "id": 110,
                     "target_language": "ja-JP",
                     "source": "日语 -> 简体中文 - 支持11月25日版本 @吃素的佩奇",
                     "latest_patch_version": "1.0.0.0",
@@ -142,7 +142,7 @@
                     ]
                 },
                 {
-                    "id": 10,
+                    "id": 111,
                     "target_language": "ja-JP",
                     "source": "日语 -> 繁體中文 - 支持11月25日版本 @吃素的佩奇",
                     "latest_patch_version": "1.0.0.0",
