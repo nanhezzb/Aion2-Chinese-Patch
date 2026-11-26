@@ -250,7 +250,7 @@
             "patch_branches": [
                 {
                     "id": 0,
-                    "target_language": "zh-TW"
+                    "target_language": "zh-TW",
                     "source": "简体中文 - 支持10月28日版本",
                     "latest_patch_version": "1.0.0.3",
                     "changelog": "",
