@@ -40,6 +40,22 @@
                             "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll"
                         },
                         {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en-US\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja-JP\\Engine.locres"
+                        },
+                        {
                             "type": "add",
                             "filename": "99c3cf9131e3bc53dc8d838a52f0cfc2.locres",
                             "remote_filename": "patches/99c3cf9131e3bc53dc8d838a52f0cfc2.locres",
@@ -80,6 +96,22 @@
                         {
                             "type": "remove",
                             "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en-US\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja-JP\\Engine.locres"
                         },
                         {
                             "type": "add",
@@ -124,6 +156,22 @@
                             "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll"
                         },
                         {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en-US\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja-JP\\Engine.locres"
+                        },
+                        {
                             "type": "add",
                             "filename": "ed7c67767740e4f09abe3f8cfb0704a7.locres",
                             "remote_filename": "patches/ed7c67767740e4f09abe3f8cfb0704a7.locres",
@@ -166,6 +214,22 @@
                             "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll"
                         },
                         {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en-US\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja\\Engine.locres"
+                        },
+                        {
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja-JP\\Engine.locres"
+                        },
+                        {
                             "type": "add",
                             "filename": "be80b7486e1823c59d61fccd47312991.locres",
                             "remote_filename": "patches/be80b7486e1823c59d61fccd47312991.locres",
@@ -204,36 +268,20 @@
                             "target_relative_path": "Aion2\\Binaries\\Win64\\dxgi.dll"
                         },
                         {
-                            "type": "replace",
-                            "filename": "pakchunk502000-Windows_0_P.pak",
-                            "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/32/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.pak.zip.32",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.pak",
-                            "file_md5": "cf7c76a115a705e394d3df1f27fc3fb3",
-                            "file_size": 3750515
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en\\Engine.locres"
                         },
                         {
-                            "type": "replace",
-                            "filename": "pakchunk502000-Windows_0_P.sig",
-                            "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/32/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.sig.zip.32",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.sig",
-                            "file_md5": "952178b9bf306045a824d0df58919b2a",
-                            "file_size": 760
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en-US\\Engine.locres"
                         },
                         {
-                            "type": "replace",
-                            "filename": "pakchunk502000-Windows_0_P.ucas",
-                            "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/1/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.ucas.zip.1",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.ucas",
-                            "file_md5": "5f43fed0ad5ca3d9cd27fa45a0fcbd82",
-                            "file_size": 48
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja\\Engine.locres"
                         },
                         {
-                            "type": "replace",
-                            "filename": "pakchunk502000-Windows_0_P.utoc",
-                            "remote_filename": "http://a2ww.ncupdate.com/A2_WW_L_GA_PURPLE/9/Patch/Aion2/Content/Paks/L10N/Text/en-US/pakchunk502000-Windows_0_P.utoc.zip.9",
-                            "target_relative_path": "Aion2\\Content\\Paks\\L10N\\Text\\en-US\\pakchunk502000-Windows_0_P.utoc",
-                            "file_md5": "7dc402d00e158ea0a23bb6f6aa0f27a3",
-                            "file_size": 1297
+                            "type": "remove",
+                            "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja-JP\\Engine.locres"
                         }
                     ]
                 }
