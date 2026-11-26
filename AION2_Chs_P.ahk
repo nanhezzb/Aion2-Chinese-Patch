@@ -464,15 +464,16 @@ g_DefaultServers := NormalizeServerConfig([
                 "latest_patch_version", "1.0.0.0",
                 "changelog", "",
                 "release_timestamp", 1791216231,
-                "actions",
-                Map(
-                    "type", "add",
-                    "filename", "bg_pakchunk999999-Windows_0_P.pak",
-                    "remote_filename", "patches/bg_pakchunk999999-Windows_0_P.pak",
-                    "target_relative_path", "Aion2\\Content\\Paks\\pakchunk999999-Windows_0_P.pak",
-                    "file_md5", "c13da4af416c1ff7e29b4177dde437e8",
-                    "file_size", 3762189
-                )
+                "actions", [
+                    Map(
+                        "type", "add",
+                        "filename", "bg_pakchunk999999-Windows_0_P.pak",
+                        "remote_filename", "patches/bg_pakchunk999999-Windows_0_P.pak",
+                        "target_relative_path", "Aion2\\Content\\Paks\\pakchunk999999-Windows_0_P.pak",
+                        "file_md5", "c13da4af416c1ff7e29b4177dde437e8",
+                        "file_size", 3762189
+                    )
+                ]
             )
         ]
     )
