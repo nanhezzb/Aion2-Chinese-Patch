@@ -8,7 +8,7 @@
 ;@Ahk2Exe-SetOrigFilename AION2_Chs_P.exe
 ;@Ahk2Exe-SetProductName AION2 Chs Patch
 ;@Ahk2Exe-SetDescription AION2 一键汉化工具
-;@Ahk2Exe-SetVersion 2.1.2.0
+;@Ahk2Exe-SetVersion 2.1.3.0
 ;@Ahk2Exe-SetCopyright Copyright © 2026
 
 ;@Ahk2Exe-SetMainIcon .\AutoHotkey\icon.ico
@@ -65,8 +65,8 @@ UniqueInstance.Ensure(Map(
 
 global g_ProjectName := "AION2 Chs Patch"
 global g_ProjectNameSC := "AION2 一键汉化工具"
-global g_CurrentAppVersion := "2.1.2.0"
-global g_CurrentAppVersionString := "2.1.2"
+global g_CurrentAppVersion := "2.1.3.0"
+global g_CurrentAppVersionString := "2.1.3"
 global g_LastSeenBulletinVersion := "1.0.0.0"
 
 global g_ConfigFile := "config.ini"
@@ -256,7 +256,7 @@ WpsCard := CreateCardControl(MainGui, {
     y: 45,
     icon: GetImageResourceHandle(".\AutoHotkey\WPS.png"),
     title: "工具更新页面",
-    desc: "获取最新版本汉化工具、下载离线补丁包等。",
+    desc: "获取最新版汉化工具、离线包或自动挂机工具等。",
     url: "https://www.kdocs.cn/l/cf9KkRNTpqhb",
     width: 541,
     height: 77,
@@ -280,8 +280,8 @@ QQGroupCard := CreateCardControl(MainGui, {
     y: 213,
     icon: GetImageResourceHandle(".\AutoHotkey\QQGroup.png"),
     title: "塔2 QQ 交流群",
-    desc: "1124021357 与其他玩家交流心得、反馈问题与建议。",
-    url: "https://qm.qq.com/q/M8hfwL2uc0",
+    desc: "1080184873 与其他玩家交流心得、反馈问题与建议。",
+    url: "https://qm.qq.com/q/ckTYvz4hva",
     width: 541,
     height: 77,
     border: true
