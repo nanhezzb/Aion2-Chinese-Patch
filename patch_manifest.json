@@ -1,7 +1,7 @@
 {
     "cloud_bulletin": {
         "latest_bulletin_version": "1.2.18.0",
-        "changelog": "** 更新公告 ** 现已支持11月25日版本，补丁文件制作 @吃素的佩奇。",
+        "changelog": "** 更新公告 ** 现已支持11月25日版本，国际服汉化补丁文件制作 @吃素的佩奇。",
         "release_timestamp": 1795702200
     },
     "servers_config": [
