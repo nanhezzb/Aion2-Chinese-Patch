@@ -1,8 +1,8 @@
 {
     "cloud_bulletin": {
-        "latest_bulletin_version": "1.2.17.0",
-        "changelog": "** 测试公告 ** 测试期间请勿使用，谢谢。",
-        "release_timestamp": 1795682785
+        "latest_bulletin_version": "1.2.18.0",
+        "changelog": "** 更新公告 ** 现已支持11月25日版本。",
+        "release_timestamp": 1795702200
     },
     "servers_config": [
         {
@@ -21,7 +21,7 @@
                     "source": "英文 -> 简体中文 - 支持11月25日版本 @吃素的佩奇",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
-                    "release_timestamp": 1795682785,
+                    "release_timestamp": 1795702200,
                     "actions": [
                         {
                             "type": "remove",
@@ -57,19 +57,19 @@
                         },
                         {
                             "type": "add",
-                            "filename": "99c3cf9131e3bc53dc8d838a52f0cfc2.locres",
-                            "remote_filename": "patches/99c3cf9131e3bc53dc8d838a52f0cfc2.locres",
+                            "filename": "7477376a95ee7feb7874df37ccd5b075.locres",
+                            "remote_filename": "patches/7477376a95ee7feb7874df37ccd5b075.locres",
                             "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en\\Engine.locres",
-                            "file_md5": "99c3cf9131e3bc53dc8d838a52f0cfc2",
-                            "file_size": 16105338
+                            "file_md5": "7477376a95ee7feb7874df37ccd5b075",
+                            "file_size": 16097370
                         },
                         {
                             "type": "add",
-                            "filename": "99c3cf9131e3bc53dc8d838a52f0cfc2.locres",
-                            "remote_filename": "patches/99c3cf9131e3bc53dc8d838a52f0cfc2.locres",
+                            "filename": "7477376a95ee7feb7874df37ccd5b075.locres",
+                            "remote_filename": "patches/7477376a95ee7feb7874df37ccd5b075.locres",
                             "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en-US\\Engine.locres",
-                            "file_md5": "99c3cf9131e3bc53dc8d838a52f0cfc2",
-                            "file_size": 16105338
+                            "file_md5": "7477376a95ee7feb7874df37ccd5b075",
+                            "file_size": 16097370
                         }
                     ]
                 },
@@ -79,7 +79,7 @@
                     "source": "英文 -> 繁體中文 - 支持11月25日版本 @吃素的佩奇",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
-                    "release_timestamp": 1795682785,
+                    "release_timestamp": 1795702200,
                     "actions": [
                         {
                             "type": "remove",
@@ -115,19 +115,19 @@
                         },
                         {
                             "type": "add",
-                            "filename": "68f5cde4ebde83ecf9bdbadbde72f7f0.locres",
-                            "remote_filename": "patches/68f5cde4ebde83ecf9bdbadbde72f7f0.locres",
+                            "filename": "c09dab7bf2ae9394ac79d59583636249.locres",
+                            "remote_filename": "patches/c09dab7bf2ae9394ac79d59583636249.locres",
                             "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en\\Engine.locres",
-                            "file_md5": "68f5cde4ebde83ecf9bdbadbde72f7f0",
-                            "file_size": 16105454
+                            "file_md5": "c09dab7bf2ae9394ac79d59583636249",
+                            "file_size": 16097486
                         },
                         {
                             "type": "add",
-                            "filename": "68f5cde4ebde83ecf9bdbadbde72f7f0.locres",
-                            "remote_filename": "patches/68f5cde4ebde83ecf9bdbadbde72f7f0.locres",
+                            "filename": "c09dab7bf2ae9394ac79d59583636249.locres",
+                            "remote_filename": "patches/c09dab7bf2ae9394ac79d59583636249.locres",
                             "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\en-US\\Engine.locres",
-                            "file_md5": "68f5cde4ebde83ecf9bdbadbde72f7f0",
-                            "file_size": 16105454
+                            "file_md5": "c09dab7bf2ae9394ac79d59583636249",
+                            "file_size": 16097486
                         }
                     ]
                 },
@@ -137,7 +137,7 @@
                     "source": "日语 -> 简体中文 - 支持11月25日版本 @吃素的佩奇",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
-                    "release_timestamp": 1795682785,
+                    "release_timestamp": 1795702200,
                     "actions": [
                         {
                             "type": "remove",
@@ -173,19 +173,19 @@
                         },
                         {
                             "type": "add",
-                            "filename": "ed7c67767740e4f09abe3f8cfb0704a7.locres",
-                            "remote_filename": "patches/ed7c67767740e4f09abe3f8cfb0704a7.locres",
+                            "filename": "cb3501cd273d95577728813608ecd751.locres",
+                            "remote_filename": "patches/cb3501cd273d95577728813608ecd751.locres",
                             "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja\\Engine.locres",
-                            "file_md5": "ed7c67767740e4f09abe3f8cfb0704a7",
-                            "file_size": 16105338
+                            "file_md5": "cb3501cd273d95577728813608ecd751",
+                            "file_size": 16097370
                         },
                         {
                             "type": "add",
-                            "filename": "ed7c67767740e4f09abe3f8cfb0704a7.locres",
-                            "remote_filename": "patches/ed7c67767740e4f09abe3f8cfb0704a7.locres",
+                            "filename": "cb3501cd273d95577728813608ecd751.locres",
+                            "remote_filename": "patches/cb3501cd273d95577728813608ecd751.locres",
                             "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja-JP\\Engine.locres",
-                            "file_md5": "ed7c67767740e4f09abe3f8cfb0704a7",
-                            "file_size": 16105338
+                            "file_md5": "cb3501cd273d95577728813608ecd751",
+                            "file_size": 16097370
                         }
                     ]
                 },
@@ -195,7 +195,7 @@
                     "source": "日语 -> 繁體中文 - 支持11月25日版本 @吃素的佩奇",
                     "latest_patch_version": "1.0.0.0",
                     "changelog": "",
-                    "release_timestamp": 1795682785,
+                    "release_timestamp": 1795702200,
                     "actions": [
                         {
                             "type": "remove",
@@ -231,19 +231,19 @@
                         },
                         {
                             "type": "add",
-                            "filename": "be80b7486e1823c59d61fccd47312991.locres",
-                            "remote_filename": "patches/be80b7486e1823c59d61fccd47312991.locres",
+                            "filename": "d1b3b6ef3c7a62ceb010ae0d785faca8.locres",
+                            "remote_filename": "patches/d1b3b6ef3c7a62ceb010ae0d785faca8.locres",
                             "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja\\Engine.locres",
-                            "file_md5": "be80b7486e1823c59d61fccd47312991",
-                            "file_size": 16105454
+                            "file_md5": "d1b3b6ef3c7a62ceb010ae0d785faca8",
+                            "file_size": 16097486
                         },
                         {
                             "type": "add",
-                            "filename": "be80b7486e1823c59d61fccd47312991.locres",
-                            "remote_filename": "patches/be80b7486e1823c59d61fccd47312991.locres",
+                            "filename": "d1b3b6ef3c7a62ceb010ae0d785faca8.locres",
+                            "remote_filename": "patches/d1b3b6ef3c7a62ceb010ae0d785faca8.locres",
                             "target_relative_path": "Engine\\Content\\Localization\\Engine\\Platforms\\Windows\\ja-JP\\Engine.locres",
-                            "file_md5": "be80b7486e1823c59d61fccd47312991",
-                            "file_size": 16105454
+                            "file_md5": "d1b3b6ef3c7a62ceb010ae0d785faca8",
+                            "file_size": 16097486
                         }
                     ]
                 }
