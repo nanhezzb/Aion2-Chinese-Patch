@@ -1,7 +1,7 @@
 {
     "cloud_bulletin": {
         "latest_bulletin_version": "1.2.18.0",
-        "changelog": "** 更新公告 ** 现已支持11月25日版本。",
+        "changelog": "** 更新公告 ** 现已支持11月25日版本，补丁文件制作 @吃素的佩奇。",
         "release_timestamp": 1795702200
     },
     "servers_config": [
@@ -18,8 +18,8 @@
                 {
                     "id": 100,
                     "target_language": "en-US",
-                    "source": "英文 -> 简体中文 - 支持11月25日版本 @吃素的佩奇",
-                    "latest_patch_version": "1.0.0.0",
+                    "source": "英文 -> 简体中文 - 支持11月25日版本",
+                    "latest_patch_version": "1.0.0.1",
                     "changelog": "",
                     "release_timestamp": 1795702200,
                     "actions": [
@@ -76,8 +76,8 @@
                 {
                     "id": 101,
                     "target_language": "en-US",
-                    "source": "英文 -> 繁體中文 - 支持11月25日版本 @吃素的佩奇",
-                    "latest_patch_version": "1.0.0.0",
+                    "source": "英文 -> 繁體中文 - 支持11月25日版本",
+                    "latest_patch_version": "1.0.0.1",
                     "changelog": "",
                     "release_timestamp": 1795702200,
                     "actions": [
@@ -134,8 +134,8 @@
                 {
                     "id": 110,
                     "target_language": "ja-JP",
-                    "source": "日语 -> 简体中文 - 支持11月25日版本 @吃素的佩奇",
-                    "latest_patch_version": "1.0.0.0",
+                    "source": "日语 -> 简体中文 - 支持11月25日版本",
+                    "latest_patch_version": "1.0.0.1",
                     "changelog": "",
                     "release_timestamp": 1795702200,
                     "actions": [
@@ -192,8 +192,8 @@
                 {
                     "id": 111,
                     "target_language": "ja-JP",
-                    "source": "日语 -> 繁體中文 - 支持11月25日版本 @吃素的佩奇",
-                    "latest_patch_version": "1.0.0.0",
+                    "source": "日语 -> 繁體中文 - 支持11月25日版本",
+                    "latest_patch_version": "1.0.0.1",
                     "changelog": "",
                     "release_timestamp": 1795702200,
                     "actions": [
