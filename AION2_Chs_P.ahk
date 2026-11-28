@@ -26,9 +26,9 @@
 ;@Ahk2Exe-AddResource .\AutoHotkey\sync.png, SYNC_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\syncdis.png, SYNC_DIS_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\diag.png, DIAG_PNG
-;@Ahk2Exe-AddResource .\AutoHotkey\diagdis.png, DIAGDIS_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\diagdis.png, DIAG_DIS_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\refresh.png, REFRESH_PNG
-;@Ahk2Exe-AddResource .\AutoHotkey\refreshdis.png, REFRESHDIS_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\refreshdis.png, REFRESH_DIS_PNG
 
 ;@format array_style: expand, object_style: expand
 
@@ -2762,11 +2762,11 @@ RefreshUi() {
     DiagImg := IsSDiagEnabled ? ".\AutoHotkey\diag.png" : ".\AutoHotkey\diagdis.png"
     RefreshImg := IsRefreshEnabled ? ".\AutoHotkey\refresh.png" : ".\AutoHotkey\refreshdis.png"
 
-    SetPicControlBitmap(PicSync, GetImageResourceHandle(SyncImg))
-    SetPicControlBitmap(PicSteam, GetImageResourceHandle(SteamImg))
-    SetPicControlBitmap(PicPurple, GetImageResourceHandle(PurpleImg))
-    SetPicControlBitmap(Picdiag, GetImageResourceHandle(DiagImg))
-    SetPicControlBitmap(PicRefreshStatus, GetImageResourceHandle(RefreshImg))
+    SetPicControlBitmap(PicSync, SyncImg)
+    SetPicControlBitmap(PicSteam, SteamImg)
+    SetPicControlBitmap(PicPurple, PurpleImg)
+    SetPicControlBitmap(Picdiag, DiagImg)
+    SetPicControlBitmap(PicRefreshStatus, RefreshImg)
 
     if (TabCtrl.Value != 1) {
         TextTipInfo.Opt("+Hidden")
@@ -3880,9 +3880,9 @@ GetImageResourceHandle(ResourcePath, ReturnNumericHandle := false) {
         ".\AutoHotkey\sync.png", "SYNC_PNG",
         ".\AutoHotkey\syncdis.png", "SYNC_DIS_PNG",
         ".\AutoHotkey\diag.png", "DIAG_PNG",
-        ".\AutoHotkey\diagdis.png", "DIAGDIS_PNG",
+        ".\AutoHotkey\diagdis.png", "DIAG_DIS_PNG",
         ".\AutoHotkey\refresh.png", "REFRESH_PNG",
-        ".\AutoHotkey\refreshdis.png", "REFRESHDIS_PNG"
+        ".\AutoHotkey\refreshdis.png", "REFRESH_DIS_PNG"
     )
 
     ResName := ResourceMap.Has(ResourcePath) ? ResourceMap[ResourcePath] : ResourcePath
