@@ -27,6 +27,8 @@
 ;@Ahk2Exe-AddResource .\AutoHotkey\syncdis.png, SYNC_DIS_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\diag.png, DIAG_PNG
 ;@Ahk2Exe-AddResource .\AutoHotkey\diagdis.png, DIAGDIS_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\refresh.png, REFRESH_PNG
+;@Ahk2Exe-AddResource .\AutoHotkey\refreshdis.png, REFRESHDIS_PNG
 
 ;@format array_style: expand, object_style: expand
 
@@ -171,7 +173,7 @@ global TabCtrl := MainGui.Add("Tab3", "x-1 y10 w574 h480", [
 
 TabCtrl.UseTab(1)
 
-global PicSync := MainGui.Add("Picture", "x520 y45 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\sync.png"))
+global PicSync := MainGui.Add("Picture", "x520 y45 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\syncdis.png"))
 AddToolTip(PicSync, "刷新以同步服务器数据。")
 g_CursorHwndMap[PicSync.Hwnd] := true
 
@@ -200,8 +202,9 @@ global BtnChinese := MainGui.Add("Button", "x14 y423 w100 h30", "一键汉化")
 global BtnRestore := MainGui.Add("Button", "x127 y423 w90 h30", "撤销汉化")
 global BtnRepair := MainGui.Add("Button", "x230 y423 w75 h30", "修复环境")
 AddToolTip(BtnRepair, "清理已知汉化文件，恢复游戏默认语言。")
-global BtnRefreshStatus := MainGui.Add("Button", "x318 y423 w50 h30", "刷新")
-AddToolTip(BtnRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
+global PicRefreshStatus := MainGui.Add("Picture", "x322 y426 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\refreshdis.png"))
+AddToolTip(PicRefreshStatus, "检测本地补丁是否失效，刷新界面控件和补丁状态。")
+g_CursorHwndMap[PicRefreshStatus.Hwnd] := true
 
 global PicSteam := MainGui.Add("Picture", "x470 y426 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\steamdis.png"))
 global TextSplit := MainGui.AddText("x502 y430 ccfcfcf", "l")
@@ -287,7 +290,7 @@ QQGroupCard := CreateCardControl(MainGui, {
     border: true
 })
 
-global Picdiag := MainGui.Add("Picture", "x515 y425 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\diag.png"))
+global Picdiag := MainGui.Add("Picture", "x515 y425 w24 h24 BackgroundTrans", GetImageResourceHandle(".\AutoHotkey\diagdis.png"))
 AddToolTip(Picdiag, "点击快速生成诊断报告，排查游戏汉化失败原因。")
 g_CursorHwndMap[Picdiag.Hwnd] := true
 
@@ -309,7 +312,7 @@ BtnReset.OnEvent("Click", (*) => DoResetConfig())
 BtnUpdate.OnEvent("Click", (*) => DoUpdatePatch())
 BtnChinese.OnEvent("Click", (*) => DoChinesePatch())
 BtnRestore.OnEvent("Click", (*) => DoRestorePatch())
-BtnRefreshStatus.OnEvent("Click", (*) => OnBtnRefreshStatusClick())
+PicRefreshStatus.OnEvent("Click", (*) => OnPicRefreshStatusClick())
 PicSteam.OnEvent("Click", (*) => LaunchPlatformUrl("steam_url", "Steam"))
 PicPurple.OnEvent("Click", (*) => LaunchPlatformUrl("purple_url", "PURPLE"))
 Picdiag.OnEvent("Click", (*) => OnDiagButtonClick())
@@ -2021,14 +2024,12 @@ DoRestorePatchInternal(IsSilent := false) {
         ShowMessageDialog("已清除汉化补丁，恢复游戏默认语言。`r`n`r`n撤销完成。")
 }
 
-OnBtnRefreshStatusClick(*) {
+OnPicRefreshStatusClick(*) {
     global g_IsRefreshing
-
-    if (g_IsRefreshing)
+    if (g_IsSyncing || g_IsPatching || g_IsRefreshing)
         return
-
     g_IsRefreshing := true
-    BtnRefreshStatus.Opt("+Disabled")
+    RefreshUi()
 
     try {
         Info := GetLocalPatchInfo()
@@ -2742,7 +2743,7 @@ CheckBulletin(BulletinMap, OnComplete := "") {
 ; ==============================================================================
 
 RefreshUi() {
-    global BtnBrowse, BtnChinese, BtnRefreshStatus, BtnReset, BtnRestore, BtnRepair, BtnScan, BtnUpdate, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, g_IsRefreshing, g_WindowsOffset, MainGui, PicPurple, PicSteam, Picdiag, TabCtrl, TextTipInfo
+    global BtnBrowse, BtnChinese, PicRefreshStatus, BtnReset, BtnRestore, BtnRepair, BtnScan, BtnUpdate, ComboServerList, EditInstallPath, g_ConfigCache, g_CurrentServer, g_InstallPath, g_IsPatching, g_IsSyncing, g_IsRefreshing, g_WindowsOffset, MainGui, PicPurple, PicSteam, Picdiag, TabCtrl, TextTipInfo
 
     ShowGameRunningTip := (!g_IsSyncing && IsGameProcessRunning())
 
@@ -2753,16 +2754,19 @@ RefreshUi() {
     IsSteamEnabled := (!g_IsSyncing && !g_IsPatching && HasSteamUrl)
     IsPurpleEnabled := (!g_IsSyncing && !g_IsPatching && HasPurpleUrl)
     IsSDiagEnabled := (!g_IsSyncing && !g_IsPatching)
+    IsRefreshEnabled := (!g_IsSyncing && !g_IsPatching && !g_IsRefreshing)
 
     SyncImg := IsSyncEnabled ? ".\AutoHotkey\sync.png" : ".\AutoHotkey\syncdis.png"
     SteamImg := IsSteamEnabled ? ".\AutoHotkey\steam.png" : ".\AutoHotkey\steamdis.png"
     PurpleImg := IsPurpleEnabled ? ".\AutoHotkey\purple.png" : ".\AutoHotkey\purpledis.png"
     DiagImg := IsSDiagEnabled ? ".\AutoHotkey\diag.png" : ".\AutoHotkey\diagdis.png"
+    RefreshImg := IsRefreshEnabled ? ".\AutoHotkey\refresh.png" : ".\AutoHotkey\refreshdis.png"
 
     SetPicControlBitmap(PicSync, GetImageResourceHandle(SyncImg))
     SetPicControlBitmap(PicSteam, GetImageResourceHandle(SteamImg))
     SetPicControlBitmap(PicPurple, GetImageResourceHandle(PurpleImg))
     SetPicControlBitmap(Picdiag, GetImageResourceHandle(DiagImg))
+    SetPicControlBitmap(PicRefreshStatus, GetImageResourceHandle(RefreshImg))
 
     if (TabCtrl.Value != 1) {
         TextTipInfo.Opt("+Hidden")
@@ -2777,11 +2781,11 @@ RefreshUi() {
             BtnChinese.Move(, 443)
             BtnRestore.Move(, 443)
             BtnRepair.Move(, 443)
-            BtnRefreshStatus.Move(, 443)
             PicSteam.Move(, 446)
             TextSplit.Move(, 450)
             PicPurple.Move(, 445)
             Picdiag.Move(, 445)
+            PicRefreshStatus.Move(, 445)
             MainGui.Move(, , , 508 + g_WindowsOffset.h)
         } else {
             TextTipInfo.Opt("+Hidden")
@@ -2790,11 +2794,11 @@ RefreshUi() {
             BtnChinese.Move(, 423)
             BtnRestore.Move(, 423)
             BtnRepair.Move(, 423)
-            BtnRefreshStatus.Move(, 423)
             PicSteam.Move(, 426)
             TextSplit.Move(, 430)
             PicPurple.Move(, 425)
             Picdiag.Move(, 425)
+            PicRefreshStatus.Move(, 425)
             MainGui.Move(, , , 488 + g_WindowsOffset.h)
         }
     } finally {
@@ -2810,7 +2814,6 @@ RefreshUi() {
         BtnBrowse.Opt("+Disabled")
         BtnReset.Opt("+Disabled")
         ComboServerList.Opt("+Disabled")
-        BtnRefreshStatus.Opt("+Disabled")
 
         return
     }
@@ -2823,12 +2826,6 @@ RefreshUi() {
         BtnRepair.Opt("-Disabled")
     } else {
         BtnRepair.Opt("+Disabled")
-    }
-
-    if (g_IsRefreshing) {
-        BtnRefreshStatus.Opt("+Disabled")
-    } else {
-        BtnRefreshStatus.Opt("-Disabled")
     }
 
     if (!g_CurrentServer.Has("id"))
@@ -3855,13 +3852,12 @@ GetWindowFrameOffset(GuiObj) {
 SetPicControlBitmap(PicCtrl, ResourcePath) {
     static STM_SETIMAGE := 0x0172
     static IMAGE_BITMAP := 0
-
     hBitmap := GetImageResourceHandle(ResourcePath, true)
-
     if (IsInteger(hBitmap) && hBitmap != 0) {
         SendMessage(STM_SETIMAGE, IMAGE_BITMAP, hBitmap, PicCtrl.Hwnd)
     } else {
-        PicCtrl.Value := ResourcePath
+        if FileExist(ResourcePath)
+            PicCtrl.Value := ResourcePath
     }
 }
 
@@ -3884,7 +3880,9 @@ GetImageResourceHandle(ResourcePath, ReturnNumericHandle := false) {
         ".\AutoHotkey\sync.png", "SYNC_PNG",
         ".\AutoHotkey\syncdis.png", "SYNC_DIS_PNG",
         ".\AutoHotkey\diag.png", "DIAG_PNG",
-        ".\AutoHotkey\diagdis.png", "DIAGDIS_PNG"
+        ".\AutoHotkey\diagdis.png", "DIAGDIS_PNG",
+        ".\AutoHotkey\refresh.png", "REFRESH_PNG",
+        ".\AutoHotkey\refreshdis.png", "REFRESHDIS_PNG"
     )
 
     ResName := ResourceMap.Has(ResourcePath) ? ResourceMap[ResourcePath] : ResourcePath
